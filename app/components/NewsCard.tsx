@@ -1,4 +1,4 @@
-import { Article } from "@/lib/types";
+import { Article, ArticleCategory } from "@/lib/types";
 
 function timeAgo(date: Date): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -15,6 +15,17 @@ const tierColors: Record<number, string> = {
   1: "bg-cyber-red/20 text-red-400 border-red-500/30",
   2: "bg-cyber-accent/10 text-cyber-accent border-cyber-accent/30",
   3: "bg-cyber-blue/10 text-cyber-blue border-sky-500/30",
+};
+
+const categoryStyles: Record<ArticleCategory, string> = {
+  Vulnerability: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+  Ransomware:    "bg-red-500/10 text-red-400 border-red-500/30",
+  APT:           "bg-purple-500/10 text-purple-400 border-purple-500/30",
+  "Data Breach": "bg-rose-500/10 text-rose-400 border-rose-500/30",
+  Malware:       "bg-orange-500/10 text-orange-400 border-orange-500/30",
+  Phishing:      "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
+  Policy:        "bg-indigo-500/10 text-indigo-400 border-indigo-500/30",
+  Other:         "bg-slate-500/10 text-slate-400 border-slate-500/30",
 };
 
 export default function NewsCard({
@@ -56,7 +67,7 @@ export default function NewsCard({
         </p>
       )}
 
-      <div className="flex items-center gap-2 text-xs">
+      <div className="flex items-center flex-wrap gap-2 text-xs">
         <span
           className={`px-2 py-0.5 rounded border font-medium ${
             tierColors[article.sourceTier] || tierColors[3]
@@ -64,7 +75,21 @@ export default function NewsCard({
         >
           {article.source}
         </span>
+        {article.category !== "Other" && (
+          <span
+            className={`px-2 py-0.5 rounded border font-medium ${
+              categoryStyles[article.category]
+            }`}
+          >
+            {article.category}
+          </span>
+        )}
         <span className="text-slate-500">{timeAgo(article.pubDate)}</span>
+        {article.alsoReportedBy.length > 0 && (
+          <span className="text-slate-600">
+            also: {article.alsoReportedBy.join(", ")}
+          </span>
+        )}
       </div>
     </a>
   );

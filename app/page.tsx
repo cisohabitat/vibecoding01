@@ -1,4 +1,6 @@
 import { fetchAllFeeds } from "@/lib/fetcher";
+import { tagArticles } from "@/lib/tagger";
+import { deduplicateArticles } from "@/lib/deduplicator";
 import { rankArticles } from "@/lib/ranker";
 import Header from "./components/Header";
 import FeaturedNews from "./components/FeaturedNews";
@@ -9,8 +11,10 @@ export const dynamic = "force-dynamic";
 export const revalidate = 900; // 15 minutes ISR
 
 export default async function Home() {
-  const articles = await fetchAllFeeds();
-  const { featured, recent, lastUpdated } = rankArticles(articles);
+  const raw = await fetchAllFeeds();
+  const tagged = tagArticles(raw);
+  const deduped = deduplicateArticles(tagged);
+  const { featured, recent, lastUpdated } = rankArticles(deduped);
 
   return (
     <div className="min-h-screen flex flex-col">
