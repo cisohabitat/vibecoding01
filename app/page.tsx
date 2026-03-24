@@ -5,6 +5,7 @@ import FeaturedNews from "./components/FeaturedNews";
 import NewsList from "./components/NewsList";
 import Footer from "./components/Footer";
 
+export const dynamic = "force-dynamic";
 export const revalidate = 900; // 15 minutes ISR
 
 export default async function Home() {
