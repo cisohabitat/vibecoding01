@@ -9,7 +9,7 @@ export default function Header() {
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             <span className="text-cyber-accent">Cyber</span>{" "}
-            <span className="text-white">Pulse</span>
+            <span className="text-white">Pulse SG</span>
           </h1>
         </div>
         <p className="mt-1 text-sm text-slate-400 ml-6">
