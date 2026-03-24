@@ -7,7 +7,6 @@ import Footer from "./components/Footer";
 import ArticleFilter from "./components/ArticleFilter";
 import TrendingTopics from "./components/TrendingTopics";
 
-export const dynamic = "force-dynamic";
 export const revalidate = 900; // 15 minutes ISR
 
 export default async function Home() {
