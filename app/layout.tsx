@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Cyber Pulse — Real-time Cybersecurity Intelligence",
+  title: "Cyber Pulse SG — Real-time Cybersecurity Intelligence",
   description:
     "Aggregated cybersecurity news from the most trusted sources, ranked by relevance.",
 };
