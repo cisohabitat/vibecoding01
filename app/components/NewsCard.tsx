@@ -1,4 +1,4 @@
-import { Article, ArticleCategory } from "@/lib/types";
+import { Article, ArticleCategory, CveSeverity } from "@/lib/types";
 
 function timeAgo(date: Date): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -15,6 +15,15 @@ const tierColors: Record<number, string> = {
   1: "bg-cyber-red/20 text-red-400 border-red-500/30",
   2: "bg-cyber-accent/10 text-cyber-accent border-cyber-accent/30",
   3: "bg-cyber-blue/10 text-cyber-blue border-sky-500/30",
+};
+
+const cveSeverityStyles: Record<CveSeverity | "null", string> = {
+  CRITICAL: "bg-red-500/10 text-red-400 border-red-500/40 hover:bg-red-500/20",
+  HIGH:     "bg-orange-500/10 text-orange-400 border-orange-500/40 hover:bg-orange-500/20",
+  MEDIUM:   "bg-amber-500/10 text-amber-400 border-amber-500/40 hover:bg-amber-500/20",
+  LOW:      "bg-sky-500/10 text-sky-400 border-sky-500/40 hover:bg-sky-500/20",
+  NONE:     "bg-slate-500/10 text-slate-400 border-slate-500/30 hover:bg-slate-500/20",
+  null:     "bg-slate-500/10 text-slate-400 border-slate-500/30 hover:bg-slate-500/20",
 };
 
 const categoryStyles: Record<ArticleCategory, string> = {
@@ -65,6 +74,28 @@ export default function NewsCard({
         <p className="text-sm text-slate-400 leading-relaxed mb-3 line-clamp-2">
           {article.description}
         </p>
+      )}
+
+      {article.cves && article.cves.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {article.cves.slice(0, 3).map((cve) => (
+            <a
+              key={cve.id}
+              href={`https://nvd.nist.gov/vuln/detail/${cve.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-mono transition-colors ${
+                cveSeverityStyles[cve.severity ?? "null"]
+              }`}
+            >
+              {cve.id}
+              {cve.cvss !== null && (
+                <span className="font-bold">{cve.cvss.toFixed(1)}</span>
+              )}
+            </a>
+          ))}
+        </div>
       )}
 
       <div className="flex items-center flex-wrap gap-2 text-xs">

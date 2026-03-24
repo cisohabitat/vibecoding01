@@ -14,6 +14,14 @@ export type ArticleCategory =
   | "Policy"
   | "Other";
 
+export type CveSeverity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "NONE";
+
+export interface CveInfo {
+  id: string;
+  cvss: number | null;
+  severity: CveSeverity | null;
+}
+
 export interface Article {
   title: string;
   link: string;
@@ -24,6 +32,7 @@ export interface Article {
   score: number;
   category: ArticleCategory;
   alsoReportedBy: string[];
+  cves: CveInfo[];
 }
 
 export interface RankedArticles {

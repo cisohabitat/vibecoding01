@@ -44,6 +44,7 @@ export async function fetchAllFeeds(): Promise<Article[]> {
         score: 0,
         category: "Other" as const,
         alsoReportedBy: [],
+        cves: [],
       }));
     })
   );
