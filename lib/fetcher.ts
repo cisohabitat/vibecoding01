@@ -5,7 +5,7 @@ import { Article } from "./types";
 const parser = new Parser({
   timeout: 10000,
   headers: {
-    "User-Agent": "CyberPulse/1.0 (RSS Aggregator)",
+    "User-Agent": "CyberPulseSG/1.0 (RSS Aggregator)",
   },
 });
 
