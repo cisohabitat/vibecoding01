@@ -42,6 +42,8 @@ export async function fetchAllFeeds(): Promise<Article[]> {
         source: source.name,
         sourceTier: source.tier,
         score: 0,
+        category: "Other" as const,
+        alsoReportedBy: [],
       }));
     })
   );
