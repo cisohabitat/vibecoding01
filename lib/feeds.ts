@@ -30,6 +30,18 @@ export const FEED_SOURCES: FeedSource[] = [
     tier: 2,
   },
 
+  // Tier 2 — Additional authoritative journalism
+  {
+    name: "Schneier on Security",
+    url: "https://www.schneier.com/feed/atom/",
+    tier: 2,
+  },
+  {
+    name: "SANS Internet Storm Center",
+    url: "https://isc.sans.edu/rssfeed_full.xml",
+    tier: 2,
+  },
+
   // Tier 3 — Additional quality sources
   {
     name: "SecurityWeek",
@@ -44,6 +56,21 @@ export const FEED_SOURCES: FeedSource[] = [
   {
     name: "The Register",
     url: "https://www.theregister.com/security/headlines.atom",
+    tier: 3,
+  },
+  {
+    name: "NCSC UK",
+    url: "https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml",
+    tier: 3,
+  },
+  {
+    name: "Google Project Zero",
+    url: "https://googleprojectzero.blogspot.com/feeds/posts/default",
+    tier: 3,
+  },
+  {
+    name: "Recorded Future",
+    url: "https://www.recordedfuture.com/feed",
     tier: 3,
   },
 ];

@@ -7,6 +7,7 @@ import Footer from "./components/Footer";
 import ArticleFilter from "./components/ArticleFilter";
 import TrendingTopics from "./components/TrendingTopics";
 import FeedFailureBanner from "./components/FeedFailureBanner";
+import StatsBanner from "./components/StatsBanner";
 
 export const revalidate = 900; // 15 minutes ISR
 
@@ -21,6 +22,7 @@ export default async function Home() {
         <div className="flex gap-8 items-start">
           <div className="flex-1 min-w-0">
             <FeedFailureBanner failedFeeds={failedFeeds} />
+            <StatsBanner featured={featured} recent={recent} />
             <ArticleFilter featured={featured} recent={recent}>
               <FeaturedNews articles={featured} />
               <NewsList articles={recent} />
