@@ -1,9 +1,22 @@
+"use client";
+
 import { TrendingTopic } from "@/lib/trending";
 
 export default function TrendingTopics({ topics }: { topics: TrendingTopic[] }) {
   if (topics.length === 0) return null;
 
   const max = topics[0].count;
+
+  function handleClick(term: string) {
+    window.dispatchEvent(
+      new CustomEvent("cyber-pulse-search", { detail: term })
+    );
+    // Scroll to the filter bar on small screens
+    document.getElementById("article-filter")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
 
   return (
     <div className="bg-cyber-800/50 border border-cyber-600/50 rounded-lg p-4">
@@ -21,7 +34,13 @@ export default function TrendingTopics({ topics }: { topics: TrendingTopic[] }) 
             </span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-slate-300 truncate capitalize">{term}</span>
+                <button
+                  onClick={() => handleClick(term)}
+                  className="text-xs text-slate-300 truncate capitalize hover:text-cyber-accent transition-colors text-left"
+                  title={`Filter by "${term}"`}
+                >
+                  {term}
+                </button>
                 <span className="text-xs font-mono text-slate-500 ml-2 shrink-0">{count}</span>
               </div>
               <div className="h-0.5 bg-cyber-700 rounded-full overflow-hidden">
@@ -35,7 +54,7 @@ export default function TrendingTopics({ topics }: { topics: TrendingTopic[] }) 
         ))}
       </ol>
       <p className="text-xs text-slate-600 mt-4 text-center">
-        from title keywords
+        click to filter
       </p>
     </div>
   );

@@ -1,4 +1,8 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Article, ArticleCategory, CveSeverity } from "@/lib/types";
+import CveModal from "./CveModal";
 
 function timeAgo(date: Date): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -37,6 +41,53 @@ const categoryStyles: Record<ArticleCategory, string> = {
   Other:         "bg-slate-500/10 text-slate-400 border-slate-500/30",
 };
 
+const READ_KEY = "cyber-pulse-read";
+const BOOKMARK_KEY = "cyber-pulse-bookmarks";
+
+function getReadUrls(): Set<string> {
+  try {
+    const raw = localStorage.getItem(READ_KEY);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function markUrlRead(url: string): void {
+  const urls = getReadUrls();
+  urls.add(url);
+  try {
+    localStorage.setItem(READ_KEY, JSON.stringify([...urls]));
+  } catch {}
+}
+
+function getBookmarks(): string[] {
+  try {
+    const raw = localStorage.getItem(BOOKMARK_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function toggleBookmarkStorage(article: Article): boolean {
+  try {
+    const raw = localStorage.getItem(BOOKMARK_KEY);
+    const saved: Article[] = raw ? JSON.parse(raw) : [];
+    const idx = saved.findIndex((a) => a.link === article.link);
+    let next: Article[];
+    if (idx >= 0) {
+      next = saved.filter((_, i) => i !== idx);
+    } else {
+      next = [article, ...saved];
+    }
+    localStorage.setItem(BOOKMARK_KEY, JSON.stringify(next));
+    return idx < 0; // true if now bookmarked
+  } catch {
+    return false;
+  }
+}
+
 export default function NewsCard({
   article,
   featured = false,
@@ -44,83 +95,142 @@ export default function NewsCard({
   article: Article;
   featured?: boolean;
 }) {
+  const [isRead, setIsRead] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [openCve, setOpenCve] = useState<string | null>(null);
+
+  const pubDate =
+    article.pubDate instanceof Date
+      ? article.pubDate
+      : new Date(article.pubDate as unknown as string);
+  const isBreaking = Date.now() - pubDate.getTime() < 60 * 60 * 1000;
+
+  useEffect(() => {
+    setIsRead(getReadUrls().has(article.link));
+    setIsBookmarked(getBookmarks().includes(article.link));
+  }, [article.link]);
+
+  function handleClick() {
+    markUrlRead(article.link);
+    setIsRead(true);
+  }
+
+  function handleBookmark(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const nowBookmarked = toggleBookmarkStorage(article);
+    setIsBookmarked(nowBookmarked);
+  }
+
   return (
-    <a
-      href={article.link}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`group block rounded-lg border transition-all duration-200 ${
-        featured
-          ? "border-cyber-accent/20 bg-cyber-700/50 hover:border-cyber-accent/50 hover:shadow-[0_0_20px_rgba(0,255,200,0.08)]"
-          : "border-cyber-600/50 bg-cyber-800/50 hover:border-cyber-500 hover:bg-cyber-700/50"
-      } p-4`}
-    >
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <h3
-          className={`font-semibold leading-snug group-hover:text-cyber-accent transition-colors ${
-            featured ? "text-lg text-white" : "text-sm text-slate-200"
-          }`}
-        >
-          {article.title}
-        </h3>
-        {featured && article.score > 0 && (
-          <span className="shrink-0 text-xs font-mono bg-cyber-accent/10 text-cyber-accent px-2 py-0.5 rounded">
-            {article.score.toFixed(1)}
-          </span>
-        )}
-      </div>
-
-      {article.description && (
-        <p className="text-sm text-slate-400 leading-relaxed mb-3 line-clamp-2">
-          {article.description}
-        </p>
-      )}
-
-      {article.cves && article.cves.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {article.cves.slice(0, 3).map((cve) => (
-            <a
-              key={cve.id}
-              href={`https://nvd.nist.gov/vuln/detail/${cve.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-mono transition-colors ${
-                cveSeverityStyles[cve.severity ?? "null"]
-              }`}
-            >
-              {cve.id}
-              {cve.cvss !== null && (
-                <span className="font-bold">{cve.cvss.toFixed(1)}</span>
-              )}
-            </a>
-          ))}
-        </div>
-      )}
-
-      <div className="flex items-center flex-wrap gap-2 text-xs">
-        <span
-          className={`px-2 py-0.5 rounded border font-medium ${
-            tierColors[article.sourceTier] || tierColors[3]
-          }`}
-        >
-          {article.source}
-        </span>
-        {article.category !== "Other" && (
-          <span
-            className={`px-2 py-0.5 rounded border font-medium ${
-              categoryStyles[article.category]
+    <>
+      <a
+        href={article.link}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={handleClick}
+        className={`group block rounded-lg border transition-all duration-200 ${
+          isRead ? "opacity-50 hover:opacity-80" : ""
+        } ${
+          featured
+            ? "border-cyber-accent/20 bg-cyber-700/50 hover:border-cyber-accent/50 hover:shadow-[0_0_20px_rgba(0,255,200,0.08)]"
+            : "border-cyber-600/50 bg-cyber-800/50 hover:border-cyber-500 hover:bg-cyber-700/50"
+        } p-4`}
+      >
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <h3
+            className={`font-semibold leading-snug group-hover:text-cyber-accent transition-colors ${
+              featured ? "text-lg text-white" : "text-sm text-slate-200"
             }`}
           >
-            {article.category}
-          </span>
+            {isBreaking && (
+              <span className="inline-flex items-center mr-2 px-1.5 py-0.5 text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/50 rounded animate-pulse align-middle">
+                BREAKING
+              </span>
+            )}
+            {article.title}
+          </h3>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {featured && article.score > 0 && (
+              <span className="text-xs font-mono bg-cyber-accent/10 text-cyber-accent px-2 py-0.5 rounded">
+                {article.score.toFixed(1)}
+              </span>
+            )}
+            <button
+              onClick={handleBookmark}
+              title={isBookmarked ? "Remove bookmark" : "Save for later"}
+              className={`text-base leading-none transition-colors ${
+                isBookmarked
+                  ? "text-cyber-accent"
+                  : "text-slate-600 hover:text-slate-400"
+              }`}
+            >
+              {isBookmarked ? "★" : "☆"}
+            </button>
+          </div>
+        </div>
+
+        {article.description && (
+          <p className="text-sm text-slate-400 leading-relaxed mb-3 line-clamp-2">
+            {article.description}
+          </p>
         )}
-        <span className="text-slate-500">{timeAgo(article.pubDate)}</span>
-        {article.alsoReportedBy.length > 0 && (
-          <span className="text-slate-600">
-            also: {article.alsoReportedBy.join(", ")}
-          </span>
+
+        {article.cves && article.cves.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {article.cves.slice(0, 3).map((cve) => (
+              <button
+                key={cve.id}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setOpenCve(cve.id);
+                }}
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-mono transition-colors cursor-pointer ${
+                  cveSeverityStyles[cve.severity ?? "null"]
+                }`}
+              >
+                {cve.id}
+                {cve.cvss !== null && (
+                  <span className="font-bold">{cve.cvss.toFixed(1)}</span>
+                )}
+              </button>
+            ))}
+          </div>
         )}
-      </div>
-    </a>
+
+        <div className="flex items-center flex-wrap gap-2 text-xs">
+          <span
+            className={`px-2 py-0.5 rounded border font-medium ${
+              tierColors[article.sourceTier] || tierColors[3]
+            }`}
+          >
+            {article.source}
+          </span>
+          {article.category !== "Other" && (
+            <span
+              className={`px-2 py-0.5 rounded border font-medium ${
+                categoryStyles[article.category]
+              }`}
+            >
+              {article.category}
+            </span>
+          )}
+          <span className="text-slate-500">{timeAgo(pubDate)}</span>
+          {article.alsoReportedBy.length > 0 && (
+            <span className="text-slate-600">
+              also: {article.alsoReportedBy.join(", ")}
+            </span>
+          )}
+          {isRead && (
+            <span className="text-slate-600 ml-auto">read</span>
+          )}
+        </div>
+      </a>
+
+      {openCve && (
+        <CveModal cveId={openCve} onClose={() => setOpenCve(null)} />
+      )}
+    </>
   );
 }

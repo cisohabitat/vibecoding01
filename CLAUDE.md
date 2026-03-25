@@ -26,19 +26,22 @@ app/
   api/
     feed.json/route.ts      — JSON feed API (ISR, 15-min revalidation)
     feed.xml/route.ts       — RSS/Atom feed API (ISR, 15-min revalidation)
+    health/route.ts         — Health check API (always fresh); returns { status, feedsUp, feedsDown, lastCheck }
   components/
     Header.tsx              — Sticky header with branding
     FeaturedNews.tsx        — Top 5 ranked articles grid
-    NewsList.tsx            — Remaining articles grid
+    NewsList.tsx            — Remaining articles section (server shell)
+    NewsListClient.tsx      — Paginated "Load more" grid for recent articles [client]
     NewsCard.tsx            — Article card (featured + default variants) [client]
-    ArticleFilter.tsx       — Search/filter UI by category [client]
+    ArticleFilter.tsx       — Search/filter UI by category; persists selected category to localStorage [client]
+    FeedFailureBanner.tsx   — Dismissible warning banner shown when ≥2 feeds fail [client]
     TrendingTopics.tsx      — Trending keywords sidebar
     Footer.tsx              — Last-updated timestamp + source attribution
 lib/
   types.ts          — TypeScript interfaces (Article, FeedSource, RankedArticles, CveInfo, etc.)
   feeds.ts          — RSS feed source registry with tier ratings (1-3)
-  fetcher.ts        — RSS fetching with Promise.allSettled + 10s timeout
-  pipeline.ts       — Orchestrates fetch → tag → deduplicate → enrich → rank
+  fetcher.ts        — RSS fetching with Promise.allSettled + 10s timeout; returns { articles, failedFeeds }
+  pipeline.ts       — Orchestrates fetch → tag → deduplicate → enrich → rank; threads failedFeeds through
   ranker.ts         — Relevance scoring (tier weight + keyword match + recency boost)
   tagger.ts         — Keyword-based category tagging (first-match rules)
   deduplicator.ts   — Title-similarity deduplication; keeps highest-scored copy
@@ -50,12 +53,15 @@ lib/
 
 - The page is a **server component** — nearly zero client JS ships to the browser.
 - ISR caching (`revalidate = 900`) serves cached pages; feeds are re-fetched every 15 min.
-- RSS feeds are fetched concurrently via `Promise.allSettled` — individual feed failures don't break the page.
+- RSS feeds are fetched concurrently via `Promise.allSettled` — individual feed failures don't break the page. Failed feed names are surfaced via `FeedFailureBanner` when ≥2 feeds are down.
 - Article pipeline: fetch → tag categories → deduplicate → enrich CVEs → rank. Top 5 from the last 24h become "featured."
 - CVE IDs are extracted from titles/descriptions and enriched with CVSS scores via the NVD API.
 - Duplicate articles (same story from multiple sources) are merged; `alsoReportedBy` tracks secondary sources.
 - Custom theme colors are defined in `globals.css` under `@theme` (Tailwind v4 syntax), prefixed `cyber-*`.
 - `NewsCard` is a **client component** (`"use client"`) because it contains interactive `<a>` elements that Next.js 16 handles client-side.
+- `NewsListClient` wraps the article grid with `useState`-based pagination (12 articles per page, "Load more" button). `NewsList` is a server component shell that delegates to it.
+- `ArticleFilter` persists the selected category filter to `localStorage` (`cyber-pulse-category` key); restored on mount with a validity guard against stale values.
+- `/api/health` is always fresh (no `revalidate`). It calls `fetchAllFeeds` directly and returns `{ status: "ok"|"degraded"|"down", feedsUp, feedsDown, lastCheck }`.
 
 ## Code Conventions
 
@@ -63,4 +69,6 @@ lib/
 - Feed sources are configured in `lib/feeds.ts` — add/remove feeds there.
 - Keyword weights for ranking are in `lib/ranker.ts`; category rules are in `lib/tagger.ts`.
 - Do not add `onClick` or other event handlers to elements inside server components — move the component to a client component instead.
+- `fetchAllFeeds()` returns `{ articles, failedFeeds }` — always destructure both fields; never discard `failedFeeds` silently.
+- `RankedArticles` includes `failedFeeds: string[]`; `rankArticles()` returns an empty array for it — the pipeline overrides this with the real value from the fetcher.
 - No test framework is configured yet.
