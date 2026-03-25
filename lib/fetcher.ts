@@ -27,7 +27,12 @@ function truncate(text: string, maxLength: number): string {
   return text.slice(0, maxLength).replace(/\s+\S*$/, "") + "…";
 }
 
-export async function fetchAllFeeds(): Promise<Article[]> {
+export interface FetchResult {
+  articles: Article[];
+  failedFeeds: string[];
+}
+
+export async function fetchAllFeeds(): Promise<FetchResult> {
   const results = await Promise.allSettled(
     FEED_SOURCES.map(async (source) => {
       const feed = await parser.parseURL(source.url);
@@ -50,13 +55,15 @@ export async function fetchAllFeeds(): Promise<Article[]> {
   );
 
   const articles: Article[] = [];
-  for (const result of results) {
+  const failedFeeds: string[] = [];
+  results.forEach((result, index) => {
     if (result.status === "fulfilled") {
       articles.push(...result.value);
     } else {
       console.warn("Failed to fetch feed:", result.reason?.message);
+      failedFeeds.push(FEED_SOURCES[index].name);
     }
-  }
+  });
 
-  return articles;
+  return { articles, failedFeeds };
 }

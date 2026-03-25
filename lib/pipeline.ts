@@ -9,9 +9,9 @@ import { rankArticles } from "./ranker";
  * Used by both the main page and the API routes.
  */
 export async function getArticles() {
-  const raw = await fetchAllFeeds();
+  const { articles: raw, failedFeeds } = await fetchAllFeeds();
   const tagged = tagArticles(raw);
   const deduped = deduplicateArticles(tagged);
   const enriched = await enrichWithCves(deduped);
-  return rankArticles(enriched);
+  return { ...rankArticles(enriched), failedFeeds };
 }

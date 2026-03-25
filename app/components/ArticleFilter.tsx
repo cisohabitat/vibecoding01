@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, ReactNode } from "react";
+import { useState, useMemo, useEffect, ReactNode } from "react";
 import { Article, ArticleCategory } from "@/lib/types";
 import NewsCard from "./NewsCard";
 
@@ -33,6 +33,18 @@ export default function ArticleFilter({
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<ArticleCategory | null>(null);
   const [timeHours, setTimeHours] = useState<number | null>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("cyber-pulse-category");
+    if (saved && CATEGORIES.includes(saved as ArticleCategory)) {
+      setCategory(saved as ArticleCategory);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (category) localStorage.setItem("cyber-pulse-category", category);
+    else localStorage.removeItem("cyber-pulse-category");
+  }, [category]);
 
   const allArticles = useMemo(() => [...featured, ...recent], [featured, recent]);
 

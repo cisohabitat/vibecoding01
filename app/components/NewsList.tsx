@@ -1,5 +1,5 @@
 import { Article } from "@/lib/types";
-import NewsCard from "./NewsCard";
+import NewsListClient from "./NewsListClient";
 
 export default function NewsList({ articles }: { articles: Article[] }) {
   if (articles.length === 0) {
@@ -12,11 +12,7 @@ export default function NewsList({ articles }: { articles: Article[] }) {
         <span className="w-2 h-2 rounded-full bg-cyber-blue" />
         Latest News
       </h2>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {articles.map((article) => (
-          <NewsCard key={article.link} article={article} />
-        ))}
-      </div>
+      <NewsListClient articles={articles} />
     </section>
   );
 }

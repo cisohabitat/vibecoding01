@@ -39,4 +39,5 @@ export interface RankedArticles {
   featured: Article[];
   recent: Article[];
   lastUpdated: string;
+  failedFeeds: string[];
 }
