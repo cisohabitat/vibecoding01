@@ -64,5 +64,6 @@ export function rankArticles(articles: Article[]): RankedArticles {
     featured,
     recent,
     lastUpdated: now.toISOString(),
+    failedFeeds: [],
   };
 }

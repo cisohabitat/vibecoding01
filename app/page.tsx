@@ -6,11 +6,12 @@ import NewsList from "./components/NewsList";
 import Footer from "./components/Footer";
 import ArticleFilter from "./components/ArticleFilter";
 import TrendingTopics from "./components/TrendingTopics";
+import FeedFailureBanner from "./components/FeedFailureBanner";
 
 export const revalidate = 900; // 15 minutes ISR
 
 export default async function Home() {
-  const { featured, recent, lastUpdated } = await getArticles();
+  const { featured, recent, lastUpdated, failedFeeds } = await getArticles();
   const trending = computeTrending([...featured, ...recent]);
 
   return (
@@ -19,6 +20,7 @@ export default async function Home() {
       <main className="flex-1 max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full">
         <div className="flex gap-8 items-start">
           <div className="flex-1 min-w-0">
+            <FeedFailureBanner failedFeeds={failedFeeds} />
             <ArticleFilter featured={featured} recent={recent}>
               <FeaturedNews articles={featured} />
               <NewsList articles={recent} />
