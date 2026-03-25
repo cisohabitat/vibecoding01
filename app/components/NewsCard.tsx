@@ -98,6 +98,7 @@ export default function NewsCard({
   const [isRead, setIsRead] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [openCve, setOpenCve] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const pubDate =
     article.pubDate instanceof Date
@@ -113,6 +114,18 @@ export default function NewsCard({
   function handleClick() {
     markUrlRead(article.link);
     setIsRead(true);
+  }
+
+  async function handleShare(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (navigator.share) {
+      await navigator.share({ title: article.title, url: article.link }).catch(() => {});
+    } else {
+      await navigator.clipboard.writeText(article.link).catch(() => {});
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   }
 
   function handleBookmark(e: React.MouseEvent) {
@@ -156,6 +169,19 @@ export default function NewsCard({
                 {article.score.toFixed(1)}
               </span>
             )}
+            <button
+              onClick={handleShare}
+              title="Share article"
+              className="text-slate-600 hover:text-slate-300 transition-colors"
+            >
+              {copied ? (
+                <span className="text-xs text-cyber-accent font-mono">Copied!</span>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                  <path d="M13 4.5a2.5 2.5 0 1 1 .702 1.737L6.97 9.604a2.518 2.518 0 0 1 0 .792l6.733 3.367a2.5 2.5 0 1 1-.671 1.341l-6.733-3.367a2.5 2.5 0 1 1 0-3.474l6.733-3.367A2.5 2.5 0 0 1 13 4.5Z" />
+                </svg>
+              )}
+            </button>
             <button
               onClick={handleBookmark}
               title={isBookmarked ? "Remove bookmark" : "Save for later"}
