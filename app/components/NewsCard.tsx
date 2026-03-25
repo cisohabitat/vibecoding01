@@ -84,7 +84,6 @@ export default function NewsCard({
               href={`https://nvd.nist.gov/vuln/detail/${cve.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-mono transition-colors ${
                 cveSeverityStyles[cve.severity ?? "null"]
               }`}
