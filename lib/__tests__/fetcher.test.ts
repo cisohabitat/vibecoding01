@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 import Parser from "rss-parser";
 import {
   cleanDescription,
   cleanTitle,
   decodeEntities,
   limitItems,
+  parseFeed,
   MAX_AGE_DAYS,
   MAX_ITEMS_PER_FEED,
   parseFeedDate,
@@ -138,5 +141,40 @@ describe("cleanTitle / cleanDescription", () => {
 
   it("strips markup when only raw content is available", () => {
     expect(cleanDescription({ content: "<p>Hello <b>world</b></p>" })).toBe("Hello world");
+  });
+});
+
+describe("parseFeed", () => {
+  it("rejects a hung feed as a timeout and closes its connection", async () => {
+    let socketClosed = false;
+    // Accepts the request but never responds
+    const server = createServer((req) => {
+      req.socket.on("close", () => (socketClosed = true));
+    });
+    await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+    const { port } = server.address() as AddressInfo;
+    try {
+      await expect(parseFeed(`http://127.0.0.1:${port}/feed`, 200)).rejects.toThrow(/timed out/);
+      await new Promise((r) => setTimeout(r, 400));
+      expect(socketClosed).toBe(true);
+    } finally {
+      server.closeAllConnections();
+      await new Promise((r) => server.close(r));
+    }
+  });
+
+  it("parses a feed that responds", async () => {
+    const server = createServer((_req, res) => {
+      res.writeHead(200, { "Content-Type": "application/rss+xml" });
+      res.end(`<?xml version="1.0"?><rss version="2.0"><channel><title>t</title><item><title>Hi</title><link>https://example.com</link></item></channel></rss>`);
+    });
+    await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+    const { port } = server.address() as AddressInfo;
+    try {
+      const feed = await parseFeed(`http://127.0.0.1:${port}/feed`, 2000);
+      expect(feed.items[0].title).toBe("Hi");
+    } finally {
+      await new Promise((r) => server.close(r));
+    }
   });
 });

@@ -6,13 +6,25 @@ import { siteUrl } from "./site";
 
 export { safeLink };
 
-const parser = new Parser({
-  timeout: 10000,
-  headers: {
-    // Identify the aggregator and where to find it, per crawler etiquette
-    "User-Agent": `CyberPulseSG/1.0 (RSS aggregator; +${siteUrl()})`,
-  },
-});
+const FEED_TIMEOUT_MS = 10_000;
+
+/**
+ * Fetches and parses one feed. rss-parser's timeout rejects the promise but
+ * never destroys the request, so a hung feed would keep its socket open; an
+ * AbortSignal passed through to http.get tears it down just after the
+ * parser's own timeout (whose "timed out" error the retry logic relies on).
+ */
+export function parseFeed(url: string, timeoutMs = FEED_TIMEOUT_MS) {
+  const parser = new Parser({
+    timeout: timeoutMs,
+    headers: {
+      // Identify the aggregator and where to find it, per crawler etiquette
+      "User-Agent": `CyberPulseSG/1.0 (RSS aggregator; +${siteUrl()})`,
+    },
+    requestOptions: { signal: AbortSignal.timeout(timeoutMs + 100) },
+  });
+  return parser.parseURL(url);
+}
 
 const NAMED_ENTITIES: Record<string, string> = {
   amp: "&",
@@ -143,7 +155,7 @@ export async function fetchAllFeeds(): Promise<FetchResult> {
   const now = Date.now();
   const results = await Promise.allSettled(
     FEED_SOURCES.map(async (source) => {
-      const feed = await withRetry(() => parser.parseURL(source.url));
+      const feed = await withRetry(() => parseFeed(source.url));
       const articles: Article[] = [];
       for (const item of feed.items || []) {
         // Links are rendered as hrefs: drop items without a safe http(s) URL
