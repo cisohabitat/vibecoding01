@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Article } from "../types";
 
 const hoursAgo = (h: number) => new Date(Date.now() - h * 3600e3);
+const ONE_HOUR_AGO = hoursAgo(1);
 
 function article(title: string, overrides: Partial<Article> = {}): Article {
   return {
@@ -27,8 +28,9 @@ vi.mock("../fetcher", () => ({
         article(`Old advisory ${i} CVE-2020-${1000 + i}`, { pubDate: hoursAgo(72), source: `Old${i}` })
       ),
       article("Ransomware zero-day exploited CVE-2026-0001", { source: "A" }),
-      article("LockBit ransomware breach", { source: "B" }),
-      article("Duplicate: LockBit ransomware breach", { source: "C" }),
+      // Same timestamp: the duplicate must not win on recency by a stray ms
+      article("LockBit ransomware breach", { source: "B", pubDate: ONE_HOUR_AGO }),
+      article("Duplicate: LockBit ransomware breach", { source: "C", pubDate: ONE_HOUR_AGO }),
     ],
     failedFeeds: ["Broken Feed"],
   })),
