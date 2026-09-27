@@ -17,12 +17,16 @@ The page is rebuilt at most every 15 minutes (Next.js ISR).
 
 ## Features
 
-- Search, multi-category and time-window filters (shareable via the URL)
+- Search (press <kbd>/</kbd>), multi-category and time-window filters, shareable via the URL
 - Grid/list view, "Load more" pagination
+- **NEW** badges for stories published since your last visit
 - Bookmarks (`/saved`) and read tracking, stored in the browser
 - CVE detail dialog with CVSS score, vector and references
-- Trending terms from the last 24 hours
-- Warning banner when two or more feeds fail
+- Trending names and CVEs from the last 24 hours (sidebar on desktop, chip strip on mobile)
+- Top Stories capped at two per source; a footer explainer describes the ranking
+- Warning banner when two or more feeds fail; if every feed fails, the last good page stays up
+- Accessible: keyboard navigable with a skip link, screen-reader labels, reduced-motion support
+- Security headers (CSP, frame, referrer, permissions) and hardened feed parsing
 
 ## Endpoints
 
