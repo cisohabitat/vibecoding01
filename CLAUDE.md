@@ -86,7 +86,7 @@ lib/
 - `ArticleFilter` persists the selected categories to `localStorage` (`cyber-pulse-category` key) and filters to the URL (`q`, `cat`, `t`); restored on mount with a validity guard against stale values. If the URL has any filter param, it fully defines the view and saved categories are ignored.
 - Never compute time-relative output (`Date.now()`) during render in client components: ISR HTML can be 15 min old and would mismatch at hydration. Use `useNow()`, which is null on the server.
 - Read `localStorage` through `useLocalStorage` and write through `writeLocalStorage` so every subscriber (other cards, `/saved`) updates in the same tab.
-- `/api/health` is dynamic (`force-dynamic`, not ISR: stale-while-revalidate would hand monitors the previous check's result). Checks are memoised for 60s per instance and CDN-cacheable for 60s without stale serving, so polling can't hammer the feed sources. It calls `fetchAllFeeds` directly and returns `{ status: "ok"|"degraded"|"down", feedsUp, feedsDown, lastCheck }`.
+- `/api/health` is dynamic (`force-dynamic`, not ISR: stale-while-revalidate would hand monitors the previous check's result). Checks are memoised for 60s per instance and CDN-cacheable only for the memo's remaining lifetime (so results are ≤ ~60s old), so polling can't hammer the feed sources. It calls `fetchAllFeeds` directly and returns `{ status: "ok"|"degraded"|"down", feedsUp, feedsDown, lastCheck }`.
 
 ## Code Conventions
 

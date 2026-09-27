@@ -4,8 +4,8 @@ import { FEED_SOURCES } from "@/lib/feeds";
 
 // Rendered per request (ISR's stale-while-revalidate would hand a monitor
 // the *previous* check's result). Checking fetches every feed, so results
-// are memoised for 60s per instance and the CDN may cache them for 60s,
-// never serving stale.
+// are memoised for 60s per instance; the CDN may cache a response only for
+// the memo's remaining lifetime, so a result is never more than ~60s old.
 export const dynamic = "force-dynamic";
 
 const TTL_MS = 60_000;
@@ -36,7 +36,12 @@ export async function GET() {
   const now = Date.now();
   // Concurrent requests share one in-flight check
   if (!cached || now - cached.at > TTL_MS) cached = { at: now, result: check() };
-  return NextResponse.json(await cached.result, {
-    headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=0" },
+  const { at, result } = cached;
+  const body = await result;
+  const remaining = Math.max(0, Math.floor((TTL_MS - (Date.now() - at)) / 1000));
+  return NextResponse.json(body, {
+    headers: {
+      "Cache-Control": remaining > 0 ? `public, s-maxage=${remaining}` : "no-store",
+    },
   });
 }

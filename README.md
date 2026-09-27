@@ -34,7 +34,7 @@ The page is rebuilt at most every 15 minutes (Next.js ISR).
 | --- | --- |
 | `/api/feed.xml` | Ranked articles as RSS 2.0 |
 | `/api/feed.json` | Ranked articles as JSON: `{ lastUpdated, count, failedFeeds, featured, recent }` (CORS-enabled) |
-| `/api/health` | Feed health: `{ status, feedsUp, feedsDown, lastCheck }` (at most 60s old) |
+| `/api/health` | Feed health: `{ status, feedsUp, feedsDown, lastCheck }` (at most ~60s old) |
 | `/api/cve/:id` | CVE details from the NVD (cached 1h) |
 
 ## Development

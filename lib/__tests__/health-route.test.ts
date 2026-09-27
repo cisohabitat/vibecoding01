@@ -15,7 +15,7 @@ describe("GET /api/health", () => {
     const { GET } = await import("@/app/api/health/route");
     const res = await GET();
     expect(await res.json()).toMatchObject({ status: "degraded", feedsUp: 2, feedsDown: 1 });
-    expect(res.headers.get("Cache-Control")).toContain("s-maxage=60");
+    expect(res.headers.get("Cache-Control")).toMatch(/s-maxage=(59|60)$/);
   });
 
   it("memoises the check for 60s, sharing concurrent requests", async () => {
@@ -24,6 +24,11 @@ describe("GET /api/health", () => {
     await Promise.all([GET(), GET()]);
     await GET();
     expect(fetchAllFeeds).toHaveBeenCalledTimes(1);
+
+    // Later responses from the same memo may only be CDN-cached for the rest of its life
+    vi.useFakeTimers({ now: Date.now() + 45_000 });
+    expect((await GET()).headers.get("Cache-Control")).toMatch(/s-maxage=1[45]$/);
+    vi.useRealTimers();
 
     vi.useFakeTimers({ now: Date.now() + 61_000 });
     await GET();
