@@ -49,11 +49,6 @@ export const FEED_SOURCES: FeedSource[] = [
     tier: 3,
   },
   {
-    name: "Naked Security",
-    url: "https://nakedsecurity.sophos.com/feed/",
-    tier: 3,
-  },
-  {
     name: "The Register",
     url: "https://www.theregister.com/security/headlines.atom",
     tier: 3,
