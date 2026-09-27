@@ -31,7 +31,7 @@ app/
   error.tsx                 — Error boundary with retry [client]
   not-found.tsx             — 404 page
   api/
-    feed.json/route.ts      — JSON feed API (ISR, 15-min revalidation)
+    feed.json/route.ts      — JSON feed API (ISR, 15-min revalidation; CORS *, includes failedFeeds)
     feed.xml/route.ts       — RSS/Atom feed API (ISR, 15-min revalidation)
     health/route.ts         — Health check API (cached 60s); returns { status, feedsUp, feedsDown, lastCheck }
     cve/[id]/route.ts       — NVD proxy for CveModal (1h data + CDN cache; 404 unknown, 502 NVD down/rate-limited)

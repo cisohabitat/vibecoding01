@@ -165,6 +165,14 @@ test("sends security headers", async ({ request }) => {
   expect(headers["x-powered-by"]).toBeUndefined();
 });
 
+test("JSON feed is public and reports failed feeds", async ({ request }) => {
+  const res = await request.get("/api/feed.json");
+  expect(res.headers()["access-control-allow-origin"]).toBe("*");
+  const body = await res.json();
+  expect(body.failedFeeds).toEqual([]);
+  expect(body.count).toBe(body.featured.length + body.recent.length);
+});
+
 test("RSS feed is served", async ({ request }) => {
   const res = await request.get("/api/feed.xml");
   expect(res.headers()["content-type"]).toContain("application/rss+xml");
