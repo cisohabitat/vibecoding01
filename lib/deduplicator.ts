@@ -39,7 +39,10 @@ export function deduplicateArticles(articles: Article[]): Article[] {
 
     for (const entry of kept) {
       if (jaccardSimilarity(tokens, entry.tokens) >= SIMILARITY_THRESHOLD) {
-        if (!entry.article.alsoReportedBy.includes(article.source)) {
+        if (
+          article.source !== entry.article.source &&
+          !entry.article.alsoReportedBy.includes(article.source)
+        ) {
           entry.article.alsoReportedBy.push(article.source);
         }
         merged = true;
