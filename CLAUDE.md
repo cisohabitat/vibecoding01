@@ -21,7 +21,8 @@ Cybersecurity news aggregator that fetches RSS feeds from trusted sources, ranks
 
 ```
 app/
-  layout.tsx                — Root layout (dark theme, metadata)
+  layout.tsx                — Root layout (dark theme, metadata: canonical, RSS/JSON feed discovery, Open Graph)
+  icon.svg                  — Favicon (pulse line)
   page.tsx                  — Main page (server component, fetches + ranks RSS)
   globals.css               — Tailwind config + custom cyber theme colors
   api/
@@ -29,6 +30,7 @@ app/
     feed.xml/route.ts       — RSS/Atom feed API (ISR, 15-min revalidation)
     health/route.ts         — Health check API (cached 60s); returns { status, feedsUp, feedsDown, lastCheck }
     cve/[id]/route.ts       — NVD proxy for CveModal (1h cache per CVE)
+  saved/layout.tsx          — Metadata for /saved (noindex)
   saved/page.tsx            — Bookmarked articles from localStorage [client]
   components/
     Header.tsx              — Sticky header with branding
