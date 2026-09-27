@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   decodeEntities,
   limitItems,
@@ -7,6 +7,7 @@ import {
   parseFeedDate,
   safeLink,
   stripHtml,
+  withRetry,
 } from "../fetcher";
 import { Article } from "../types";
 
@@ -76,5 +77,30 @@ describe("limitItems", () => {
     const kept = limitItems(items.reverse(), now);
     expect(kept).toHaveLength(MAX_ITEMS_PER_FEED);
     expect(kept[0].title).toBe("d0");
+  });
+});
+
+describe("withRetry", () => {
+  it("retries a transient failure once", async () => {
+    const fn = vi.fn().mockRejectedValueOnce(new Error("Status code 503")).mockResolvedValueOnce("ok");
+    await expect(withRetry(fn, 0)).resolves.toBe("ok");
+    expect(fn).toHaveBeenCalledTimes(2);
+  });
+
+  it("retries network errors", async () => {
+    const fn = vi.fn().mockRejectedValueOnce(new Error("ECONNRESET")).mockResolvedValueOnce("ok");
+    await expect(withRetry(fn, 0)).resolves.toBe("ok");
+  });
+
+  it("does not retry 4xx responses", async () => {
+    const fn = vi.fn().mockRejectedValue(new Error("Status code 404"));
+    await expect(withRetry(fn, 0)).rejects.toThrow("404");
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it("gives up after one retry", async () => {
+    const fn = vi.fn().mockRejectedValue(new Error("Status code 502"));
+    await expect(withRetry(fn, 0)).rejects.toThrow("502");
+    expect(fn).toHaveBeenCalledTimes(2);
   });
 });

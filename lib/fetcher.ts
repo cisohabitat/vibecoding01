@@ -86,6 +86,22 @@ export function limitItems(articles: Article[], now: number): Article[] {
     .slice(0, MAX_ITEMS_PER_FEED);
 }
 
+/**
+ * Retries once after `delayMs` on transient failures (network errors,
+ * timeouts, 5xx). rss-parser reports HTTP errors as "Status code NNN";
+ * 4xx responses won't change on retry, so they fail immediately.
+ */
+export async function withRetry<T>(fn: () => Promise<T>, delayMs = 1000): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    const status = /Status code (\d{3})/.exec(String((err as Error)?.message))?.[1];
+    if (status && status.startsWith("4")) throw err;
+    await new Promise((r) => setTimeout(r, delayMs));
+    return fn();
+  }
+}
+
 export interface FetchResult {
   articles: Article[];
   failedFeeds: string[];
@@ -95,7 +111,7 @@ export async function fetchAllFeeds(): Promise<FetchResult> {
   const now = Date.now();
   const results = await Promise.allSettled(
     FEED_SOURCES.map(async (source) => {
-      const feed = await parser.parseURL(source.url);
+      const feed = await withRetry(() => parser.parseURL(source.url));
       const articles: Article[] = [];
       for (const item of feed.items || []) {
         // Links are rendered as hrefs: drop items without a safe http(s) URL
