@@ -78,9 +78,7 @@ export default function NewsCard({
     writeLocalStorage(READ_KEY, JSON.stringify(next));
   }
 
-  async function handleShare(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
+  async function handleShare() {
     if (navigator.share) {
       await navigator.share({ title: article.title, url: article.link }).catch(() => {});
     } else {
@@ -90,29 +88,27 @@ export default function NewsCard({
     }
   }
 
-  function handleBookmark(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
+  function handleBookmark() {
     const next = isBookmarked
       ? bookmarks.filter((a) => a.link !== article.link)
       : [article, ...bookmarks];
     writeLocalStorage(BOOKMARK_KEY, JSON.stringify(next));
   }
 
+  // The title link is "stretched" over the whole card with an ::after
+  // overlay, so the card is clickable without nesting the buttons inside
+  // an <a> (invalid HTML, confusing for keyboard/screen-reader users).
+  // Interactive controls sit above the overlay via `relative z-10`.
   return (
     <>
-      <a
-        href={article.link}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={handleClick}
-        className={`group block rounded-lg border transition-all duration-200 ${
-          isRead ? "opacity-50 hover:opacity-80" : ""
+      <article
+        className={`group relative rounded-lg border transition-all duration-200 ${
+          isRead ? "opacity-60 hover:opacity-90" : ""
         } ${
           featured
             ? "border-cyber-accent/20 bg-cyber-700/50 hover:border-cyber-accent/50 hover:shadow-[0_0_20px_rgba(0,255,200,0.08)]"
             : "border-cyber-600/50 bg-cyber-800/50 hover:border-cyber-500 hover:bg-cyber-700/50"
-        } p-4`}
+        } p-4 has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-cyber-accent`}
       >
         <div className="flex items-start justify-between gap-3 mb-2">
           <h3
@@ -125,37 +121,54 @@ export default function NewsCard({
                 BREAKING
               </span>
             )}
-            {article.title}
+            <a
+              href={article.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={handleClick}
+              onAuxClick={handleClick}
+              className="outline-none after:absolute after:inset-0 after:rounded-lg after:content-['']"
+            >
+              {article.title}
+            </a>
           </h3>
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="relative z-10 flex items-center gap-1.5 shrink-0">
             {featured && article.score > 0 && (
-              <span className="text-xs font-mono bg-cyber-accent/10 text-cyber-accent px-2 py-0.5 rounded">
+              <span
+                className="text-xs font-mono bg-cyber-accent/10 text-cyber-accent px-2 py-0.5 rounded"
+                title="Relevance score"
+              >
                 {article.score.toFixed(1)}
               </span>
             )}
             <button
+              type="button"
               onClick={handleShare}
               title="Share article"
-              className="text-slate-600 hover:text-slate-300 transition-colors"
+              aria-label={copied ? "Link copied" : "Share article"}
+              className="p-1 text-slate-500 hover:text-slate-200 transition-colors"
             >
               {copied ? (
                 <span className="text-xs text-cyber-accent font-mono">Copied!</span>
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5" aria-hidden="true">
                   <path d="M13 4.5a2.5 2.5 0 1 1 .702 1.737L6.97 9.604a2.518 2.518 0 0 1 0 .792l6.733 3.367a2.5 2.5 0 1 1-.671 1.341l-6.733-3.367a2.5 2.5 0 1 1 0-3.474l6.733-3.367A2.5 2.5 0 0 1 13 4.5Z" />
                 </svg>
               )}
             </button>
             <button
+              type="button"
               onClick={handleBookmark}
               title={isBookmarked ? "Remove bookmark" : "Save for later"}
-              className={`text-base leading-none transition-colors ${
+              aria-label={isBookmarked ? "Remove bookmark" : "Save for later"}
+              aria-pressed={isBookmarked}
+              className={`p-1 text-base leading-none transition-colors ${
                 isBookmarked
                   ? "text-cyber-accent"
-                  : "text-slate-600 hover:text-slate-400"
+                  : "text-slate-500 hover:text-slate-200"
               }`}
             >
-              {isBookmarked ? "★" : "☆"}
+              <span aria-hidden="true">{isBookmarked ? "★" : "☆"}</span>
             </button>
           </div>
         </div>
@@ -167,15 +180,16 @@ export default function NewsCard({
         )}
 
         {article.cves && article.cves.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
+          <div className="relative z-10 flex flex-wrap gap-1.5 mb-3 w-fit">
             {article.cves.slice(0, 3).map((cve) => (
               <button
+                type="button"
                 key={cve.id}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setOpenCve(cve.id);
-                }}
+                onClick={() => setOpenCve(cve.id)}
+                aria-label={`${cve.id} details${
+                  cve.cvss !== null ? `, CVSS ${cve.cvss.toFixed(1)}` : ""
+                }${cve.severity ? ` ${cve.severity.toLowerCase()}` : ""}`}
+                aria-haspopup="dialog"
                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-mono transition-colors cursor-pointer ${
                   cveSeverityStyles[cve.severity ?? "null"]
                 }`}
@@ -206,19 +220,21 @@ export default function NewsCard({
               {article.category}
             </span>
           )}
-          {now !== null && (
-            <span className="text-slate-500">{timeAgo(pubDate, now)}</span>
+          {now !== null && !Number.isNaN(pubDate.getTime()) && (
+            <time dateTime={pubDate.toISOString()} className="text-slate-400">
+              {timeAgo(pubDate, now)}
+            </time>
           )}
           {article.alsoReportedBy.length > 0 && (
-            <span className="text-slate-600">
+            <span className="text-slate-500">
               also: {article.alsoReportedBy.join(", ")}
             </span>
           )}
           {isRead && (
-            <span className="text-slate-600 ml-auto">read</span>
+            <span className="text-slate-500 ml-auto">read</span>
           )}
         </div>
-      </a>
+      </article>
 
       {openCve && (
         <CveModal key={openCve} cveId={openCve} onClose={() => setOpenCve(null)} />

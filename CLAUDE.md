@@ -73,7 +73,7 @@ lib/
 - Duplicate articles (same story from multiple sources) are merged; `alsoReportedBy` tracks secondary sources.
 - Security headers (CSP, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy) are set for all routes in `next.config.ts`. `connect-src` is `'self'` only: browser-side fetches must go through an API route (e.g. `/api/cve/[id]`), not to third-party hosts directly.
 - Custom theme colors are defined in `globals.css` under `@theme` (Tailwind v4 syntax), prefixed `cyber-*`.
-- `NewsCard` is a **client component** (`"use client"`) because it contains interactive `<a>` elements that Next.js 16 handles client-side.
+- `NewsCard` is a **client component** (`"use client"`) for its read/bookmark/share/CVE interactions. The card is an `<article>` whose title link is stretched over the whole card with an `::after` overlay; buttons sit above it with `relative z-10`. Never nest buttons or other interactive elements inside the `<a>`.
 - `NewsListClient` wraps the article grid with `useState`-based pagination (12 articles per page, "Load more" button). `NewsList` is a server component shell that delegates to it. It reads grid/list mode from `ViewModeContext`.
 - `ArticleFilter` persists the selected categories to `localStorage` (`cyber-pulse-category` key) and filters to the URL (`q`, `cat`, `t`); restored on mount with a validity guard against stale values.
 - Never compute time-relative output (`Date.now()`) during render in client components: ISR HTML can be 15 min old and would mismatch at hydration. Use `useNow()`, which is null on the server.
