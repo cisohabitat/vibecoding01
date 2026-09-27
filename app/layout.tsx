@@ -49,7 +49,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="font-sans antialiased">
-        <div className="scanline fixed inset-0 z-50" />
+        <div className="scanline fixed inset-0 z-50" aria-hidden="true" />
         {children}
         <Analytics />
         <SpeedInsights />

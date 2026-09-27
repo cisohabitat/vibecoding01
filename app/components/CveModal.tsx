@@ -44,6 +44,7 @@ export default function CveModal({
   return (
     <dialog
       ref={dialogRef}
+      aria-labelledby="cve-modal-title"
       onClose={onClose}
       onClick={handleBackdropClick}
       className="rounded-xl border border-cyber-600/50 bg-cyber-800 p-0 max-w-lg w-full mx-4 backdrop:bg-black/70 open:animate-none"
@@ -53,9 +54,10 @@ export default function CveModal({
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
             <p className="text-xs text-slate-500 font-mono mb-1">Vulnerability Detail</p>
-            <h2 className="text-lg font-bold text-white font-mono">{cveId}</h2>
+            <h2 id="cve-modal-title" className="text-lg font-bold text-white font-mono">{cveId}</h2>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="shrink-0 text-slate-500 hover:text-slate-200 transition-colors text-xl leading-none mt-1"
             aria-label="Close"
@@ -66,7 +68,7 @@ export default function CveModal({
 
         {/* Body */}
         {!data && !error && (
-          <div className="text-slate-500 text-sm py-8 text-center animate-pulse">
+          <div className="text-slate-400 text-sm py-8 text-center animate-pulse" role="status">
             Loading CVE data…
           </div>
         )}

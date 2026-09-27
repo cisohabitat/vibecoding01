@@ -26,6 +26,19 @@ body {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
+/* Respect the OS "reduce motion" setting: stop pulsing badges/dots and
+   smooth scrolling. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 .scanline {
   background: repeating-linear-gradient(
     0deg,

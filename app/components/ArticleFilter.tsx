@@ -178,21 +178,25 @@ export default function ArticleFilter({
       <div className="mb-6 space-y-3">
         <div className="flex gap-2">
           <input
-            type="text"
+            type="search"
+            aria-label="Search articles"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search articles…"
             className="flex-1 bg-cyber-800 border border-cyber-600/50 rounded-lg px-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyber-accent/50 transition-colors"
           />
           <button
+            type="button"
             onClick={toggleViewMode}
             title={viewMode === "grid" ? "Switch to list view" : "Switch to grid view"}
+            aria-label={viewMode === "grid" ? "Switch to list view" : "Switch to grid view"}
             className="px-3 py-2 text-xs text-slate-400 border border-cyber-600/50 rounded-lg hover:border-cyber-500 hover:text-slate-200 transition-colors font-mono"
           >
             {viewMode === "grid" ? "≡ List" : "⊞ Grid"}
           </button>
           {isFiltered && (
             <button
+              type="button"
               onClick={clearAll}
               className="px-3 py-2 text-xs text-slate-400 border border-cyber-600/50 rounded-lg hover:border-cyber-500 hover:text-slate-200 transition-colors whitespace-nowrap"
             >
@@ -201,11 +205,13 @@ export default function ArticleFilter({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filters">
           {CATEGORIES.map((cat) => (
             <button
+              type="button"
               key={cat}
               onClick={() => toggleCategory(cat)}
+              aria-pressed={categories.includes(cat)}
               className={`px-3 py-1 text-xs rounded-full border transition-colors ${
                 categories.includes(cat)
                   ? "bg-cyber-accent/20 border-cyber-accent/50 text-cyber-accent"
@@ -215,11 +221,14 @@ export default function ArticleFilter({
               {cat}
             </button>
           ))}
-          <span className="border-l border-cyber-600/30 h-4 mx-1" />
+          <span className="border-l border-cyber-600/30 h-4 mx-1" aria-hidden="true" />
           {TIME_OPTIONS.map(({ label, hours }) => (
             <button
+              type="button"
               key={label}
               onClick={() => toggleTime(hours)}
+              aria-pressed={timeHours === hours}
+              aria-label={`Last ${label}`}
               className={`px-3 py-1 text-xs rounded-full border font-mono transition-colors ${
                 timeHours === hours
                   ? "bg-cyber-blue/20 border-cyber-blue/50 text-cyber-blue"
@@ -235,11 +244,11 @@ export default function ArticleFilter({
       {/* Content: filtered view or default server-rendered content */}
       {isFiltered ? (
         <div>
-          <p className="text-xs text-slate-500 mb-4">
+          <p className="text-xs text-slate-400 mb-4" role="status">
             {filtered.length} result{filtered.length !== 1 ? "s" : ""}
           </p>
           {filtered.length === 0 ? (
-            <p className="text-slate-500 text-center py-16 text-sm">
+            <p className="text-slate-400 text-center py-16 text-sm">
               No articles match your filters.
             </p>
           ) : (

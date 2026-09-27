@@ -32,6 +32,7 @@ export default function SavedPage() {
           <div className="flex items-center gap-4">
             {bookmarks && bookmarks.length > 0 && (
               <button
+                type="button"
                 onClick={clearAll}
                 className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
               >

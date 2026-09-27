@@ -13,7 +13,9 @@ export default function TrendingTopics({ topics }: { topics: TrendingTopic[] }) 
     );
     // Scroll to the filter bar on small screens
     document.getElementById("article-filter")?.scrollIntoView({
-      behavior: "smooth",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
       block: "start",
     });
   }
@@ -29,12 +31,13 @@ export default function TrendingTopics({ topics }: { topics: TrendingTopic[] }) 
       <ol className="space-y-2.5">
         {topics.map(({ term, count }, i) => (
           <li key={term} className="flex items-center gap-2.5">
-            <span className="text-xs font-mono text-slate-600 w-4 shrink-0 text-right">
+            <span className="text-xs font-mono text-slate-500 w-4 shrink-0 text-right" aria-hidden="true">
               {i + 1}
             </span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-1">
                 <button
+                  type="button"
                   onClick={() => handleClick(term)}
                   className="text-xs text-slate-300 truncate capitalize hover:text-cyber-accent transition-colors text-left"
                   title={`Filter by "${term}"`}
@@ -43,7 +46,7 @@ export default function TrendingTopics({ topics }: { topics: TrendingTopic[] }) 
                 </button>
                 <span className="text-xs font-mono text-slate-500 ml-2 shrink-0">{count}</span>
               </div>
-              <div className="h-0.5 bg-cyber-700 rounded-full overflow-hidden">
+              <div className="h-0.5 bg-cyber-700 rounded-full overflow-hidden" aria-hidden="true">
                 <div
                   className="h-full bg-cyber-accent/50 rounded-full"
                   style={{ width: `${(count / max) * 100}%` }}
@@ -53,7 +56,7 @@ export default function TrendingTopics({ topics }: { topics: TrendingTopic[] }) 
           </li>
         ))}
       </ol>
-      <p className="text-xs text-slate-600 mt-4 text-center">
+      <p className="text-xs text-slate-500 mt-4 text-center">
         click to filter
       </p>
     </div>

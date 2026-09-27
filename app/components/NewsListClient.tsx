@@ -26,6 +26,7 @@ export default function NewsListClient({ articles }: { articles: Article[] }) {
       {hasMore && (
         <div className="mt-6 text-center">
           <button
+            type="button"
             onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
             className="px-6 py-2 text-sm border border-cyber-600/50 text-slate-400 rounded-lg hover:border-cyber-500 hover:text-slate-200 transition-colors"
           >
