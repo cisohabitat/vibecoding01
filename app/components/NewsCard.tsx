@@ -250,7 +250,8 @@ export default function NewsCard({
               {timeAgo(pubDate, now)}
             </time>
           )}
-          {article.alsoReportedBy.length > 0 && (
+          {/* Optional chaining: bookmarks from storage may predate this field */}
+          {article.alsoReportedBy?.length > 0 && (
             <span className="text-slate-500">
               also: {article.alsoReportedBy.join(", ")}
             </span>

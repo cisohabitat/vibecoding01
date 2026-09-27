@@ -90,22 +90,37 @@ test("bookmarks persist and appear on the saved page", async ({ page, context })
 test("corrupted bookmark storage doesn't break the page", async ({ page }) => {
   const errors = trackErrors(page);
   await page.addInitScript(() => {
-    localStorage.setItem("cyber-pulse-bookmarks", JSON.stringify([null, 42, { title: "no link" }]));
+    localStorage.setItem(
+      "cyber-pulse-bookmarks",
+      // Only the last entry is usable: a minimal object from an older format
+      JSON.stringify([null, 42, { title: "no link" }, { title: "Minimal bookmark", link: "https://example.com/min" }])
+    );
     localStorage.setItem("cyber-pulse-read", JSON.stringify([null, 7]));
   });
   await page.goto("/");
   await expect(page.locator("article time").first()).toBeVisible();
   await page.goto("/saved");
-  await expect(page.getByText("No saved articles yet.")).toBeVisible();
+  await expect(page.locator("article")).toHaveCount(1);
+  await expect(page.getByRole("link", { name: "Minimal bookmark" })).toBeVisible();
   expect(errors).toEqual([]);
 });
 
-test("right-clicking a card doesn't mark it read", async ({ page }) => {
+test("middle-click marks a card read; right-click doesn't", async ({ page, context }) => {
   await page.goto("/");
+  // Wait for hydration so the handlers are attached
+  await expect(page.locator("article time").first()).toHaveText(/ago|just now/);
+
   const lockbit = card(page, "LockBit ransomware");
   await lockbit.getByRole("link").click({ button: "right" });
   await page.keyboard.press("Escape");
+  await page.waitForTimeout(300);
   await expect(lockbit.getByText("read", { exact: true })).toHaveCount(0);
+
+  const apt = card(page, "APT29 targets");
+  const popup = context.waitForEvent("page");
+  await apt.getByRole("link").click({ button: "middle" });
+  await popup;
+  await expect(apt.getByText("read", { exact: true })).toBeVisible();
 });
 
 test("search and category filters sync to the URL", async ({ page }) => {
