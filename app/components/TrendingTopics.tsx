@@ -81,7 +81,7 @@ export default function TrendingTopics({ topics }: { topics: TrendingTopic[] }) 
           </li>
         ))}
       </ol>
-      <p className="text-xs text-slate-500 mt-4 text-center">
+      <p className="text-xs text-slate-400 mt-4 text-center">
         click to filter
       </p>
     </div>

@@ -65,7 +65,7 @@ export default function CveModal({
         {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
-            <p className="text-xs text-slate-500 font-mono mb-1">Vulnerability Detail</p>
+            <p className="text-xs text-slate-400 font-mono mb-1">Vulnerability Detail</p>
             <h2 id="cve-modal-title" className="text-lg font-bold text-white font-mono">{cveId}</h2>
           </div>
           <button

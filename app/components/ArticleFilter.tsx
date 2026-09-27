@@ -272,7 +272,10 @@ export default function ArticleFilter({
 
       {/* Content: filtered view or default server-rendered content */}
       {isFiltered ? (
-        <div>
+        <section aria-labelledby="filtered-heading">
+          <h2 id="filtered-heading" className="sr-only">
+            Filtered articles
+          </h2>
           <p className="text-xs text-slate-400 mb-4" role="status">
             {filtered.length} result{filtered.length !== 1 ? "s" : ""}
           </p>
@@ -287,7 +290,7 @@ export default function ArticleFilter({
               ))}
             </div>
           )}
-        </div>
+        </section>
       ) : (
         <ViewModeContext.Provider value={viewMode}>{children}</ViewModeContext.Provider>
       )}

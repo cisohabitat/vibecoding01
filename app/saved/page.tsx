@@ -56,7 +56,7 @@ export default function SavedPage() {
           <div className="text-center py-24">
             <p className="text-slate-500 text-2xl mb-3">☆</p>
             <p className="text-slate-400 text-sm">No saved articles yet.</p>
-            <p className="text-slate-600 text-xs mt-2">
+            <p className="text-slate-400 text-xs mt-2">
               Click the ☆ on any article to save it here.
             </p>
           </div>
