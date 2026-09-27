@@ -73,6 +73,7 @@ lib/
 
 - The page is a **server component**; interactive pieces (cards, filters, trending) are client components.
 - ISR caching (`revalidate = 900`) serves cached pages; feeds are re-fetched every 15 min.
+- If **every** feed fails, `getArticles()` throws `AllFeedsFailedError` so ISR keeps serving the last good page instead of caching an empty one (except during `next build`, detected via `NEXT_PHASE`, which renders the empty state).
 - RSS feeds are fetched concurrently via `Promise.allSettled` — individual feed failures don't break the page. Failed feed names are surfaced via `FeedFailureBanner` when ≥2 feeds are down.
 - Article pipeline: fetch → tag categories → deduplicate → rank → enrich CVEs. Top 5 from the last 24h become "featured" (at most 2 per source, see `pickFeatured`).
 - CVE IDs are extracted from titles/descriptions and enriched with CVSS scores via the NVD API. Lookups go to featured articles first and are capped per regeneration (`MAX_CVE_LOOKUPS`: 5 without a key, 20 with `NVD_API_KEY`) to stay within NVD rate limits. Set `NVD_API_KEY` in the Vercel env to raise the cap.

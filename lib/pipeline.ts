@@ -3,6 +3,14 @@ import { tagArticles } from "./tagger";
 import { deduplicateArticles } from "./deduplicator";
 import { enrichWithCves } from "./cve";
 import { rankArticles } from "./ranker";
+import { FEED_SOURCES } from "./feeds";
+
+export class AllFeedsFailedError extends Error {
+  constructor() {
+    super("Every feed failed to load; keeping the previously generated page");
+    this.name = "AllFeedsFailedError";
+  }
+}
 
 /**
  * Full article pipeline: fetch → tag → deduplicate → rank → CVE-enrich.
@@ -11,6 +19,17 @@ import { rankArticles } from "./ranker";
  */
 export async function getArticles() {
   const { articles: raw, failedFeeds } = await fetchAllFeeds();
+
+  // If every feed failed (network outage, egress block), throwing makes ISR
+  // keep serving the last good page instead of caching an empty one for 15
+  // minutes. During `next build` there's no previous page, so render the
+  // empty state (with the failure banner) instead of failing the build.
+  if (
+    failedFeeds.length === FEED_SOURCES.length &&
+    process.env.NEXT_PHASE !== "phase-production-build"
+  ) {
+    throw new AllFeedsFailedError();
+  }
   const tagged = tagArticles(raw);
   const deduped = deduplicateArticles(tagged);
   const ranked = rankArticles(deduped);

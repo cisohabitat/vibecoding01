@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { fetchAllFeeds } from "../fetcher";
 import { Article } from "../types";
 
 const hoursAgo = (h: number) => new Date(Date.now() - h * 3600e3);
@@ -36,7 +37,10 @@ vi.mock("../fetcher", () => ({
   })),
 }));
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
 
 describe("getArticles", () => {
   it("tags, dedupes, ranks, enriches featured first and threads failedFeeds", async () => {
@@ -64,5 +68,30 @@ describe("getArticles", () => {
     const zeroDay = featured.find((a) => a.source === "A");
     expect(zeroDay?.cves).toEqual([{ id: "CVE-2026-0001", cvss: 7.5, severity: "HIGH" }]);
     expect(fetchMock.mock.calls[0][0]).toContain("CVE-2026-0001");
+  });
+});
+
+describe("getArticles when every feed fails", () => {
+  const allFailed = async () => {
+    const { FEED_SOURCES } = await import("../feeds");
+    vi.mocked(fetchAllFeeds).mockResolvedValueOnce({
+      articles: [],
+      failedFeeds: FEED_SOURCES.map((f) => f.name),
+    });
+  };
+
+  it("throws so ISR keeps the last good page", async () => {
+    await allFailed();
+    const { getArticles, AllFeedsFailedError } = await import("../pipeline");
+    await expect(getArticles()).rejects.toBeInstanceOf(AllFeedsFailedError);
+  });
+
+  it("renders the empty state during next build", async () => {
+    vi.stubEnv("NEXT_PHASE", "phase-production-build");
+    await allFailed();
+    const { getArticles } = await import("../pipeline");
+    const result = await getArticles();
+    expect(result.featured).toEqual([]);
+    expect(result.failedFeeds.length).toBeGreaterThan(0);
   });
 });
