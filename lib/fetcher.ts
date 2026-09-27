@@ -159,8 +159,9 @@ export async function fetchAllFeeds(): Promise<FetchResult> {
     if (result.status === "fulfilled") {
       articles.push(...result.value);
     } else {
-      console.warn("Failed to fetch feed:", result.reason?.message);
-      failedFeeds.push(FEED_SOURCES[index].name);
+      const { name, url } = FEED_SOURCES[index];
+      console.warn(`Failed to fetch feed "${name}" (${url}): ${result.reason?.message ?? result.reason}`);
+      failedFeeds.push(name);
     }
   });
 
