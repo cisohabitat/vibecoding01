@@ -31,7 +31,7 @@ app/
     feed.json/route.ts      — JSON feed API (ISR, 15-min revalidation)
     feed.xml/route.ts       — RSS/Atom feed API (ISR, 15-min revalidation)
     health/route.ts         — Health check API (cached 60s); returns { status, feedsUp, feedsDown, lastCheck }
-    cve/[id]/route.ts       — NVD proxy for CveModal (1h cache per CVE)
+    cve/[id]/route.ts       — NVD proxy for CveModal (1h data + CDN cache; 404 unknown, 502 NVD down/rate-limited)
   saved/layout.tsx          — Metadata for /saved (noindex)
   saved/page.tsx            — Bookmarked articles from localStorage [client]
   components/
@@ -90,4 +90,4 @@ lib/
 - Do not add `onClick` or other event handlers to elements inside server components — move the component to a client component instead.
 - `fetchAllFeeds()` returns `{ articles, failedFeeds }` — always destructure both fields; never discard `failedFeeds` silently.
 - `RankedArticles` includes `failedFeeds: string[]`; `rankArticles()` returns an empty array for it — the pipeline overrides this with the real value from the fetcher.
-- Unit tests use Vitest and live in `lib/__tests__/`. Run `npm test`, `npm run lint`, and `npm run build` before pushing.
+- Unit tests use Vitest and live in `lib/__tests__/` (route handlers can be tested by importing `GET` directly; `@/` resolves via `vitest.config.ts`). Run `npm test`, `npm run lint`, and `npm run build` before pushing.

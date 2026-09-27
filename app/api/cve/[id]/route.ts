@@ -12,6 +12,11 @@ export interface CveDetail {
   references: string[];
 }
 
+// Let the CDN cache answers so repeated modal opens don't hit NVD
+// (keyless NVD access allows only 5 requests per 30s).
+const CACHE_OK = "public, s-maxage=3600, stale-while-revalidate=86400";
+const CACHE_NOT_FOUND = "public, s-maxage=3600";
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -19,7 +24,7 @@ export async function GET(
   const { id } = await params;
   const cveId = id.toUpperCase();
 
-  if (!/^CVE-\d{4}-\d{4,}$/.test(cveId)) {
+  if (!/^CVE-\d{4}-\d{4,7}$/.test(cveId)) {
     return NextResponse.json({ error: "Invalid CVE ID" }, { status: 400 });
   }
 
@@ -33,15 +38,25 @@ export async function GET(
       }
     );
 
+    if (res.status === 404) {
+      return NextResponse.json(
+        { error: "CVE not found" },
+        { status: 404, headers: { "Cache-Control": CACHE_NOT_FOUND } }
+      );
+    }
     if (!res.ok) {
-      return NextResponse.json({ error: "CVE not found" }, { status: 404 });
+      // Rate limiting (403/429) or an NVD outage: not cacheable
+      return NextResponse.json({ error: "NVD unavailable" }, { status: 502 });
     }
 
     const data = await res.json();
     const vuln = data.vulnerabilities?.[0]?.cve;
 
     if (!vuln) {
-      return NextResponse.json({ error: "CVE not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "CVE not found" },
+        { status: 404, headers: { "Cache-Control": CACHE_NOT_FOUND } }
+      );
     }
 
     const metrics = vuln.metrics;
@@ -71,7 +86,7 @@ export async function GET(
       references,
     };
 
-    return NextResponse.json(detail);
+    return NextResponse.json(detail, { headers: { "Cache-Control": CACHE_OK } });
   } catch {
     return NextResponse.json({ error: "Failed to fetch CVE data" }, { status: 502 });
   }
