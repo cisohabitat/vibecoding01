@@ -7,6 +7,10 @@ export function extractCveIds(text: string): string[] {
   return [...new Set(matches.map((m) => m.toUpperCase()))];
 }
 
+// NVD_API_URL overrides the endpoint (the e2e tests point it at a fixture)
+export const NVD_API_URL =
+  process.env.NVD_API_URL ?? "https://services.nvd.nist.gov/rest/json/cves/2.0";
+
 // NVD allows 5 requests per rolling 30s without an API key, 50 with one.
 // Keep each regeneration under that budget.
 export const MAX_CVE_LOOKUPS = process.env.NVD_API_KEY ? 20 : 5;
@@ -19,7 +23,7 @@ export function nvdHeaders(): HeadersInit | undefined {
 async function fetchCveScore(cveId: string): Promise<CveInfo> {
   try {
     const res = await fetch(
-      `https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${cveId}`,
+      `${NVD_API_URL}?cveId=${cveId}`,
       {
         headers: nvdHeaders(),
         next: { revalidate: 3600 }, // cache each CVE lookup for 1 hour

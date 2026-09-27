@@ -29,6 +29,7 @@ export default defineConfig({
         FEED_SOURCES_OVERRIDE: JSON.stringify([
           { name: "Fixture Feed", url: `http://localhost:${FEED_PORT}/rss.xml`, tier: 2 },
         ]),
+        NVD_API_URL: `http://localhost:${FEED_PORT}/nvd`,
         NO_PROXY: "localhost,127.0.0.1",
       },
       // Always build fresh: reusing a server left running from an older build

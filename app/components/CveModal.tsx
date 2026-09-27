@@ -71,7 +71,7 @@ export default function CveModal({
           <button
             type="button"
             onClick={close}
-            className="shrink-0 text-slate-500 hover:text-slate-200 transition-colors text-xl leading-none mt-1"
+            className="shrink-0 text-slate-400 hover:text-slate-200 transition-colors text-xl leading-none mt-1"
             aria-label="Close"
           >
             ×
@@ -122,7 +122,7 @@ export default function CveModal({
                   </span>
                 )}
                 {data.vectorString && (
-                  <span className="text-xs font-mono text-slate-500 break-all">
+                  <span className="text-xs font-mono text-slate-400 break-all">
                     {data.vectorString}
                   </span>
                 )}
@@ -136,7 +136,7 @@ export default function CveModal({
 
             {/* Dates */}
             {(data.published || data.lastModified) && (
-              <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+              <div className="flex flex-wrap gap-4 text-xs text-slate-400">
                 {data.published && (
                   <span>Published: {new Date(data.published).toLocaleDateString()}</span>
                 )}
@@ -149,7 +149,7 @@ export default function CveModal({
             {/* References */}
             {data.references.length > 0 && (
               <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">
+                <p className="text-xs text-slate-400 uppercase tracking-wide mb-2">
                   References
                 </p>
                 <ul className="space-y-1">
@@ -175,7 +175,7 @@ export default function CveModal({
                 href={`https://nvd.nist.gov/vuln/detail/${cveId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-slate-500 hover:text-cyber-accent transition-colors"
+                className="text-xs text-slate-400 hover:text-cyber-accent transition-colors"
               >
                 View full record on NVD →
               </a>

@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 // Console errors that are expected outside Vercel or without NVD access
-const IGNORED_ERRORS = /_vercel|api\/cve|Failed to load resource/;
+const IGNORED_ERRORS = /_vercel|Failed to load resource/;
 
 function trackErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -189,8 +189,12 @@ test("CVE chip opens the detail dialog without leaving the page", async ({ page,
   await page.goto("/");
   let opened = false;
   context.on("page", () => (opened = true));
-  await page.getByRole("button", { name: /CVE-2024-23897 details/ }).click();
-  await expect(page.getByRole("dialog", { name: "CVE-2024-23897" })).toBeVisible();
+  // Enriched at build time from the fixture NVD
+  await page.getByRole("button", { name: /CVE-2024-23897 details, CVSS 9\.8 critical/ }).click();
+  const dialog = page.getByRole("dialog", { name: "CVE-2024-23897" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("Fixture description for CVE-2024-23897.")).toBeVisible();
+  await expect(dialog.getByText("CRITICAL")).toBeVisible();
   expect(opened).toBe(false);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -253,7 +257,8 @@ test.describe("accessibility (axe-core)", () => {
     ["CVE dialog", async (page) => {
       await page.goto("/");
       await page.getByRole("button", { name: /CVE-2024-23897 details/ }).click();
-      await page.getByRole("dialog").waitFor();
+      // Audit the loaded state (score, vector, dates, references)
+      await page.getByText("Fixture description for CVE-2024-23897.").waitFor();
     }],
     ["saved", async (page) => { await page.goto("/saved"); }],
   ];

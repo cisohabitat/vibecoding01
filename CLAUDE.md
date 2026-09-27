@@ -65,7 +65,7 @@ lib/
   ranker.ts         — Relevance scoring (tier weight + keyword match + recency boost)
   tagger.ts         — Keyword-based category tagging (first-match rules)
   deduplicator.ts   — Deduplication by identical link or title similarity (never merges titles naming different CVEs); keeps the lowest-tier, newest copy
-  cve.ts            — CVE ID extraction + CVSS enrichment via NVD API (capped lookups, optional NVD_API_KEY)
+  cve.ts            — CVE ID extraction + CVSS enrichment via NVD API (capped lookups, optional NVD_API_KEY; NVD_API_URL override for tests)
   trending.ts       — Trending terms (names, CVE IDs) from last-24h titles; ≥2 stories, generic words excluded
   rss.ts            — RSS 2.0 builder for /api/feed.xml (XML-safe escaping, CVEs as <category>)
   site.ts           — Absolute site URL (NEXT_PUBLIC_SITE_URL, else Vercel production domain)
@@ -73,7 +73,7 @@ lib/
   __tests__/        — Vitest unit tests (lib modules + API route handlers)
 e2e/
   app.spec.ts       — Playwright end-to-end tests
-  feed-server.mjs   — Fixture RSS server (dates relative to request time)
+  feed-server.mjs   — Fixture RSS server (dates relative to request time) + fixture NVD API at /nvd
 .github/
   workflows/ci.yml  — CI: prod-dependency audit, lint, typecheck, unit tests, build; separate e2e job
   dependabot.yml    — Weekly grouped npm updates, monthly Actions updates

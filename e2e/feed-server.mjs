@@ -39,7 +39,36 @@ function rss() {
   return `<?xml version="1.0"?><rss version="2.0"><channel><title>Fixture</title>${items.join("")}</channel></rss>`;
 }
 
+// Minimal NVD CVE API response, so CVE enrichment and the CVE dialog are
+// tested without depending on the live (rate-limited) NVD
+function nvd(cveId) {
+  return JSON.stringify({
+    vulnerabilities: [
+      {
+        cve: {
+          id: cveId,
+          published: "2024-01-24T18:15:09.370",
+          lastModified: "2024-06-10T17:16:21.000",
+          descriptions: [{ lang: "en", value: `Fixture description for ${cveId}.` }],
+          metrics: {
+            cvssMetricV31: [
+              { cvssData: { baseScore: 9.8, baseSeverity: "CRITICAL", vectorString: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" } },
+            ],
+          },
+          references: [{ url: "https://example.com/advisory" }],
+        },
+      },
+    ],
+  });
+}
+
 createServer((req, res) => {
+  const url = new URL(req.url, "http://localhost");
+  if (url.pathname === "/nvd") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(nvd(url.searchParams.get("cveId")));
+    return;
+  }
   res.writeHead(200, { "Content-Type": "application/rss+xml" });
   res.end(rss());
 }).listen(PORT, () => console.log(`fixture feed on :${PORT}`));
