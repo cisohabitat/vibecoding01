@@ -84,11 +84,17 @@ export default function NewsCard({
   async function handleShare() {
     if (navigator.share) {
       await navigator.share({ title: article.title, url: article.link }).catch(() => {});
-    } else {
-      await navigator.clipboard.writeText(article.link).catch(() => {});
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      return;
     }
+    // Clipboard API is missing on insecure origins and some older browsers
+    try {
+      await navigator.clipboard.writeText(article.link);
+    } catch {
+      window.prompt("Copy this link:", article.link);
+      return;
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   function handleBookmark() {
