@@ -274,6 +274,18 @@ test.describe("accessibility (axe-core)", () => {
   }
 });
 
+test("failed-feeds banner names the feeds and can be dismissed", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("article time").first()).toHaveText(/ago|just now/);
+  const banner = page.getByRole("status").filter({ hasText: "Data may be incomplete" });
+  await expect(banner).toContainText("Broken Feed A, Broken Feed B");
+
+  await banner.getByRole("button", { name: "Dismiss warning" }).click();
+  await expect(banner).toHaveCount(0);
+  // Focus moves into the page instead of falling back to <body>
+  await expect(page.locator("main")).toBeFocused();
+});
+
 test("sends security headers", async ({ request }) => {
   const res = await request.get("/");
   const headers = res.headers();
@@ -286,7 +298,7 @@ test("JSON feed is public and reports failed feeds", async ({ request }) => {
   const res = await request.get("/api/feed.json");
   expect(res.headers()["access-control-allow-origin"]).toBe("*");
   const body = await res.json();
-  expect(body.failedFeeds).toEqual([]);
+  expect(body.failedFeeds).toEqual(["Broken Feed A", "Broken Feed B"]);
   expect(body.count).toBe(body.featured.length + body.recent.length);
 });
 

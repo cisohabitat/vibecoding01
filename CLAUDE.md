@@ -73,7 +73,7 @@ lib/
   __tests__/        — Vitest unit tests (lib modules + API route handlers)
 e2e/
   app.spec.ts       — Playwright end-to-end tests
-  feed-server.mjs   — Fixture RSS server (dates relative to request time) + fixture NVD API at /nvd
+  feed-server.mjs   — Fixture RSS server (dates relative to request time), fixture NVD API at /nvd, 503s for /broken-* (two failing sources trigger the banner)
 .github/
   workflows/ci.yml  — CI: prod-dependency audit, lint, typecheck, unit tests, build; separate e2e job
   dependabot.yml    — Weekly grouped npm updates, monthly Actions updates

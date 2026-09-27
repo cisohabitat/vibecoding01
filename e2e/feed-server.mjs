@@ -64,6 +64,12 @@ function nvd(cveId) {
 
 createServer((req, res) => {
   const url = new URL(req.url, "http://localhost");
+  // Simulated outages, so the failed-feeds banner is exercised
+  if (url.pathname.startsWith("/broken")) {
+    res.writeHead(503);
+    res.end("unavailable");
+    return;
+  }
   if (url.pathname === "/nvd") {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(nvd(url.searchParams.get("cveId")));
