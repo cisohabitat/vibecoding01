@@ -214,6 +214,8 @@ test("keyboard users can skip to content; nav marks the current page", async ({ 
   await page.goto("/");
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("main")).toBeFocused();
   await expect(page.getByRole("link", { name: "Feed", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(page.locator("a button, a a")).toHaveCount(0);
 });

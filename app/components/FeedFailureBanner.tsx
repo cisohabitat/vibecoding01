@@ -20,7 +20,11 @@ export default function FeedFailureBanner({
       </span>
       <button
         type="button"
-        onClick={() => setDismissed(true)}
+        onClick={() => {
+          setDismissed(true);
+          // The focused button is about to disappear; keep focus in the page
+          document.getElementById("main")?.focus();
+        }}
         aria-label="Dismiss warning"
         className="shrink-0 text-amber-400 hover:text-amber-200 transition-colors"
       >

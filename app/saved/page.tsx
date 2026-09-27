@@ -23,7 +23,7 @@ export default function SavedPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main id="main" className="flex-1 max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full">
+      <main id="main" tabIndex={-1} className="outline-none flex-1 max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
             <span className="text-cyber-accent" aria-hidden="true">★</span>
