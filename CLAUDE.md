@@ -59,7 +59,7 @@ lib/
   tagger.ts         — Keyword-based category tagging (first-match rules)
   deduplicator.ts   — Title-similarity deduplication; keeps the lowest-tier (most authoritative), newest copy
   cve.ts            — CVE ID extraction + CVSS enrichment via NVD API (capped lookups, optional NVD_API_KEY)
-  trending.ts       — Trending topic extraction from recent article titles
+  trending.ts       — Trending terms (names, CVE IDs) from last-24h titles; ≥2 stories, generic words excluded
   rss.ts            — RSS 2.0 builder for /api/feed.xml (XML-safe escaping, CVEs as <category>)
   site.ts           — Absolute site URL (NEXT_PUBLIC_SITE_URL, else Vercel production domain)
 ```
