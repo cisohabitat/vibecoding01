@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchAllFeeds } from "../fetcher";
 import { Article } from "../types";
 
@@ -37,9 +37,12 @@ vi.mock("../fetcher", () => ({
   })),
 }));
 
+beforeEach(() => vi.resetModules());
+
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
+  vi.useRealTimers();
 });
 
 describe("getArticles", () => {
@@ -93,5 +96,33 @@ describe("getArticles when every feed fails", () => {
     const result = await getArticles();
     expect(result.featured).toEqual([]);
     expect(result.failedFeeds.length).toBeGreaterThan(0);
+  });
+});
+
+describe("getArticles memo", () => {
+  it("shares one pipeline run between concurrent callers for 60s", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({ vulnerabilities: [] })));
+    vi.mocked(fetchAllFeeds).mockClear();
+    const { getArticles } = await import("../pipeline");
+
+    const [a, b] = await Promise.all([getArticles(), getArticles()]);
+    expect(a).toBe(b);
+    expect(fetchAllFeeds).toHaveBeenCalledTimes(1);
+
+    vi.useFakeTimers({ now: Date.now() + 61_000 });
+    await getArticles();
+    expect(fetchAllFeeds).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not memoise failures", async () => {
+    const { FEED_SOURCES } = await import("../feeds");
+    vi.mocked(fetchAllFeeds).mockClear();
+    vi.mocked(fetchAllFeeds).mockResolvedValueOnce({ articles: [], failedFeeds: FEED_SOURCES.map((f) => f.name) });
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({ vulnerabilities: [] })));
+    const { getArticles } = await import("../pipeline");
+
+    await expect(getArticles()).rejects.toThrow();
+    await expect(getArticles()).resolves.toHaveProperty("featured");
+    expect(fetchAllFeeds).toHaveBeenCalledTimes(2);
   });
 });

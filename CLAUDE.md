@@ -58,7 +58,7 @@ lib/
   types.ts          — TypeScript interfaces (Article, FeedSource, RankedArticles, CveInfo, etc.)
   feeds.ts          — RSS feed source registry with tier ratings (1-3); FEED_SOURCES_OVERRIDE env (JSON) replaces it for tests
   fetcher.ts        — RSS fetching (Promise.allSettled, 10s timeout, one retry on transient errors), item sanitising, ≤40 newest items/feed, ≤30 days old; returns { articles, failedFeeds }
-  pipeline.ts       — Orchestrates fetch → tag → deduplicate → rank → enrich; threads failedFeeds through
+  pipeline.ts       — Orchestrates fetch → tag → deduplicate → rank → enrich; threads failedFeeds through; 60s in-process memo shared by page + feed routes
   keywords.ts       — Word-boundary keyword matching shared by ranker and tagger
   ranker.ts         — Relevance scoring (tier weight + keyword match + recency boost)
   tagger.ts         — Keyword-based category tagging (first-match rules)

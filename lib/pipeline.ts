@@ -16,8 +16,29 @@ export class AllFeedsFailedError extends Error {
  * Full article pipeline: fetch → tag → deduplicate → rank → CVE-enrich.
  * Ranking runs before enrichment so the limited NVD lookups go to the
  * featured articles first. Used by both the main page and the API routes.
+ *
+ * The page, /api/feed.json and /api/feed.xml regenerate on the same
+ * schedule; a short in-process memo lets them share one run instead of each
+ * fetching every feed. Failures aren't memoised. Callers must not mutate
+ * the result.
  */
-export async function getArticles() {
+export function getArticles(): ReturnType<typeof runPipeline> {
+  const now = Date.now();
+  if (!memo || now - memo.at > MEMO_TTL_MS) {
+    const result = runPipeline();
+    const entry = { at: now, result };
+    memo = entry;
+    result.catch(() => {
+      if (memo === entry) memo = null;
+    });
+  }
+  return memo.result;
+}
+
+const MEMO_TTL_MS = 60_000;
+let memo: { at: number; result: ReturnType<typeof runPipeline> } | null = null;
+
+async function runPipeline() {
   const { articles: raw, failedFeeds } = await fetchAllFeeds();
 
   // If every feed failed (network outage, egress block), throwing makes ISR
@@ -30,6 +51,7 @@ export async function getArticles() {
   ) {
     throw new AllFeedsFailedError();
   }
+
   const tagged = tagArticles(raw);
   const deduped = deduplicateArticles(tagged);
   const ranked = rankArticles(deduped);
