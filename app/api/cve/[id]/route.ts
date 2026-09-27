@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { nvdHeaders } from "@/lib/cve";
+import { NVD_API_URL, nvdHeaders } from "@/lib/cve";
 import { safeLink } from "@/lib/url";
 
 export interface CveDetail {
@@ -31,7 +31,7 @@ export async function GET(
 
   try {
     const res = await fetch(
-      `https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${cveId}`,
+      `${NVD_API_URL}?cveId=${cveId}`,
       {
         headers: nvdHeaders(),
         next: { revalidate: 3600 },

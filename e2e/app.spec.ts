@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 // Console errors that are expected outside Vercel or without NVD access
-const IGNORED_ERRORS = /_vercel|api\/cve|Failed to load resource/;
+const IGNORED_ERRORS = /_vercel|Failed to load resource/;
 
 function trackErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -189,8 +189,12 @@ test("CVE chip opens the detail dialog without leaving the page", async ({ page,
   await page.goto("/");
   let opened = false;
   context.on("page", () => (opened = true));
-  await page.getByRole("button", { name: /CVE-2024-23897 details/ }).click();
-  await expect(page.getByRole("dialog", { name: "CVE-2024-23897" })).toBeVisible();
+  // Enriched at build time from the fixture NVD
+  await page.getByRole("button", { name: /CVE-2024-23897 details, CVSS 9\.8 critical/ }).click();
+  const dialog = page.getByRole("dialog", { name: "CVE-2024-23897" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("Fixture description for CVE-2024-23897.")).toBeVisible();
+  await expect(dialog.getByText("CRITICAL")).toBeVisible();
   expect(opened).toBe(false);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -253,7 +257,8 @@ test.describe("accessibility (axe-core)", () => {
     ["CVE dialog", async (page) => {
       await page.goto("/");
       await page.getByRole("button", { name: /CVE-2024-23897 details/ }).click();
-      await page.getByRole("dialog").waitFor();
+      // Audit the loaded state (score, vector, dates, references)
+      await page.getByText("Fixture description for CVE-2024-23897.").waitFor();
     }],
     ["saved", async (page) => { await page.goto("/saved"); }],
   ];
@@ -269,19 +274,61 @@ test.describe("accessibility (axe-core)", () => {
   }
 });
 
-test("sends security headers", async ({ request }) => {
-  const res = await request.get("/");
-  const headers = res.headers();
-  expect(headers["content-security-policy"]).toContain("frame-ancestors 'none'");
+test("failed-feeds banner names the feeds and can be dismissed", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("article time").first()).toHaveText(/ago|just now/);
+  const banner = page.getByRole("status").filter({ hasText: "Data may be incomplete" });
+  await expect(banner).toContainText("Broken Feed A, Broken Feed B");
+
+  await banner.getByRole("button", { name: "Dismiss warning" }).click();
+  await expect(banner).toHaveCount(0);
+  // Focus moves into the page instead of falling back to <body>
+  await expect(page.locator("main")).toBeFocused();
+});
+
+test("sends security headers with a per-request CSP nonce", async ({ request }) => {
+  const [a, b] = await Promise.all([request.get("/"), request.get("/")]);
+  const csp = a.headers()["content-security-policy"];
+  const scriptSrc = csp.split(";").find((d) => d.trim().startsWith("script-src"))!;
+  expect(scriptSrc).toMatch(/'nonce-[A-Za-z0-9+/=]+' 'strict-dynamic'/);
+  expect(scriptSrc).not.toContain("'unsafe-inline'");
+  expect(csp).toContain("frame-ancestors 'none'");
+  // A fresh nonce on every request
+  const nonce = (h: string) => /'nonce-([^']+)'/.exec(h)![1];
+  expect(nonce(csp)).not.toBe(nonce(b.headers()["content-security-policy"]));
+
+  const headers = a.headers();
   expect(headers["x-content-type-options"]).toBe("nosniff");
   expect(headers["x-powered-by"]).toBeUndefined();
 });
+
+for (const path of ["/", "/saved", "/does-not-exist"]) {
+  test(`no CSP violations and every script nonced on ${path}`, async ({ page }) => {
+    const violations: string[] = [];
+    page.on("console", (m) => {
+      if (/Content Security Policy|Refused to (execute|load)/.test(m.text()) && !/_vercel/.test(m.text())) {
+        violations.push(m.text());
+      }
+    });
+    await page.goto(path);
+    await page.waitForLoadState("networkidle");
+    expect(violations).toEqual([]);
+    // Every script from the server carries the nonce; Vercel Analytics and
+    // Speed Insights are injected from JS and allowed via 'strict-dynamic'
+    const unnonced = await page.evaluate(() =>
+      [...document.querySelectorAll("script")]
+        .filter((s) => !s.nonce && !s.src.includes("/_vercel/"))
+        .map((s) => s.src || s.textContent?.slice(0, 40))
+    );
+    expect(unnonced).toEqual([]);
+  });
+}
 
 test("JSON feed is public and reports failed feeds", async ({ request }) => {
   const res = await request.get("/api/feed.json");
   expect(res.headers()["access-control-allow-origin"]).toBe("*");
   const body = await res.json();
-  expect(body.failedFeeds).toEqual([]);
+  expect(body.failedFeeds).toEqual(["Broken Feed A", "Broken Feed B"]);
   expect(body.count).toBe(body.featured.length + body.recent.length);
 });
 

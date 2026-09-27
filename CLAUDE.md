@@ -7,7 +7,7 @@ Cybersecurity news aggregator that fetches RSS feeds from trusted sources, ranks
 - **Framework**: Next.js 16 (App Router, TypeScript)
 - **Styling**: Tailwind CSS 4 (via `@tailwindcss/postcss`)
 - **RSS Parsing**: `rss-parser`
-- **Deployment**: Vercel (dynamic rendering with ISR, 15-min revalidation)
+- **Deployment**: Vercel (pages rendered per request for the CSP nonce; article data cached 15 min; feed routes ISR)
 
 ## Commands
 
@@ -21,13 +21,14 @@ Cybersecurity news aggregator that fetches RSS feeds from trusted sources, ranks
 ## Project Structure
 
 ```
+proxy.ts                    — Per-request nonce Content-Security-Policy for pages (Next 16 "proxy", formerly middleware)
 app/
-  layout.tsx                — Root layout (dark theme, metadata: canonical, RSS feed discovery, Open Graph)
+  layout.tsx                — Root layout (dark theme, metadata: canonical, RSS feed discovery, Open Graph); `await connection()` makes every page dynamic
   icon.svg                  — Favicon (pulse line)
   opengraph-image.tsx       — 1200×630 social preview image (next/og, built statically)
   robots.ts / sitemap.ts    — robots.txt (disallows /api/cve, /api/health) and sitemap.xml
   manifest.ts               — Web app manifest (installable, theme colours)
-  page.tsx                  — Main page (server component, fetches + ranks RSS)
+  page.tsx                  — Main page (server component; data from getCachedArticles())
   globals.css               — Tailwind config + custom cyber theme colors
   error.tsx                 — Error boundary with retry [client]
   not-found.tsx             — 404 page
@@ -60,12 +61,12 @@ lib/
   types.ts          — TypeScript interfaces (Article, FeedSource, RankedArticles, CveInfo, etc.)
   feeds.ts          — RSS feed source registry with tier ratings (1-3); FEED_SOURCES_OVERRIDE env (JSON) replaces it for tests
   fetcher.ts        — RSS fetching (Promise.allSettled, 10s timeout, one retry on 5xx/timeouts/network errors), item sanitising, ≤40 newest items/feed, ≤30 days old; returns { articles, failedFeeds }
-  pipeline.ts       — Orchestrates fetch → tag → deduplicate → rank → enrich; threads failedFeeds through; 60s in-process memo shared by page + feed routes
+  pipeline.ts       — Orchestrates fetch → tag → deduplicate → rank → enrich; threads failedFeeds through; 60s in-process memo; getCachedArticles() = same behind Next's data cache (15 min)
   keywords.ts       — Word-boundary keyword matching shared by ranker and tagger
   ranker.ts         — Relevance scoring (tier weight + keyword match + recency boost)
   tagger.ts         — Keyword-based category tagging (first-match rules)
   deduplicator.ts   — Deduplication by identical link or title similarity (never merges titles naming different CVEs); keeps the lowest-tier, newest copy
-  cve.ts            — CVE ID extraction + CVSS enrichment via NVD API (capped lookups, optional NVD_API_KEY)
+  cve.ts            — CVE ID extraction + CVSS enrichment via NVD API (capped lookups, optional NVD_API_KEY; NVD_API_URL override for tests)
   trending.ts       — Trending terms (names, CVE IDs) from last-24h titles; ≥2 stories, generic words excluded
   rss.ts            — RSS 2.0 builder for /api/feed.xml (XML-safe escaping, CVEs as <category>)
   site.ts           — Absolute site URL (NEXT_PUBLIC_SITE_URL, else Vercel production domain)
@@ -73,7 +74,7 @@ lib/
   __tests__/        — Vitest unit tests (lib modules + API route handlers)
 e2e/
   app.spec.ts       — Playwright end-to-end tests
-  feed-server.mjs   — Fixture RSS server (dates relative to request time)
+  feed-server.mjs   — Fixture RSS server (dates relative to request time), fixture NVD API at /nvd, 503s for /broken-* (two failing sources trigger the banner)
 .github/
   workflows/ci.yml  — CI: prod-dependency audit, lint, typecheck, unit tests, build; separate e2e job
   dependabot.yml    — Weekly grouped npm updates, monthly Actions updates
@@ -82,14 +83,15 @@ e2e/
 ## Architecture Notes
 
 - The page is a **server component**; interactive pieces (cards, filters, trending) are client components.
-- ISR caching (`revalidate = 900`) serves cached pages; feeds are re-fetched every 15 min.
-- If **every** feed fails, `getArticles()` throws `AllFeedsFailedError` so ISR keeps serving the last good page instead of caching an empty one (except during `next build`, detected via `NEXT_PHASE`, which renders the empty state).
+- **Pages render per request** (root layout calls `await connection()`) because the CSP nonce from `proxy.ts` only exists at request time; static HTML would carry un-nonced, blocked scripts. Don't add `revalidate`/static rendering to pages. Rendering is cheap because pages read `getCachedArticles()`: the pipeline result lives in Next's data cache for 15 min (`unstable_cache`, keyed by deployment + feed list + NVD endpoint, since the cache outlives builds/deploys; Dates are revived after JSON round-tripping). Feeds and NVD are hit at most once per 15 min, not per view.
+- `/api/feed.json` and `/api/feed.xml` stay ISR (`revalidate = 900`) and call `getArticles()` directly.
+- If **every** feed fails, `getArticles()` throws `AllFeedsFailedError` so the previous cached data / ISR output keeps being served instead of an empty result (except during `next build`, detected via `NEXT_PHASE`, which renders the empty state).
 - RSS feeds are fetched concurrently via `Promise.allSettled` — individual feed failures don't break the page. Failed feed names are surfaced via `FeedFailureBanner` when ≥2 feeds are down.
 - Article pipeline: fetch → tag categories → deduplicate → rank → enrich CVEs. Top 5 from the last 24h become "featured" (at most 2 per source, see `pickFeatured`).
 - CVE IDs are extracted from titles/descriptions and enriched with CVSS scores via the NVD API. Lookups go to featured articles first and are capped per regeneration (`MAX_CVE_LOOKUPS`: 5 without a key, 20 with `NVD_API_KEY`) to stay within NVD rate limits. Set `NVD_API_KEY` in the Vercel env to raise the cap.
 - Keywords match at word boundaries with common inflections (`lib/keywords.ts`), so "apt" doesn't match "adapt" and "conti" doesn't match "continues". A keyword ending in a non-alphanumeric character (e.g. `cve-`) acts as a prefix.
 - Duplicate articles (same story from multiple sources) are merged; `alsoReportedBy` tracks secondary sources.
-- Security headers (CSP, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy) are set for all routes in `next.config.ts`. `connect-src` is `'self'` only: browser-side fetches must go through an API route (e.g. `/api/cve/[id]`), not to third-party hosts directly.
+- Content-Security-Policy is set per request in `proxy.ts`: `script-src 'self' 'nonce-…' 'strict-dynamic'` (no `'unsafe-inline'`). Next.js nonces its own scripts automatically; scripts injected from JS by a nonced script (Vercel Analytics/Speed Insights) are allowed by `'strict-dynamic'`. Any hand-written inline `<script>` must use the nonce from `headers().get("x-nonce")`. `style-src` keeps `'unsafe-inline'` (inline style attributes). `connect-src` is `'self'` only: browser-side fetches must go through an API route (e.g. `/api/cve/[id]`). The other security headers (X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy) are in `next.config.ts`.
 - Custom theme colors are defined in `globals.css` under `@theme` (Tailwind v4 syntax), prefixed `cyber-*`.
 - `NewsCard` is a **client component** (`"use client"`) for its read/bookmark/share/CVE interactions. The card is an `<article>` whose title link is stretched over the whole card with an `::after` overlay; buttons sit above it with `relative z-10`. Never nest buttons or other interactive elements inside the `<a>`.
 - `NewsListClient` wraps the article grid with `useState`-based pagination (12 articles per page, "Load more" button). `NewsList` is a server component shell that delegates to it. It reads grid/list mode from `ViewModeContext`.
