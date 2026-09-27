@@ -72,6 +72,20 @@ export function parseFeedDate(values: Array<string | undefined>, now: number): D
   return new Date(now);
 }
 
+// Keep the page payload bounded: each feed contributes at most its newest
+// MAX_ITEMS_PER_FEED items, and nothing older than MAX_AGE_DAYS.
+export const MAX_ITEMS_PER_FEED = 40;
+export const MAX_AGE_DAYS = 30;
+
+/** Newest-first, capped, and without items older than the age limit. */
+export function limitItems(articles: Article[], now: number): Article[] {
+  const cutoff = now - MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+  return articles
+    .filter((a) => a.pubDate.getTime() >= cutoff)
+    .sort((a, b) => b.pubDate.getTime() - a.pubDate.getTime())
+    .slice(0, MAX_ITEMS_PER_FEED);
+}
+
 export interface FetchResult {
   articles: Article[];
   failedFeeds: string[];
@@ -103,7 +117,7 @@ export async function fetchAllFeeds(): Promise<FetchResult> {
           cves: [],
         });
       }
-      return articles;
+      return limitItems(articles, now);
     })
   );
 

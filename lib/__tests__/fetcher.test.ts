@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { decodeEntities, parseFeedDate, safeLink, stripHtml } from "../fetcher";
+import {
+  decodeEntities,
+  limitItems,
+  MAX_AGE_DAYS,
+  MAX_ITEMS_PER_FEED,
+  parseFeedDate,
+  safeLink,
+  stripHtml,
+} from "../fetcher";
+import { Article } from "../types";
 
 describe("decodeEntities", () => {
   it("decodes numeric and common named entities", () => {
@@ -48,5 +57,24 @@ describe("parseFeedDate", () => {
 
   it("falls back to now when nothing parses", () => {
     expect(parseFeedDate(["not a date", undefined], now).getTime()).toBe(now);
+  });
+});
+
+describe("limitItems", () => {
+  const now = Date.parse("2026-01-31T00:00:00Z");
+  const day = 24 * 3600e3;
+  const item = (daysAgo: number) =>
+    ({ title: `d${daysAgo}`, pubDate: new Date(now - daysAgo * day) }) as Article;
+
+  it("drops items older than the age limit", () => {
+    const kept = limitItems([item(1), item(MAX_AGE_DAYS + 1), item(MAX_AGE_DAYS - 1)], now);
+    expect(kept.map((a) => a.title)).toEqual(["d1", `d${MAX_AGE_DAYS - 1}`]);
+  });
+
+  it("keeps only the newest items per feed", () => {
+    const items = Array.from({ length: MAX_ITEMS_PER_FEED + 10 }, (_, i) => item(i / 10));
+    const kept = limitItems(items.reverse(), now);
+    expect(kept).toHaveLength(MAX_ITEMS_PER_FEED);
+    expect(kept[0].title).toBe("d0");
   });
 });

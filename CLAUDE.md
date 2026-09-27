@@ -52,7 +52,7 @@ app/
 lib/
   types.ts          — TypeScript interfaces (Article, FeedSource, RankedArticles, CveInfo, etc.)
   feeds.ts          — RSS feed source registry with tier ratings (1-3)
-  fetcher.ts        — RSS fetching with Promise.allSettled + 10s timeout; returns { articles, failedFeeds }
+  fetcher.ts        — RSS fetching (Promise.allSettled, 10s timeout), item sanitising, ≤40 newest items/feed, ≤30 days old; returns { articles, failedFeeds }
   pipeline.ts       — Orchestrates fetch → tag → deduplicate → rank → enrich; threads failedFeeds through
   keywords.ts       — Word-boundary keyword matching shared by ranker and tagger
   ranker.ts         — Relevance scoring (tier weight + keyword match + recency boost)
