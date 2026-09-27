@@ -56,6 +56,8 @@ lib/
   deduplicator.ts   — Title-similarity deduplication; keeps the lowest-tier (most authoritative), newest copy
   cve.ts            — CVE ID extraction + CVSS enrichment via NVD API (capped lookups, optional NVD_API_KEY)
   trending.ts       — Trending topic extraction from recent article titles
+  rss.ts            — RSS 2.0 builder for /api/feed.xml (XML-safe escaping, CVEs as <category>)
+  site.ts           — Absolute site URL (NEXT_PUBLIC_SITE_URL, else Vercel production domain)
 ```
 
 ## Architecture Notes
