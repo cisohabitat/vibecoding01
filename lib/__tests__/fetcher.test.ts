@@ -90,8 +90,24 @@ describe("withRetry", () => {
     expect(fn).toHaveBeenCalledTimes(2);
   });
 
-  it("retries network errors", async () => {
-    const fn = vi.fn().mockRejectedValueOnce(new Error("ECONNRESET")).mockResolvedValueOnce("ok");
+  it("retries network errors and timeouts", async () => {
+    const reset = Object.assign(new Error("socket hang up"), { code: "ECONNRESET" });
+    const fn = vi.fn().mockRejectedValueOnce(reset).mockResolvedValueOnce("ok");
+    await expect(withRetry(fn, 0)).resolves.toBe("ok");
+    const timeout = vi.fn().mockRejectedValueOnce(new Error("Request timed out after 10000ms")).mockResolvedValueOnce("ok");
+    await expect(withRetry(timeout, 0)).resolves.toBe("ok");
+  });
+
+  it("does not retry redirects without Location or parse errors", async () => {
+    for (const message of ["Status code 301", "Non-whitespace before first tag."]) {
+      const fn = vi.fn().mockRejectedValue(new Error(message));
+      await expect(withRetry(fn, 0)).rejects.toThrow(message);
+      expect(fn).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it("retries network errors (legacy check)", async () => {
+    const fn = vi.fn().mockRejectedValueOnce(Object.assign(new Error("x"), { code: "ETIMEDOUT" })).mockResolvedValueOnce("ok");
     await expect(withRetry(fn, 0)).resolves.toBe("ok");
   });
 

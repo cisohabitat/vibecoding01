@@ -105,17 +105,36 @@ export function limitItems(articles: Article[], now: number): Article[] {
     .slice(0, MAX_ITEMS_PER_FEED);
 }
 
+const TRANSIENT_CODES = new Set([
+  "ECONNRESET",
+  "ECONNREFUSED",
+  "ETIMEDOUT",
+  "EAI_AGAIN",
+  "ENOTFOUND",
+  "EPIPE",
+  "ENETUNREACH",
+]);
+
 /**
- * Retries once after `delayMs` on transient failures (network errors,
- * timeouts, 5xx). rss-parser reports HTTP errors as "Status code NNN";
- * 4xx responses won't change on retry, so they fail immediately.
+ * Whether a feed error might succeed on retry: 5xx responses, timeouts and
+ * network errors. 3xx/4xx responses and XML parse errors won't change.
+ * rss-parser reports HTTP errors as "Status code NNN" and timeouts as
+ * "Request timed out after Nms".
  */
+export function isTransientError(err: unknown): boolean {
+  const message = String((err as Error)?.message ?? err);
+  const status = /Status code (\d{3})/.exec(message)?.[1];
+  if (status) return status.startsWith("5");
+  if (/timed out/i.test(message)) return true;
+  return TRANSIENT_CODES.has((err as NodeJS.ErrnoException)?.code ?? "");
+}
+
+/** Retries once after `delayMs` when the failure is transient. */
 export async function withRetry<T>(fn: () => Promise<T>, delayMs = 1000): Promise<T> {
   try {
     return await fn();
   } catch (err) {
-    const status = /Status code (\d{3})/.exec(String((err as Error)?.message))?.[1];
-    if (status && status.startsWith("4")) throw err;
+    if (!isTransientError(err)) throw err;
     await new Promise((r) => setTimeout(r, delayMs));
     return fn();
   }
