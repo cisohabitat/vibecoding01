@@ -31,7 +31,9 @@ export default defineConfig({
         ]),
         NO_PROXY: "localhost,127.0.0.1",
       },
-      reuseExistingServer: !process.env.CI,
+      // Always build fresh: reusing a server left running from an older build
+      // silently tests stale code
+      reuseExistingServer: false,
     },
   ],
 });

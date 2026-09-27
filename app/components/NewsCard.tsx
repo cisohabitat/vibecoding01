@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Article, ArticleCategory, CveSeverity } from "@/lib/types";
 import CveModal from "./CveModal";
 import { useNow } from "./useNow";
+import { useLastVisit } from "./useLastVisit";
 import { parseStoredList, useLocalStorage, writeLocalStorage } from "./useLocalStorage";
 
 function timeAgo(date: Date, now: number): string {
@@ -71,6 +72,8 @@ export default function NewsCard({
       : new Date(article.pubDate as unknown as string);
   // Relative times are client-only (now is null during SSR/hydration)
   const isBreaking = now !== null && now - pubDate.getTime() < 60 * 60 * 1000;
+  const lastVisit = useLastVisit();
+  const isNew = lastVisit !== null && pubDate.getTime() > lastVisit && !isRead;
 
   function handleClick() {
     if (isRead) return;
@@ -218,6 +221,14 @@ export default function NewsCard({
               }`}
             >
               {article.category}
+            </span>
+          )}
+          {isNew && (
+            <span
+              className="px-1.5 py-0.5 rounded bg-cyber-accent/15 text-cyber-accent font-semibold"
+              title="Published since your last visit"
+            >
+              NEW
             </span>
           )}
           {now !== null && !Number.isNaN(pubDate.getTime()) && (

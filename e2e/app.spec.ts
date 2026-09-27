@@ -106,6 +106,28 @@ test("search and category filters sync to the URL", async ({ page }) => {
   await expect(page.getByRole("status").filter({ hasText: "result" })).toHaveText("1 result");
 });
 
+test("marks articles published since the last visit as NEW", async ({ page }) => {
+  // Fixture articles are 10 min, 57 min, 1h44m ... old; last visit 2h ago
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem("cyber-pulse-previous-visit")) {
+      localStorage.setItem("cyber-pulse-last-visit", String(Date.now() - 2 * 3600e3));
+    }
+  });
+  await page.goto("/");
+  await expect(card(page, "Attackers adapt").getByText("NEW", { exact: true })).toBeVisible();
+  await expect(card(page, "Ivanti Connect Secure").getByText("NEW", { exact: true })).toHaveCount(0);
+
+  // Still marked after a reload in the same session
+  await page.reload();
+  await expect(card(page, "Attackers adapt").getByText("NEW", { exact: true })).toBeVisible();
+});
+
+test("first visit shows no NEW badges", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("article time").first()).toBeVisible();
+  await expect(page.getByText("NEW", { exact: true })).toHaveCount(0);
+});
+
 test("CVE chip opens the detail dialog without leaving the page", async ({ page, context }) => {
   await page.goto("/");
   let opened = false;
