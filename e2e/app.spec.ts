@@ -122,6 +122,20 @@ test("marks articles published since the last visit as NEW", async ({ page }) =>
   await expect(card(page, "Attackers adapt").getByText("NEW", { exact: true })).toBeVisible();
 });
 
+test("the visit is recorded when the page is hidden, not when it opens", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("article time").first().waitFor();
+  expect(await page.evaluate(() => localStorage.getItem("cyber-pulse-last-visit"))).toBeNull();
+
+  const before = Date.now();
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  const stored = Number(await page.evaluate(() => localStorage.getItem("cyber-pulse-last-visit")));
+  expect(stored).toBeGreaterThanOrEqual(before - 1000);
+});
+
 test("first visit shows no NEW badges", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("article time").first()).toBeVisible();
