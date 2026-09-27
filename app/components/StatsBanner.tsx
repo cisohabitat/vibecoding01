@@ -19,9 +19,10 @@ function computeStats(featured: Article[], recent: Article[]): Stats {
     return t >= cutoff;
   });
 
-  const criticalCves = today.filter((a) =>
-    a.cves.some((c) => c.severity === "CRITICAL")
-  ).length;
+  // Distinct CVE IDs: the same CVE covered by several stories counts once
+  const criticalCves = new Set(
+    today.flatMap((a) => a.cves.filter((c) => c.severity === "CRITICAL").map((c) => c.id))
+  ).size;
 
   const breachCount = today.filter((a) => a.category === "Data Breach").length;
   const ransomwareCount = today.filter((a) => a.category === "Ransomware").length;
@@ -59,16 +60,16 @@ export default function StatsBanner({
   ];
 
   return (
-    <div className="flex flex-wrap gap-4 mb-6 px-1">
+    <dl className="flex flex-wrap gap-4 mb-6 px-1" aria-label="Last 24 hours">
       {stats.map(({ label, value, color }) => (
         <div
           key={label}
-          className="flex items-baseline gap-2 bg-cyber-800/40 border border-cyber-600/30 rounded-lg px-4 py-2"
+          className="flex flex-row-reverse items-baseline gap-2 bg-cyber-800/40 border border-cyber-600/30 rounded-lg px-4 py-2"
         >
-          <span className={`text-xl font-bold font-mono ${color}`}>{value}</span>
-          <span className="text-xs text-slate-500 uppercase tracking-wide">{label}</span>
+          <dt className="text-xs text-slate-400 uppercase tracking-wide">{label}</dt>
+          <dd className={`text-xl font-bold font-mono ${color}`}>{value}</dd>
         </div>
       ))}
-    </div>
+    </dl>
   );
 }
