@@ -2,13 +2,15 @@ import Parser from "rss-parser";
 import { FEED_SOURCES } from "./feeds";
 import { Article } from "./types";
 import { safeLink } from "./url";
+import { siteUrl } from "./site";
 
 export { safeLink };
 
 const parser = new Parser({
   timeout: 10000,
   headers: {
-    "User-Agent": "CyberPulseSG/1.0 (RSS Aggregator)",
+    // Identify the aggregator and where to find it, per crawler etiquette
+    "User-Agent": `CyberPulseSG/1.0 (RSS aggregator; +${siteUrl()})`,
   },
 });
 
