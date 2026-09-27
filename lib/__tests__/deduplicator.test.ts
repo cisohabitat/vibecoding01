@@ -47,6 +47,15 @@ describe("deduplicateArticles", () => {
     expect(result.find((a) => a.title.includes("1111"))?.alsoReportedBy).toEqual(["Other"]);
   });
 
+  it("merges items with the same link even when titles differ", () => {
+    const result = deduplicateArticles([
+      article({ title: "Week in review: patches galore", link: "https://example.com/x", source: "A" }),
+      article({ title: "Weekly roundup of security news", link: "https://example.com/x", source: "B" }),
+    ]);
+    expect(result).toHaveLength(1);
+    expect(result[0].alsoReportedBy).toEqual(["B"]);
+  });
+
   it("does not list the primary source as also reporting", () => {
     const result = deduplicateArticles([
       article({ title: "Chrome update fixes exploited zero-day flaw", source: "BleepingComputer" }),

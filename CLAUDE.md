@@ -63,7 +63,7 @@ lib/
   keywords.ts       — Word-boundary keyword matching shared by ranker and tagger
   ranker.ts         — Relevance scoring (tier weight + keyword match + recency boost)
   tagger.ts         — Keyword-based category tagging (first-match rules)
-  deduplicator.ts   — Title-similarity deduplication (never merges titles naming different CVEs); keeps the lowest-tier, newest copy
+  deduplicator.ts   — Deduplication by identical link or title similarity (never merges titles naming different CVEs); keeps the lowest-tier, newest copy
   cve.ts            — CVE ID extraction + CVSS enrichment via NVD API (capped lookups, optional NVD_API_KEY)
   trending.ts       — Trending terms (names, CVE IDs) from last-24h titles; ≥2 stories, generic words excluded
   rss.ts            — RSS 2.0 builder for /api/feed.xml (XML-safe escaping, CVEs as <category>)

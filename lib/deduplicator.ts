@@ -49,8 +49,10 @@ export function deduplicateArticles(articles: Article[]): Article[] {
 
     for (const entry of kept) {
       if (
-        !differentCves(cves, entry.cves) &&
-        jaccardSimilarity(tokens, entry.tokens) >= SIMILARITY_THRESHOLD
+        // Same URL is always the same story (links are also React keys)
+        entry.article.link === article.link ||
+        (!differentCves(cves, entry.cves) &&
+          jaccardSimilarity(tokens, entry.tokens) >= SIMILARITY_THRESHOLD)
       ) {
         if (
           article.source !== entry.article.source &&
