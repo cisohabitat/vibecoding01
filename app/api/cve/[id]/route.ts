@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nvdHeaders } from "@/lib/cve";
+import { safeLink } from "@/lib/url";
 
 export interface CveDetail {
   id: string;
@@ -69,11 +70,11 @@ export async function GET(
       (d) => d.lang === "en"
     )?.value ?? "";
 
-    const references: string[] = (
-      vuln.references as { url: string }[]
-    )
-      ?.slice(0, 5)
-      .map((r) => r.url) ?? [];
+    // Rendered as links in the dialog: keep only absolute http(s) URLs
+    const references: string[] = ((vuln.references ?? []) as { url?: string }[])
+      .map((r) => safeLink(r.url))
+      .filter((url): url is string => url !== null)
+      .slice(0, 5);
 
     const detail: CveDetail = {
       id: cveId,

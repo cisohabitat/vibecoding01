@@ -68,6 +68,7 @@ lib/
   trending.ts       — Trending terms (names, CVE IDs) from last-24h titles; ≥2 stories, generic words excluded
   rss.ts            — RSS 2.0 builder for /api/feed.xml (XML-safe escaping, CVEs as <category>)
   site.ts           — Absolute site URL (NEXT_PUBLIC_SITE_URL, else Vercel production domain)
+  url.ts            — safeLink(): only absolute http(s) URLs may become hrefs (feed links, NVD references)
   __tests__/        — Vitest unit tests (lib modules + API route handlers)
 e2e/
   app.spec.ts       — Playwright end-to-end tests

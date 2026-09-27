@@ -1,6 +1,9 @@
 import Parser from "rss-parser";
 import { FEED_SOURCES } from "./feeds";
 import { Article } from "./types";
+import { safeLink } from "./url";
+
+export { safeLink };
 
 const parser = new Parser({
   timeout: 10000,
@@ -64,17 +67,6 @@ export function stripHtml(html: string): string {
 function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength).replace(/\s+\S*$/, "") + "…";
-}
-
-/** Returns the link if it is an absolute http(s) URL, else null. */
-export function safeLink(link: string | undefined): string | null {
-  if (!link) return null;
-  try {
-    const url = new URL(link.trim());
-    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
-  } catch {
-    return null;
-  }
 }
 
 /**
