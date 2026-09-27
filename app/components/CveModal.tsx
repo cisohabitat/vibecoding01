@@ -18,7 +18,7 @@ export default function CveModal({
   onClose: () => void;
 }) {
   const [data, setData] = useState<CveDetail | null>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<"not-found" | "unavailable" | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -27,10 +27,16 @@ export default function CveModal({
 
   // Parent keys this component by cveId, so state starts fresh per CVE
   useEffect(() => {
-    fetch(`/api/cve/${encodeURIComponent(cveId)}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: CveDetail) => setData(d))
-      .catch(() => setError(true));
+    const controller = new AbortController();
+    fetch(`/api/cve/${encodeURIComponent(cveId)}`, { signal: controller.signal })
+      .then(async (r) => {
+        if (r.ok) setData((await r.json()) as CveDetail);
+        else setError(r.status === 404 ? "not-found" : "unavailable");
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setError("unavailable");
+      });
+    return () => controller.abort();
   }, [cveId]);
 
   function handleBackdropClick(e: React.MouseEvent<HTMLDialogElement>) {
@@ -74,8 +80,20 @@ export default function CveModal({
         )}
 
         {error && (
-          <div className="text-slate-400 text-sm py-8 text-center">
-            Could not load data for {cveId}.
+          <div className="text-slate-400 text-sm py-8 text-center" role="alert">
+            {error === "not-found"
+              ? `${cveId} isn't in the NVD yet — it may be reserved or awaiting analysis.`
+              : "The NVD is busy or unavailable right now. Try again in a minute."}
+            <div className="mt-3">
+              <a
+                href={`https://nvd.nist.gov/vuln/detail/${cveId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-cyber-accent hover:underline"
+              >
+                Check NVD directly →
+              </a>
+            </div>
           </div>
         )}
 
