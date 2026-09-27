@@ -23,6 +23,20 @@ const TIME_OPTIONS = [
   { label: "7d", hours: 168 },
 ];
 
+/** Everything a search can match: text, sources, category and CVE IDs. */
+function searchText(a: Article): string {
+  return [
+    a.title,
+    a.description,
+    a.source,
+    ...(a.alsoReportedBy ?? []),
+    a.category,
+    ...(a.cves ?? []).map((c) => c.id),
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
 const CAT_KEY = "cyber-pulse-category";
 const VIEW_KEY = "cyber-pulse-viewmode";
 
@@ -157,12 +171,7 @@ export default function ArticleFilter({
           : new Date(a.pubDate as unknown as string).getTime();
       if (cutoff && pubTime < cutoff) return false;
       if (categories.length > 0 && !categories.includes(a.category)) return false;
-      if (
-        q &&
-        !a.title.toLowerCase().includes(q) &&
-        !a.description.toLowerCase().includes(q)
-      )
-        return false;
+      if (q && !searchText(a).includes(q)) return false;
       return true;
     });
   }, [allArticles, search, categories, timeHours, isFiltered, now]);

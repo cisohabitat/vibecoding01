@@ -129,6 +129,11 @@ test("search and category filters sync to the URL", async ({ page }) => {
   await expect(page.getByRole("status").filter({ hasText: "result" })).toHaveText("1 result");
   await expect(page).toHaveURL(/\?q=lockbit/);
 
+  // Search also matches the source name, not just title/description
+  // (every fixture article comes from "Fixture Feed")
+  await page.getByRole("searchbox", { name: "Search articles" }).fill("fixture feed");
+  await expect(page.getByRole("status").filter({ hasText: "result" })).toHaveText("17 results");
+
   await page.getByRole("button", { name: "Clear ×" }).click();
   const chip = page.getByRole("button", { name: "Ransomware", exact: true });
   await chip.click();
