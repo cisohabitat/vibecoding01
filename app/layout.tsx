@@ -19,7 +19,6 @@ export const metadata: Metadata = {
     canonical: "/",
     types: {
       "application/rss+xml": [{ url: "/api/feed.xml", title: "Cyber Pulse RSS" }],
-      "application/feed+json": [{ url: "/api/feed.json", title: "Cyber Pulse JSON" }],
     },
   },
   openGraph: {

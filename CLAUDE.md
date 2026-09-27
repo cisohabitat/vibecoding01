@@ -21,7 +21,7 @@ Cybersecurity news aggregator that fetches RSS feeds from trusted sources, ranks
 
 ```
 app/
-  layout.tsx                — Root layout (dark theme, metadata: canonical, RSS/JSON feed discovery, Open Graph)
+  layout.tsx                — Root layout (dark theme, metadata: canonical, RSS feed discovery, Open Graph)
   icon.svg                  — Favicon (pulse line)
   page.tsx                  — Main page (server component, fetches + ranks RSS)
   globals.css               — Tailwind config + custom cyber theme colors
