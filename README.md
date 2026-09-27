@@ -60,5 +60,6 @@ All optional:
 
 ## Deployment
 
-Deployed on Vercel. CI (GitHub Actions) runs lint, typecheck, tests and a
-production build on every push to `main` and on pull requests.
+Deployed on Vercel. CI (GitHub Actions) runs a production-dependency audit,
+lint, typecheck, tests and a production build on every push to `main` and on
+pull requests. Dependabot proposes dependency updates weekly.
