@@ -16,6 +16,7 @@ Cybersecurity news aggregator that fetches RSS feeds from trusted sources, ranks
 - `npm run start` — Start production server
 - `npm run lint` — Run ESLint
 - `npm test` — Run unit tests (Vitest, `lib/__tests__/`)
+- `npm run test:e2e` — Build and run end-to-end tests (Playwright, `e2e/`) against a fixture feed
 
 ## Project Structure
 
@@ -53,7 +54,7 @@ app/
     Footer.tsx              — Last-updated timestamp + source attribution
 lib/
   types.ts          — TypeScript interfaces (Article, FeedSource, RankedArticles, CveInfo, etc.)
-  feeds.ts          — RSS feed source registry with tier ratings (1-3)
+  feeds.ts          — RSS feed source registry with tier ratings (1-3); FEED_SOURCES_OVERRIDE env (JSON) replaces it for tests
   fetcher.ts        — RSS fetching (Promise.allSettled, 10s timeout), item sanitising, ≤40 newest items/feed, ≤30 days old; returns { articles, failedFeeds }
   pipeline.ts       — Orchestrates fetch → tag → deduplicate → rank → enrich; threads failedFeeds through
   keywords.ts       — Word-boundary keyword matching shared by ranker and tagger
@@ -79,7 +80,7 @@ lib/
 - Custom theme colors are defined in `globals.css` under `@theme` (Tailwind v4 syntax), prefixed `cyber-*`.
 - `NewsCard` is a **client component** (`"use client"`) for its read/bookmark/share/CVE interactions. The card is an `<article>` whose title link is stretched over the whole card with an `::after` overlay; buttons sit above it with `relative z-10`. Never nest buttons or other interactive elements inside the `<a>`.
 - `NewsListClient` wraps the article grid with `useState`-based pagination (12 articles per page, "Load more" button). `NewsList` is a server component shell that delegates to it. It reads grid/list mode from `ViewModeContext`.
-- `ArticleFilter` persists the selected categories to `localStorage` (`cyber-pulse-category` key) and filters to the URL (`q`, `cat`, `t`); restored on mount with a validity guard against stale values.
+- `ArticleFilter` persists the selected categories to `localStorage` (`cyber-pulse-category` key) and filters to the URL (`q`, `cat`, `t`); restored on mount with a validity guard against stale values. If the URL has any filter param, it fully defines the view and saved categories are ignored.
 - Never compute time-relative output (`Date.now()`) during render in client components: ISR HTML can be 15 min old and would mismatch at hydration. Use `useNow()`, which is null on the server.
 - Read `localStorage` through `useLocalStorage` and write through `writeLocalStorage` so every subscriber (other cards, `/saved`) updates in the same tab.
 - `/api/health` is cached for 60s (`revalidate = 60`) so polling it can't hammer the feed sources. It calls `fetchAllFeeds` directly and returns `{ status: "ok"|"degraded"|"down", feedsUp, feedsDown, lastCheck }`.
@@ -92,4 +93,5 @@ lib/
 - Do not add `onClick` or other event handlers to elements inside server components — move the component to a client component instead.
 - `fetchAllFeeds()` returns `{ articles, failedFeeds }` — always destructure both fields; never discard `failedFeeds` silently.
 - `RankedArticles` includes `failedFeeds: string[]`; `rankArticles()` returns an empty array for it — the pipeline overrides this with the real value from the fetcher.
+- End-to-end tests (`e2e/app.spec.ts`) run a production build against `e2e/feed-server.mjs` (fixture feed with request-relative dates) via `FEED_SOURCES_OVERRIDE`. Add a case there when changing UI behaviour.
 - Unit tests use Vitest and live in `lib/__tests__/` (route handlers can be tested by importing `GET` directly; `@/` resolves via `vitest.config.mts`). Run `npm test`, `npm run lint`, and `npm run build` before pushing.

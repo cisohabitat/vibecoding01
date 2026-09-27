@@ -1,6 +1,6 @@
 import { FeedSource } from "./types";
 
-export const FEED_SOURCES: FeedSource[] = [
+const DEFAULT_FEED_SOURCES: FeedSource[] = [
   // Tier 1 — Government/authoritative
   {
     name: "CISA Alerts",
@@ -69,3 +69,27 @@ export const FEED_SOURCES: FeedSource[] = [
     tier: 3,
   },
 ];
+
+/**
+ * FEED_SOURCES_OVERRIDE (JSON array of { name, url, tier }) replaces the
+ * feed list. Used by the end-to-end tests to serve fixture feeds.
+ */
+function loadFeedSources(): FeedSource[] {
+  const override = process.env.FEED_SOURCES_OVERRIDE;
+  if (!override) return DEFAULT_FEED_SOURCES;
+  const parsed: unknown = JSON.parse(override);
+  if (
+    !Array.isArray(parsed) ||
+    !parsed.every(
+      (f) =>
+        typeof f?.name === "string" &&
+        typeof f?.url === "string" &&
+        [1, 2, 3].includes(f?.tier)
+    )
+  ) {
+    throw new Error("FEED_SOURCES_OVERRIDE must be a JSON array of { name, url, tier }");
+  }
+  return parsed as FeedSource[];
+}
+
+export const FEED_SOURCES: FeedSource[] = loadFeedSources();

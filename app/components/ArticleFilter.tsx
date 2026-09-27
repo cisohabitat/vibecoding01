@@ -53,12 +53,16 @@ export default function ArticleFilter({
 
     if (q) setSearch(q);
 
+    // A URL with filters (e.g. a shared link) fully defines the view; the
+    // saved categories only apply when the URL has none.
+    const urlHasFilters = !!(q || catParam || tParam);
+
     if (catParam) {
       const cats = catParam
         .split(",")
         .filter((c) => CATEGORIES.includes(c as ArticleCategory)) as ArticleCategory[];
       if (cats.length > 0) setCategories(cats);
-    } else {
+    } else if (!urlHasFilters) {
       try {
         const saved = localStorage.getItem(CAT_KEY);
         if (saved) {

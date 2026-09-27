@@ -41,6 +41,7 @@ Requires Node.js 20.9 or later.
 npm install
 npm run dev      # http://localhost:3000
 npm test         # unit tests (Vitest)
+npm run test:e2e # end-to-end tests (Playwright) against a local fixture feed
 npm run lint
 npm run build
 ```
@@ -61,5 +62,6 @@ All optional:
 ## Deployment
 
 Deployed on Vercel. CI (GitHub Actions) runs a production-dependency audit,
-lint, typecheck, tests and a production build on every push to `main` and on
+lint, typecheck, unit tests, a production build and the Playwright end-to-end
+suite on every push to `main` and on
 pull requests. Dependabot proposes dependency updates weekly.
