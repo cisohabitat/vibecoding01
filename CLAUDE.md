@@ -50,7 +50,7 @@ app/
     useNow.ts               — Shared minute-ticking clock; null during SSR/hydration [client]
     useLocalStorage.ts      — Hydration-safe localStorage hook + writer that notifies subscribers [client]
     FeedFailureBanner.tsx   — Dismissible warning banner shown when ≥2 feeds fail [client]
-    TrendingTopics.tsx      — Trending keywords sidebar; click dispatches a search event [client]
+    TrendingTopics.tsx      — Trending sidebar (lg+) and TrendingStrip chips (below lg); click dispatches a search event [client]
     Footer.tsx              — Last-updated timestamp + source attribution
 lib/
   types.ts          — TypeScript interfaces (Article, FeedSource, RankedArticles, CveInfo, etc.)

@@ -5,7 +5,7 @@ import FeaturedNews from "./components/FeaturedNews";
 import NewsList from "./components/NewsList";
 import Footer from "./components/Footer";
 import ArticleFilter from "./components/ArticleFilter";
-import TrendingTopics from "./components/TrendingTopics";
+import TrendingTopics, { TrendingStrip } from "./components/TrendingTopics";
 import FeedFailureBanner from "./components/FeedFailureBanner";
 import StatsBanner from "./components/StatsBanner";
 
@@ -24,6 +24,9 @@ export default async function Home() {
           <div className="flex-1 min-w-0">
             <FeedFailureBanner failedFeeds={failedFeeds} />
             <StatsBanner featured={featured} recent={recent} />
+            <div className="lg:hidden">
+              <TrendingStrip topics={trending} />
+            </div>
             <ArticleFilter featured={featured} recent={recent}>
               <FeaturedNews articles={featured} />
               <NewsList articles={recent} />

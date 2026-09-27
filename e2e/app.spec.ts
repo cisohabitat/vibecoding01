@@ -140,3 +140,18 @@ test("RSS feed is served", async ({ request }) => {
   expect(body).toContain("<title>LockBit ransomware hits hospital network</title>");
   expect(body).toMatch(/<atom:link href="https?:\/\/[^"]+\/api\/feed\.xml"/);
 });
+
+test.describe("on a phone", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("trending strip filters articles", async ({ page }) => {
+    await page.goto("/");
+    const strip = page.getByRole("navigation", { name: "Trending in the last 24 hours" });
+    await expect(strip).toBeVisible();
+    const first = strip.getByRole("button").first();
+    const term = (await first.getAttribute("title"))!.match(/"(.+)"/)![1];
+    await first.click();
+    await expect(page.getByRole("searchbox", { name: "Search articles" })).toHaveValue(term);
+    await expect(page.getByRole("status").filter({ hasText: "result" })).not.toHaveText("0 results");
+  });
+});
