@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 // Console errors that are expected outside Vercel or without NVD access
@@ -239,6 +240,32 @@ test("Load more moves focus to the first new article", async ({ page }) => {
   await page.getByRole("button", { name: /Load more/ }).click();
   await expect(latest.locator("article")).toHaveCount(18);
   await expect(latest.locator("article").nth(12).getByRole("link")).toBeFocused();
+});
+
+test.describe("accessibility (axe-core)", () => {
+  const states: Array<[string, (page: Page) => Promise<void>]> = [
+    ["home", async (page) => { await page.goto("/"); }],
+    ["filtered list view", async (page) => {
+      await page.goto("/?cat=Ransomware");
+      await page.getByRole("button", { name: "Switch to list view" }).click();
+    }],
+    ["CVE dialog", async (page) => {
+      await page.goto("/");
+      await page.getByRole("button", { name: /CVE-2024-23897 details/ }).click();
+      await page.getByRole("dialog").waitFor();
+    }],
+    ["saved", async (page) => { await page.goto("/saved"); }],
+  ];
+
+  for (const [name, setup] of states) {
+    test(`${name} has no violations`, async ({ page }) => {
+      await setup(page);
+      // Let client-only content (times, badges) render first
+      await page.waitForLoadState("networkidle");
+      const { violations } = await new AxeBuilder({ page }).analyze();
+      expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+    });
+  }
 });
 
 test("sends security headers", async ({ request }) => {
