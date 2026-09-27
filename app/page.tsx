@@ -18,7 +18,8 @@ export default async function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full">
+      <main id="main" className="flex-1 max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full">
+        <h1 className="sr-only">Latest cybersecurity news</h1>
         <div className="flex gap-8 items-start">
           <div className="flex-1 min-w-0">
             <FeedFailureBanner failedFeeds={failedFeeds} />

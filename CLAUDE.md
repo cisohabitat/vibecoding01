@@ -35,7 +35,8 @@ app/
   saved/layout.tsx          — Metadata for /saved (noindex)
   saved/page.tsx            — Bookmarked articles from localStorage [client]
   components/
-    Header.tsx              — Sticky header with branding
+    Header.tsx              — Skip link + sticky header with branding
+    NavLinks.tsx            — Header nav with aria-current for the active page [client]
     FeaturedNews.tsx        — Top 5 ranked articles grid
     NewsList.tsx            — Remaining articles section (server shell)
     NewsListClient.tsx      — Paginated "Load more" grid for recent articles [client]
