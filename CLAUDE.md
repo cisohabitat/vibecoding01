@@ -33,7 +33,7 @@ app/
   api/
     feed.json/route.ts      — JSON feed API (ISR, 15-min revalidation; CORS *, includes failedFeeds)
     feed.xml/route.ts       — RSS/Atom feed API (ISR, 15-min revalidation)
-    health/route.ts         — Health check API (cached 60s); returns { status, feedsUp, feedsDown, lastCheck }
+    health/route.ts         — Health check API (dynamic; 60s memo, never stale); returns { status, feedsUp, feedsDown, lastCheck }
     cve/[id]/route.ts       — NVD proxy for CveModal (1h data + CDN cache; 404 unknown, 502 NVD down/rate-limited)
   saved/layout.tsx          — Metadata for /saved (noindex)
   saved/page.tsx            — Bookmarked articles from localStorage [client]
@@ -85,7 +85,7 @@ lib/
 - `ArticleFilter` persists the selected categories to `localStorage` (`cyber-pulse-category` key) and filters to the URL (`q`, `cat`, `t`); restored on mount with a validity guard against stale values. If the URL has any filter param, it fully defines the view and saved categories are ignored.
 - Never compute time-relative output (`Date.now()`) during render in client components: ISR HTML can be 15 min old and would mismatch at hydration. Use `useNow()`, which is null on the server.
 - Read `localStorage` through `useLocalStorage` and write through `writeLocalStorage` so every subscriber (other cards, `/saved`) updates in the same tab.
-- `/api/health` is cached for 60s (`revalidate = 60`) so polling it can't hammer the feed sources. It calls `fetchAllFeeds` directly and returns `{ status: "ok"|"degraded"|"down", feedsUp, feedsDown, lastCheck }`.
+- `/api/health` is dynamic (`force-dynamic`, not ISR: stale-while-revalidate would hand monitors the previous check's result). Checks are memoised for 60s per instance and CDN-cacheable for 60s without stale serving, so polling can't hammer the feed sources. It calls `fetchAllFeeds` directly and returns `{ status: "ok"|"degraded"|"down", feedsUp, feedsDown, lastCheck }`.
 
 ## Code Conventions
 
