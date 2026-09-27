@@ -36,6 +36,25 @@ export function decodeEntities(text: string): string {
   });
 }
 
+function collapseWhitespace(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Titles are plain text once the XML parser has decoded them, so they are
+ * NOT tag-stripped: security headlines often name tags ("XSS via <svg>").
+ * Only leftover (double-encoded) entities are decoded.
+ */
+export function cleanTitle(title: string): string {
+  return collapseWhitespace(decodeEntities(title));
+}
+
+/** Plain-text description: rss-parser's contentSnippet is already stripped and decoded. */
+export function cleanDescription(item: { contentSnippet?: string; content?: string; summary?: string }): string {
+  if (item.contentSnippet) return collapseWhitespace(item.contentSnippet);
+  return stripHtml(item.content || item.summary || "");
+}
+
 export function stripHtml(html: string): string {
   return decodeEntities(html.replace(/<[^>]*>/g, ""))
     .replace(/\s+/g, " ")
@@ -118,13 +137,10 @@ export async function fetchAllFeeds(): Promise<FetchResult> {
         const link = safeLink(item.link);
         if (!link) continue;
         articles.push({
-          title: stripHtml(item.title || "") || "Untitled",
+          title: cleanTitle(item.title || "") || "Untitled",
           link,
           pubDate: parseFeedDate([item.isoDate, item.pubDate], now),
-          description: truncate(
-            stripHtml(item.contentSnippet || item.content || item.summary || ""),
-            200
-          ),
+          description: truncate(cleanDescription(item), 200),
           source: source.name,
           sourceTier: source.tier,
           score: 0,

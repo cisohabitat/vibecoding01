@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
+import Parser from "rss-parser";
 import {
+  cleanDescription,
+  cleanTitle,
   decodeEntities,
   limitItems,
   MAX_AGE_DAYS,
@@ -102,5 +105,22 @@ describe("withRetry", () => {
     const fn = vi.fn().mockRejectedValue(new Error("Status code 502"));
     await expect(withRetry(fn, 0)).rejects.toThrow("502");
     expect(fn).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("cleanTitle / cleanDescription", () => {
+  it("keeps angle-bracket text in titles after XML decoding", async () => {
+    const xml = `<?xml version="1.0"?><rss version="2.0"><channel><title>t</title>
+      <item><title>XSS via &lt;svg&gt; onload in Foo; a &lt; b and c &gt; d &amp;#8217;s</title>
+      <description>&lt;p&gt;Use &amp;lt;script&amp;gt; &lt;b&gt;safely&lt;/b&gt;&lt;/p&gt;</description>
+      <link>https://example.com</link></item></channel></rss>`;
+    const [item] = (await new Parser().parseString(xml)).items;
+    expect(cleanTitle(item.title!)).toBe("XSS via <svg> onload in Foo; a < b and c > d \u2019s");
+    // Markup in the description is stripped; escaped text is kept
+    expect(cleanDescription(item)).toBe("Use <script> safely");
+  });
+
+  it("strips markup when only raw content is available", () => {
+    expect(cleanDescription({ content: "<p>Hello <b>world</b></p>" })).toBe("Hello world");
   });
 });
