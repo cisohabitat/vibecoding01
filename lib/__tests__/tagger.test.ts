@@ -22,6 +22,25 @@ describe("assignCategory", () => {
     expect(assignCategory("Zero-day exploited in the wild")).toBe("Vulnerability");
   });
 
+  it("recognises current threat group names", () => {
+    expect(assignCategory("Akira gang claims attack on university")).toBe("Ransomware");
+    expect(assignCategory("Black Basta affiliates pivot to Teams")).toBe("Ransomware");
+    expect(assignCategory("Salt Typhoon breached US telecoms")).toBe("APT");
+    expect(assignCategory("Mustang Panda targets diplomats")).toBe("APT");
+  });
+
+  it("tags legal and regulatory news as Policy", () => {
+    expect(assignCategory("EU NIS2 deadlines approach for member states")).toBe("Policy");
+    expect(assignCategory("Treasury sanctions spyware vendor executives")).toBe("Malware");
+    expect(assignCategory("Treasury sanctions crypto mixer operators")).toBe("Policy");
+    expect(assignCategory("Hacker sentenced to five years")).toBe("Policy");
+  });
+
+  it("does not match name fragments inside other words", () => {
+    expect(assignCategory("Akiran festival season")).toBe("Other");
+    expect(assignCategory("Sanctuary cities budget")).toBe("Other");
+  });
+
   it("tags the rat keyword only as a whole word", () => {
     expect(assignCategory("New RAT spreads via Discord")).toBe("Malware");
     expect(assignCategory("Interest rate changes")).toBe("Other");

@@ -5,7 +5,10 @@ import { compileKeywords } from "./keywords";
 const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> = [
   {
     category: "Ransomware",
-    keywords: ["ransomware", "ransom demand", "lockbit", "blackcat", "cl0p", "ryuk", "conti"],
+    keywords: [
+      "ransomware", "ransom demand", "extortion gang", "lockbit", "blackcat", "alphv", "cl0p",
+      "ryuk", "conti", "akira", "black basta", "blackbasta", "rhysida", "revil",
+    ],
   },
   {
     category: "APT",
@@ -18,8 +21,15 @@ const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> =
       "fancy bear",
       "cozy bear",
       "volt typhoon",
+      "salt typhoon",
+      "flax typhoon",
       "sandworm",
       "kimsuky",
+      "turla",
+      "mustang panda",
+      "charming kitten",
+      "cyber espionage",
+      "cyberespionage",
     ],
   },
   {
@@ -40,7 +50,11 @@ const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> =
   },
   {
     category: "Policy",
-    keywords: ["regulation", "policy", "policies", "legislation", "gdpr", "compliance", "executive order", "senate", "congress", "cisa advisory", "nist"],
+    keywords: [
+      "regulation", "regulator", "policy", "policies", "legislation", "gdpr", "nis2",
+      "cyber resilience act", "compliance", "executive order", "senate", "congress",
+      "cisa advisory", "nist", "sanction", "indicted", "indictment", "sentenced", "extradited",
+    ],
   },
 ];
 
