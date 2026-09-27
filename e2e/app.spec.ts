@@ -239,6 +239,14 @@ test("JSON feed is public and reports failed feeds", async ({ request }) => {
   expect(body.count).toBe(body.featured.length + body.recent.length);
 });
 
+test("web app manifest is linked and valid", async ({ page, request }) => {
+  await page.goto("/");
+  const href = await page.locator('link[rel="manifest"]').getAttribute("href");
+  expect(href).toBeTruthy();
+  const manifest = await (await request.get(href!)).json();
+  expect(manifest).toMatchObject({ name: "Cyber Pulse SG", start_url: "/", display: "standalone" });
+});
+
 test("RSS feed is served", async ({ request }) => {
   const res = await request.get("/api/feed.xml");
   expect(res.headers()["content-type"]).toContain("application/rss+xml");

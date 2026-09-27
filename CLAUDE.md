@@ -26,6 +26,7 @@ app/
   icon.svg                  — Favicon (pulse line)
   opengraph-image.tsx       — 1200×630 social preview image (next/og, built statically)
   robots.ts / sitemap.ts    — robots.txt (disallows /api/cve, /api/health) and sitemap.xml
+  manifest.ts               — Web app manifest (installable, theme colours)
   page.tsx                  — Main page (server component, fetches + ranks RSS)
   globals.css               — Tailwind config + custom cyber theme colors
   error.tsx                 — Error boundary with retry [client]
