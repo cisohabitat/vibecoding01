@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Article } from "@/lib/types";
-import NewsCard, { BOOKMARK_KEY } from "@/app/components/NewsCard";
+import NewsCard, { BOOKMARK_KEY, isStoredArticle } from "@/app/components/NewsCard";
 import Header from "@/app/components/Header";
 import {
   parseStoredList,
@@ -14,7 +14,7 @@ export default function SavedPage() {
   const raw = useLocalStorage(BOOKMARK_KEY);
   // null until localStorage has been read on the client
   const bookmarks: Article[] | null =
-    raw === undefined ? null : parseStoredList<Article>(BOOKMARK_KEY, raw);
+    raw === undefined ? null : parseStoredList<Article>(BOOKMARK_KEY, raw, isStoredArticle);
 
   function clearAll() {
     writeLocalStorage(BOOKMARK_KEY, null);

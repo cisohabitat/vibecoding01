@@ -49,15 +49,22 @@ export function writeLocalStorage(key: string, value: string | null): void {
 // Many cards parse the same stored list; cache the last parse per key.
 const parseCache = new Map<string, { raw: string; value: unknown[] }>();
 
-/** Parses a stored JSON array, returning [] for missing or invalid data. */
-export function parseStoredList<T>(key: string, raw: string | null | undefined): T[] {
+/**
+ * Parses a stored JSON array, returning [] for missing or invalid data and
+ * dropping entries that fail `isValid` (storage can be corrupted or stale).
+ */
+export function parseStoredList<T>(
+  key: string,
+  raw: string | null | undefined,
+  isValid: (v: unknown) => v is T
+): T[] {
   if (!raw) return [];
   const hit = parseCache.get(key);
   if (hit && hit.raw === raw) return hit.value as T[];
   let value: unknown[] = [];
   try {
     const parsed: unknown = JSON.parse(raw);
-    if (Array.isArray(parsed)) value = parsed;
+    if (Array.isArray(parsed)) value = parsed.filter(isValid);
   } catch {}
   parseCache.set(key, { raw, value });
   return value as T[];

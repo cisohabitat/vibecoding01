@@ -87,6 +87,27 @@ test("bookmarks persist and appear on the saved page", async ({ page, context })
   await expect(page.getByText("No saved articles yet.")).toBeVisible();
 });
 
+test("corrupted bookmark storage doesn't break the page", async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.addInitScript(() => {
+    localStorage.setItem("cyber-pulse-bookmarks", JSON.stringify([null, 42, { title: "no link" }]));
+    localStorage.setItem("cyber-pulse-read", JSON.stringify([null, 7]));
+  });
+  await page.goto("/");
+  await expect(page.locator("article time").first()).toBeVisible();
+  await page.goto("/saved");
+  await expect(page.getByText("No saved articles yet.")).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("right-clicking a card doesn't mark it read", async ({ page }) => {
+  await page.goto("/");
+  const lockbit = card(page, "LockBit ransomware");
+  await lockbit.getByRole("link").click({ button: "right" });
+  await page.keyboard.press("Escape");
+  await expect(lockbit.getByText("read", { exact: true })).toHaveCount(0);
+});
+
 test("search and category filters sync to the URL", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("searchbox", { name: "Search articles" }).fill("lockbit");
@@ -157,7 +178,7 @@ test("keyboard users can skip to content; nav marks the current page", async ({ 
   await page.goto("/");
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();
-  await expect(page.getByRole("link", { name: "Feed" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("link", { name: "Feed", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(page.locator("a button, a a")).toHaveCount(0);
 });
 

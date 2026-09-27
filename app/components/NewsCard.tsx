@@ -48,6 +48,11 @@ const READ_KEY = "cyber-pulse-read";
 export const BOOKMARK_KEY = "cyber-pulse-bookmarks";
 const MAX_READ_URLS = 1000;
 
+const isString = (v: unknown): v is string => typeof v === "string";
+// Stored bookmarks may be corrupted or from an older format
+export const isStoredArticle = (v: unknown): v is Article =>
+  typeof v === "object" && v !== null && typeof (v as Article).link === "string" && typeof (v as Article).title === "string";
+
 export default function NewsCard({
   article,
   featured = false,
@@ -61,8 +66,8 @@ export default function NewsCard({
   const readRaw = useLocalStorage(READ_KEY);
   const bookmarksRaw = useLocalStorage(BOOKMARK_KEY);
 
-  const readUrls = parseStoredList<string>(READ_KEY, readRaw);
-  const bookmarks = parseStoredList<Article>(BOOKMARK_KEY, bookmarksRaw);
+  const readUrls = parseStoredList<string>(READ_KEY, readRaw, isString);
+  const bookmarks = parseStoredList<Article>(BOOKMARK_KEY, bookmarksRaw, isStoredArticle);
   const isRead = readUrls.includes(article.link);
   const isBookmarked = bookmarks.some((a) => a.link === article.link);
 
@@ -137,7 +142,8 @@ export default function NewsCard({
               target="_blank"
               rel="noopener noreferrer"
               onClick={handleClick}
-              onAuxClick={handleClick}
+              // Middle-click opens a tab too; ignore right-click (context menu)
+              onAuxClick={(e) => e.button === 1 && handleClick()}
               className="outline-none after:absolute after:inset-0 after:rounded-lg after:content-['']"
             >
               {article.title}
