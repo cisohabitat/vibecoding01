@@ -1,8 +1,7 @@
 {
-  "name": "vibecoding01",
+  "name": "cyber-pulse",
   "version": "1.0.0",
-  "description": "Vibe Coding Experiment",
-  "main": "index.js",
+  "description": "Cybersecurity news aggregator: ranked RSS from trusted sources",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
@@ -39,5 +38,6 @@
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "vitest": "^5.0.2"
-  }
+  },
+  "private": true
 }
