@@ -25,6 +25,8 @@ app/
   icon.svg                  — Favicon (pulse line)
   page.tsx                  — Main page (server component, fetches + ranks RSS)
   globals.css               — Tailwind config + custom cyber theme colors
+  error.tsx                 — Error boundary with retry [client]
+  not-found.tsx             — 404 page
   api/
     feed.json/route.ts      — JSON feed API (ISR, 15-min revalidation)
     feed.xml/route.ts       — RSS/Atom feed API (ISR, 15-min revalidation)
