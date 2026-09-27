@@ -9,6 +9,18 @@ updates:
       minor-and-patch:
         update-types: [minor, patch]
     open-pull-requests-limit: 5
+    ignore:
+      # Held back until the lint toolchain supports them (checked 2026-09):
+      # - ESLint 10 removed rule-context APIs that eslint-plugin-react,
+      #   -import and -jsx-a11y (bundled in eslint-config-next) still use,
+      #   and their peer ranges stop at ESLint 9.
+      # - TypeScript 7 (native compiler) has no JS compiler API, which
+      #   typescript-eslint needs; `npm run lint` crashes.
+      # Remove these once eslint-config-next / typescript-eslint support them.
+      - dependency-name: eslint
+        update-types: ["version-update:semver-major"]
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
