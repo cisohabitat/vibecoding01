@@ -53,7 +53,7 @@ app/
     useLastVisit.ts         — Previous visit time (fixed per browser session) for NEW badges [client]
     FeedFailureBanner.tsx   — Dismissible warning banner shown when ≥2 feeds fail [client]
     TrendingTopics.tsx      — Trending sidebar (lg+) and TrendingStrip chips (below lg); click dispatches a search event [client]
-    Footer.tsx              — Last-updated timestamp + source attribution
+    Footer.tsx              — Last-updated timestamp, source list (from FEED_SOURCES) + RSS link
 lib/
   types.ts          — TypeScript interfaces (Article, FeedSource, RankedArticles, CveInfo, etc.)
   feeds.ts          — RSS feed source registry with tier ratings (1-3); FEED_SOURCES_OVERRIDE env (JSON) replaces it for tests
