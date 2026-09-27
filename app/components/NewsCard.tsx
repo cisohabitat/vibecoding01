@@ -126,7 +126,9 @@ export default function NewsCard({
             }`}
           >
             {isBreaking && (
-              <span className="inline-flex items-center mr-2 px-1.5 py-0.5 text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/50 rounded animate-pulse align-middle">
+              <span className="inline-flex items-center gap-1 mr-2 px-1.5 py-0.5 text-xs font-bold bg-red-500/20 text-red-300 border border-red-500/50 rounded align-middle">
+                {/* Pulse only the dot: fading the text drops its contrast below 4.5:1 */}
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" aria-hidden="true" />
                 BREAKING
               </span>
             )}
