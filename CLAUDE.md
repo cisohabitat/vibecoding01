@@ -48,6 +48,7 @@ app/
     CveModal.tsx            — CVE detail dialog opened from a card's CVE chip [client]
     ArticleFilter.tsx       — Search, multi-category and time filters; syncs to URL + localStorage; provides view mode [client]
     StatsBanner.tsx         — 24h counts (stories, distinct critical CVEs, breaches, ransomware)
+    UpdatedAgo.tsx          — Live "Updated Nm ago" for the page's data [client]
     ViewModeContext.tsx     — Grid/list view mode context provided by ArticleFilter [client]
     useNow.ts               — Shared minute-ticking clock; null during SSR/hydration [client]
     useLocalStorage.ts      — Hydration-safe localStorage hook + writer that notifies subscribers [client]

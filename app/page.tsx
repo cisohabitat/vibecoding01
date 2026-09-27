@@ -8,6 +8,7 @@ import ArticleFilter from "./components/ArticleFilter";
 import TrendingTopics, { TrendingStrip } from "./components/TrendingTopics";
 import FeedFailureBanner from "./components/FeedFailureBanner";
 import StatsBanner from "./components/StatsBanner";
+import UpdatedAgo from "./components/UpdatedAgo";
 
 export const revalidate = 900; // 15 minutes ISR
 
@@ -24,6 +25,7 @@ export default async function Home() {
           <div className="flex-1 min-w-0">
             <FeedFailureBanner failedFeeds={failedFeeds} />
             <StatsBanner featured={featured} recent={recent} />
+            <UpdatedAgo lastUpdated={lastUpdated} />
             <div className="lg:hidden">
               <TrendingStrip topics={trending} />
             </div>

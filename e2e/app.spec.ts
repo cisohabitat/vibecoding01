@@ -30,6 +30,7 @@ test("renders ranked articles without hydration errors", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Latest News" })).toBeVisible();
   // Relative times are client-only; their presence means hydration finished
   await expect(page.locator("article time").first()).toHaveText(/ago|just now/);
+  await expect(page.getByText(/^Updated (just now|\d+m ago)$/)).toBeVisible();
   expect(errors).toEqual([]);
 });
 
