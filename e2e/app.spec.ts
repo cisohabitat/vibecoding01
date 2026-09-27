@@ -189,6 +189,22 @@ test("CVE chip opens the detail dialog without leaving the page", async ({ page,
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
+test("closing the CVE dialog returns focus to its chip", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("article time").first()).toHaveText(/ago|just now/);
+  const chip = page.getByRole("button", { name: /CVE-2024-23897 details/ });
+  for (const closeWith of ["Escape", "button"] as const) {
+    await chip.focus();
+    await page.keyboard.press("Enter");
+    const dialog = page.getByRole("dialog", { name: "CVE-2024-23897" });
+    await expect(dialog).toBeVisible();
+    if (closeWith === "Escape") await page.keyboard.press("Escape");
+    else await dialog.getByRole("button", { name: "Close" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(chip).toBeFocused();
+  }
+});
+
 test("keyboard users can skip to content; nav marks the current page", async ({ page }) => {
   await page.goto("/");
   await page.keyboard.press("Tab");

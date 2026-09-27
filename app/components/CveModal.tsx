@@ -39,8 +39,14 @@ export default function CveModal({
     return () => controller.abort();
   }, [cveId]);
 
+  // Close through the native dialog so the browser restores focus to the
+  // element that opened it; its "close" event then calls onClose.
+  function close() {
+    dialogRef.current?.close();
+  }
+
   function handleBackdropClick(e: React.MouseEvent<HTMLDialogElement>) {
-    if (e.target === dialogRef.current) onClose();
+    if (e.target === dialogRef.current) close();
   }
 
   const colorClass = data?.severity
@@ -64,7 +70,7 @@ export default function CveModal({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={close}
             className="shrink-0 text-slate-500 hover:text-slate-200 transition-colors text-xl leading-none mt-1"
             aria-label="Close"
           >
