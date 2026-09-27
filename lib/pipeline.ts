@@ -1,7 +1,8 @@
+import { unstable_cache } from "next/cache";
 import { fetchAllFeeds } from "./fetcher";
 import { tagArticles } from "./tagger";
 import { deduplicateArticles } from "./deduplicator";
-import { enrichWithCves } from "./cve";
+import { enrichWithCves, NVD_API_URL } from "./cve";
 import { rankArticles } from "./ranker";
 import { FEED_SOURCES } from "./feeds";
 
@@ -62,4 +63,37 @@ async function runPipeline() {
     recent: enriched.slice(ranked.featured.length),
     failedFeeds,
   };
+}
+
+/**
+ * getArticles() behind Next's data cache for 15 minutes, shared across
+ * requests and instances. The page renders dynamically (per-request CSP
+ * nonce), so without this every view would re-run the pipeline. On
+ * revalidation failure (e.g. AllFeedsFailedError) the previous entry keeps
+ * being served.
+ */
+const cachedPipeline = unstable_cache(() => getArticles(), cacheKey(), {
+  revalidate: 900,
+});
+
+/**
+ * The data cache outlives builds (and, on Vercel, deployments), so the key
+ * includes what defines the result: the deployment (ranking/shape changes),
+ * the feed list and the NVD endpoint (test overrides).
+ */
+function cacheKey(): string[] {
+  return [
+    "articles",
+    process.env.VERCEL_DEPLOYMENT_ID ?? "local",
+    JSON.stringify(FEED_SOURCES),
+    NVD_API_URL,
+  ];
+}
+
+export async function getCachedArticles(): ReturnType<typeof getArticles> {
+  const data = await cachedPipeline();
+  // The data cache stores JSON, so Dates come back as strings
+  const revive = (list: typeof data.featured) =>
+    list.map((a) => ({ ...a, pubDate: new Date(a.pubDate) }));
+  return { ...data, featured: revive(data.featured), recent: revive(data.recent) };
 }

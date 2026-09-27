@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { connection } from "next/server";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -40,11 +41,16 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Render every page per request: the CSP nonce from proxy.ts only exists
+  // at request time (static HTML would carry un-nonced, blocked scripts).
+  // Article data stays cached in lib/pipeline.ts.
+  await connection();
+
   return (
     <html lang="en" className="dark">
       <body className="font-sans antialiased">
