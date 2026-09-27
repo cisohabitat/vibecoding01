@@ -41,7 +41,7 @@ export default function StatsBanner({
     computeStats(featured, recent);
 
   const stats = [
-    { label: "Stories Today", value: totalToday, color: "text-cyber-accent" },
+    { label: "Stories · 24h", value: totalToday, color: "text-cyber-accent" },
     {
       label: "Critical CVEs",
       value: criticalCves,
