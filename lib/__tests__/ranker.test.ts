@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeKeywordScore, rankArticles } from "../ranker";
+import { computeKeywordScore, pickFeatured, rankArticles } from "../ranker";
 import { Article } from "../types";
 
 function article(overrides: Partial<Article>): Article {
@@ -44,5 +44,19 @@ describe("rankArticles", () => {
     expect(featured).not.toContain(old);
     expect(recent.map((a) => a.title)).toContain(old.title);
     expect(featured.length + recent.length).toBe(8);
+  });
+});
+
+describe("pickFeatured", () => {
+  const scored = (source: string, score: number) => article({ source, score, title: `${source}${score}` });
+
+  it("allows at most two articles per source", () => {
+    const sorted = [scored("A", 10), scored("A", 9), scored("A", 8), scored("B", 7), scored("C", 6), scored("A", 5), scored("D", 4)];
+    expect(pickFeatured(sorted).map((a) => a.title)).toEqual(["A10", "A9", "B7", "C6", "D4"]);
+  });
+
+  it("falls back to score order when sources run out", () => {
+    const sorted = [scored("A", 10), scored("A", 9), scored("A", 8), scored("A", 7), scored("B", 6)];
+    expect(pickFeatured(sorted).map((a) => a.title)).toEqual(["A10", "A9", "A8", "A7", "B6"]);
   });
 });

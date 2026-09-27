@@ -44,6 +44,31 @@ function scoreArticle(article: Article): number {
   return tierWeight + keywordScore + recencyBoost;
 }
 
+const FEATURED_COUNT = 5;
+const MAX_FEATURED_PER_SOURCE = 2;
+
+/**
+ * Picks the top `count` articles (already sorted by score), allowing at most
+ * MAX_FEATURED_PER_SOURCE from one source so a prolific outlet can't fill
+ * Top Stories. Falls back to score order if there aren't enough sources.
+ */
+export function pickFeatured(sorted: Article[], count = FEATURED_COUNT): Article[] {
+  const picked: Article[] = [];
+  const perSource = new Map<string, number>();
+  for (const a of sorted) {
+    if (picked.length >= count) break;
+    const n = perSource.get(a.source) ?? 0;
+    if (n >= MAX_FEATURED_PER_SOURCE) continue;
+    perSource.set(a.source, n + 1);
+    picked.push(a);
+  }
+  for (const a of sorted) {
+    if (picked.length >= count) break;
+    if (!picked.includes(a)) picked.push(a);
+  }
+  return picked.sort((a, b) => b.score - a.score);
+}
+
 export function rankArticles(articles: Article[]): RankedArticles {
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -56,8 +81,8 @@ export function rankArticles(articles: Article[]): RankedArticles {
     .filter((a) => a.pubDate >= oneDayAgo)
     .sort((a, b) => b.score - a.score);
 
-  // Featured: top 5 from last 24h
-  const featured = last24h.slice(0, 5);
+  // Featured: top 5 from last 24h, at most 2 per source
+  const featured = pickFeatured(last24h);
   const featuredLinks = new Set(featured.map((a) => a.link));
 
   // Recent: everything else, sorted by date

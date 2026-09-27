@@ -69,7 +69,7 @@ lib/
 - The page is a **server component**; interactive pieces (cards, filters, trending) are client components.
 - ISR caching (`revalidate = 900`) serves cached pages; feeds are re-fetched every 15 min.
 - RSS feeds are fetched concurrently via `Promise.allSettled` — individual feed failures don't break the page. Failed feed names are surfaced via `FeedFailureBanner` when ≥2 feeds are down.
-- Article pipeline: fetch → tag categories → deduplicate → rank → enrich CVEs. Top 5 from the last 24h become "featured."
+- Article pipeline: fetch → tag categories → deduplicate → rank → enrich CVEs. Top 5 from the last 24h become "featured" (at most 2 per source, see `pickFeatured`).
 - CVE IDs are extracted from titles/descriptions and enriched with CVSS scores via the NVD API. Lookups go to featured articles first and are capped per regeneration (`MAX_CVE_LOOKUPS`: 5 without a key, 20 with `NVD_API_KEY`) to stay within NVD rate limits. Set `NVD_API_KEY` in the Vercel env to raise the cap.
 - Keywords match at word boundaries with common inflections (`lib/keywords.ts`), so "apt" doesn't match "adapt" and "conti" doesn't match "continues". A keyword ending in a non-alphanumeric character (e.g. `cve-`) acts as a prefix.
 - Duplicate articles (same story from multiple sources) are merged; `alsoReportedBy` tracks secondary sources.
@@ -90,4 +90,4 @@ lib/
 - Do not add `onClick` or other event handlers to elements inside server components — move the component to a client component instead.
 - `fetchAllFeeds()` returns `{ articles, failedFeeds }` — always destructure both fields; never discard `failedFeeds` silently.
 - `RankedArticles` includes `failedFeeds: string[]`; `rankArticles()` returns an empty array for it — the pipeline overrides this with the real value from the fetcher.
-- Unit tests use Vitest and live in `lib/__tests__/` (route handlers can be tested by importing `GET` directly; `@/` resolves via `vitest.config.ts`). Run `npm test`, `npm run lint`, and `npm run build` before pushing.
+- Unit tests use Vitest and live in `lib/__tests__/` (route handlers can be tested by importing `GET` directly; `@/` resolves via `vitest.config.mts`). Run `npm test`, `npm run lint`, and `npm run build` before pushing.
