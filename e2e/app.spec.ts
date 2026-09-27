@@ -147,6 +147,16 @@ test("keyboard users can skip to content; nav marks the current page", async ({ 
   await expect(page.locator("a button, a a")).toHaveCount(0);
 });
 
+test("pressing / focuses search, but not while typing elsewhere", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("article time").first().waitFor();
+  await page.keyboard.press("/");
+  const search = page.getByRole("searchbox", { name: "Search articles" });
+  await expect(search).toBeFocused();
+  await page.keyboard.type("a/b");
+  await expect(search).toHaveValue("a/b");
+});
+
 test("sends security headers", async ({ request }) => {
   const res = await request.get("/");
   const headers = res.headers();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, ReactNode } from "react";
+import { useState, useMemo, useEffect, useRef, ReactNode } from "react";
 import { Article, ArticleCategory } from "@/lib/types";
 import NewsCard from "./NewsCard";
 import { ViewMode, ViewModeContext } from "./ViewModeContext";
@@ -40,6 +40,20 @@ export default function ArticleFilter({
   const [timeHours, setTimeHours] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const now = useNow();
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // "/" focuses the search box unless the user is already typing somewhere
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "")) return;
+      e.preventDefault();
+      searchRef.current?.focus();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   // Restore state from URL params and localStorage once, after hydration.
   // Reading these during render would mismatch the server HTML, so a
@@ -182,11 +196,13 @@ export default function ArticleFilter({
       <div className="mb-6 space-y-3">
         <div className="flex gap-2">
           <input
+            ref={searchRef}
             type="search"
             aria-label="Search articles"
+            aria-keyshortcuts="/"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search articles…"
+            placeholder="Search articles…  ( / )"
             className="flex-1 bg-cyber-800 border border-cyber-600/50 rounded-lg px-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyber-accent/50 transition-colors"
           />
           <button
