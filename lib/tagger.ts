@@ -1,4 +1,5 @@
 import { Article, ArticleCategory } from "./types";
+import { compileKeywords } from "./keywords";
 
 // Rules are checked in order — first match wins
 const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> = [
@@ -23,7 +24,7 @@ const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> =
   },
   {
     category: "Data Breach",
-    keywords: ["breach", "data breach", "data leak", "leaked", "exposed records", "stolen data", "exfiltrat"],
+    keywords: ["breach", "data breach", "data leak", "leaked", "exposed records", "stolen data", "exfiltrate", "exfiltration"],
   },
   {
     category: "Phishing",
@@ -31,22 +32,27 @@ const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> =
   },
   {
     category: "Vulnerability",
-    keywords: ["vulnerability", "cve-", "zero-day", "0day", "0-day", "exploit", "rce", "remote code execution", "patch tuesday", "security flaw"],
+    keywords: ["vulnerability", "vulnerabilities", "cve-", "zero-day", "0day", "0-day", "exploit", "rce", "remote code execution", "patch tuesday", "security flaw"],
   },
   {
     category: "Malware",
-    keywords: ["malware", "trojan", "backdoor", "rootkit", "spyware", "worm", "botnet", "infostealer", "stealer", " rat "],
+    keywords: ["malware", "trojan", "backdoor", "rootkit", "spyware", "worm", "botnet", "infostealer", "stealer", "rat"],
   },
   {
     category: "Policy",
-    keywords: ["regulation", "policy", "legislation", "gdpr", "compliance", "executive order", "senate", "congress", "cisa advisory", "nist"],
+    keywords: ["regulation", "policy", "policies", "legislation", "gdpr", "compliance", "executive order", "senate", "congress", "cisa advisory", "nist"],
   },
 ];
 
-function assignCategory(text: string): ArticleCategory {
+const COMPILED_RULES = CATEGORY_RULES.map((rule) => ({
+  category: rule.category,
+  patterns: compileKeywords(rule.keywords),
+}));
+
+export function assignCategory(text: string): ArticleCategory {
   const lower = text.toLowerCase();
-  for (const rule of CATEGORY_RULES) {
-    if (rule.keywords.some((kw) => lower.includes(kw))) {
+  for (const rule of COMPILED_RULES) {
+    if (rule.patterns.some((re) => re.test(lower))) {
       return rule.category;
     }
   }

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Header() {
   return (
     <header className="border-b border-cyber-600 bg-cyber-800/80 backdrop-blur-sm sticky top-0 z-40">
@@ -14,18 +16,18 @@ export default function Header() {
             </h1>
           </div>
           <nav className="flex items-center gap-3">
-            <a
+            <Link
               href="/"
               className="text-xs text-slate-400 hover:text-slate-200 transition-colors"
             >
               Feed
-            </a>
-            <a
+            </Link>
+            <Link
               href="/saved"
               className="text-xs text-slate-400 hover:text-cyber-accent transition-colors flex items-center gap-1"
             >
               <span>★</span> Saved
-            </a>
+            </Link>
           </nav>
         </div>
         <p className="mt-1 text-sm text-slate-400 ml-6">

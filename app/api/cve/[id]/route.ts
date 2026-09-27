@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { nvdHeaders } from "@/lib/cve";
 
 export interface CveDetail {
   id: string;
@@ -26,6 +27,7 @@ export async function GET(
     const res = await fetch(
       `https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${cveId}`,
       {
+        headers: nvdHeaders(),
         next: { revalidate: 3600 },
         signal: AbortSignal.timeout(8000),
       }

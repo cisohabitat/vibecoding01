@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Article, ArticleCategory, CveSeverity } from "@/lib/types";
 import CveModal from "./CveModal";
+import { useNow } from "./useNow";
+import { parseStoredList, useLocalStorage, writeLocalStorage } from "./useLocalStorage";
 
-function timeAgo(date: Date): string {
-  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+function timeAgo(date: Date, now: number): string {
+  const seconds = Math.floor((now - date.getTime()) / 1000);
   if (seconds < 60) return "just now";
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
@@ -42,51 +44,8 @@ const categoryStyles: Record<ArticleCategory, string> = {
 };
 
 const READ_KEY = "cyber-pulse-read";
-const BOOKMARK_KEY = "cyber-pulse-bookmarks";
-
-function getReadUrls(): Set<string> {
-  try {
-    const raw = localStorage.getItem(READ_KEY);
-    return new Set(raw ? JSON.parse(raw) : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function markUrlRead(url: string): void {
-  const urls = getReadUrls();
-  urls.add(url);
-  try {
-    localStorage.setItem(READ_KEY, JSON.stringify([...urls]));
-  } catch {}
-}
-
-function getBookmarks(): string[] {
-  try {
-    const raw = localStorage.getItem(BOOKMARK_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function toggleBookmarkStorage(article: Article): boolean {
-  try {
-    const raw = localStorage.getItem(BOOKMARK_KEY);
-    const saved: Article[] = raw ? JSON.parse(raw) : [];
-    const idx = saved.findIndex((a) => a.link === article.link);
-    let next: Article[];
-    if (idx >= 0) {
-      next = saved.filter((_, i) => i !== idx);
-    } else {
-      next = [article, ...saved];
-    }
-    localStorage.setItem(BOOKMARK_KEY, JSON.stringify(next));
-    return idx < 0; // true if now bookmarked
-  } catch {
-    return false;
-  }
-}
+export const BOOKMARK_KEY = "cyber-pulse-bookmarks";
+const MAX_READ_URLS = 1000;
 
 export default function NewsCard({
   article,
@@ -95,25 +54,28 @@ export default function NewsCard({
   article: Article;
   featured?: boolean;
 }) {
-  const [isRead, setIsRead] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
   const [openCve, setOpenCve] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const now = useNow();
+  const readRaw = useLocalStorage(READ_KEY);
+  const bookmarksRaw = useLocalStorage(BOOKMARK_KEY);
+
+  const readUrls = parseStoredList<string>(READ_KEY, readRaw);
+  const bookmarks = parseStoredList<Article>(BOOKMARK_KEY, bookmarksRaw);
+  const isRead = readUrls.includes(article.link);
+  const isBookmarked = bookmarks.some((a) => a.link === article.link);
 
   const pubDate =
     article.pubDate instanceof Date
       ? article.pubDate
       : new Date(article.pubDate as unknown as string);
-  const isBreaking = Date.now() - pubDate.getTime() < 60 * 60 * 1000;
-
-  useEffect(() => {
-    setIsRead(getReadUrls().has(article.link));
-    setIsBookmarked(getBookmarks().includes(article.link));
-  }, [article.link]);
+  // Relative times are client-only (now is null during SSR/hydration)
+  const isBreaking = now !== null && now - pubDate.getTime() < 60 * 60 * 1000;
 
   function handleClick() {
-    markUrlRead(article.link);
-    setIsRead(true);
+    if (isRead) return;
+    const next = [...readUrls, article.link].slice(-MAX_READ_URLS);
+    writeLocalStorage(READ_KEY, JSON.stringify(next));
   }
 
   async function handleShare(e: React.MouseEvent) {
@@ -131,8 +93,10 @@ export default function NewsCard({
   function handleBookmark(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    const nowBookmarked = toggleBookmarkStorage(article);
-    setIsBookmarked(nowBookmarked);
+    const next = isBookmarked
+      ? bookmarks.filter((a) => a.link !== article.link)
+      : [article, ...bookmarks];
+    writeLocalStorage(BOOKMARK_KEY, JSON.stringify(next));
   }
 
   return (
@@ -242,7 +206,9 @@ export default function NewsCard({
               {article.category}
             </span>
           )}
-          <span className="text-slate-500">{timeAgo(pubDate)}</span>
+          {now !== null && (
+            <span className="text-slate-500">{timeAgo(pubDate, now)}</span>
+          )}
           {article.alsoReportedBy.length > 0 && (
             <span className="text-slate-600">
               also: {article.alsoReportedBy.join(", ")}
@@ -255,7 +221,7 @@ export default function NewsCard({
       </a>
 
       {openCve && (
-        <CveModal cveId={openCve} onClose={() => setOpenCve(null)} />
+        <CveModal key={openCve} cveId={openCve} onClose={() => setOpenCve(null)} />
       )}
     </>
   );

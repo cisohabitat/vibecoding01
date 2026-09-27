@@ -7,11 +7,21 @@ export function extractCveIds(text: string): string[] {
   return [...new Set(matches.map((m) => m.toUpperCase()))];
 }
 
+// NVD allows 5 requests per rolling 30s without an API key, 50 with one.
+// Keep each regeneration under that budget.
+export const MAX_CVE_LOOKUPS = process.env.NVD_API_KEY ? 20 : 5;
+
+export function nvdHeaders(): HeadersInit | undefined {
+  const key = process.env.NVD_API_KEY;
+  return key ? { apiKey: key } : undefined;
+}
+
 async function fetchCveScore(cveId: string): Promise<CveInfo> {
   try {
     const res = await fetch(
       `https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${cveId}`,
       {
+        headers: nvdHeaders(),
         next: { revalidate: 3600 }, // cache each CVE lookup for 1 hour
         signal: AbortSignal.timeout(5000),
       }
@@ -35,6 +45,11 @@ async function fetchCveScore(cveId: string): Promise<CveInfo> {
   }
 }
 
+/**
+ * Attaches CVE info to articles. `articles` must be in priority order
+ * (most important first): NVD lookups go to the earliest CVE IDs, up to
+ * MAX_CVE_LOOKUPS; later IDs are listed without a score.
+ */
 export async function enrichWithCves(articles: Article[]): Promise<Article[]> {
   // Extract CVE IDs for all articles up-front (cheap regex, no network)
   const articleCves = articles.map((a) => ({
@@ -42,11 +57,11 @@ export async function enrichWithCves(articles: Article[]): Promise<Article[]> {
     ids: extractCveIds(a.title + " " + a.description),
   }));
 
-  // Collect unique CVE IDs from the first 20 articles; cap at 10 NVD lookups
   const toFetch = new Set<string>();
-  for (const { ids } of articleCves.slice(0, 20)) {
-    ids.forEach((id) => toFetch.add(id));
-    if (toFetch.size >= 10) break;
+  for (const { ids } of articleCves) {
+    for (const id of ids) {
+      if (toFetch.size < MAX_CVE_LOOKUPS) toFetch.add(id);
+    }
   }
 
   // Fetch CVSS scores concurrently; individual failures don't break the page

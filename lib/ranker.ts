@@ -1,23 +1,28 @@
 import { Article, RankedArticles } from "./types";
+import { compileKeywords } from "./keywords";
 
 const CRITICAL_KEYWORDS = ["zero-day", "0day", "0-day", "cve-", "ransomware", "breach", "apt"];
-const HIGH_KEYWORDS = ["vulnerability", "exploit", "malware", "attack", "critical", "rce", "backdoor"];
+const HIGH_KEYWORDS = ["vulnerability", "vulnerabilities", "exploit", "malware", "attack", "critical", "rce", "backdoor"];
 const MEDIUM_KEYWORDS = ["patch", "update", "threat", "phishing", "hack", "flaw", "botnet"];
+
+const CRITICAL_PATTERNS = compileKeywords(CRITICAL_KEYWORDS);
+const HIGH_PATTERNS = compileKeywords(HIGH_KEYWORDS);
+const MEDIUM_PATTERNS = compileKeywords(MEDIUM_KEYWORDS);
 
 const TIER_WEIGHTS: Record<number, number> = { 1: 3, 2: 2, 3: 1 };
 
-function computeKeywordScore(text: string): number {
+export function computeKeywordScore(text: string): number {
   const lower = text.toLowerCase();
   let score = 0;
 
-  for (const kw of CRITICAL_KEYWORDS) {
-    if (lower.includes(kw)) score += 3;
+  for (const re of CRITICAL_PATTERNS) {
+    if (re.test(lower)) score += 3;
   }
-  for (const kw of HIGH_KEYWORDS) {
-    if (lower.includes(kw)) score += 2;
+  for (const re of HIGH_PATTERNS) {
+    if (re.test(lower)) score += 2;
   }
-  for (const kw of MEDIUM_KEYWORDS) {
-    if (lower.includes(kw)) score += 1;
+  for (const re of MEDIUM_PATTERNS) {
+    if (re.test(lower)) score += 1;
   }
 
   return score;

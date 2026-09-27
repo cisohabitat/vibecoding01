@@ -1,27 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Article } from "@/lib/types";
-import NewsCard from "@/app/components/NewsCard";
+import NewsCard, { BOOKMARK_KEY } from "@/app/components/NewsCard";
 import Header from "@/app/components/Header";
-
-const BOOKMARK_KEY = "cyber-pulse-bookmarks";
+import {
+  parseStoredList,
+  useLocalStorage,
+  writeLocalStorage,
+} from "@/app/components/useLocalStorage";
 
 export default function SavedPage() {
-  const [bookmarks, setBookmarks] = useState<Article[] | null>(null);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(BOOKMARK_KEY);
-      setBookmarks(raw ? JSON.parse(raw) : []);
-    } catch {
-      setBookmarks([]);
-    }
-  }, []);
+  const raw = useLocalStorage(BOOKMARK_KEY);
+  // null until localStorage has been read on the client
+  const bookmarks: Article[] | null =
+    raw === undefined ? null : parseStoredList<Article>(BOOKMARK_KEY, raw);
 
   function clearAll() {
-    localStorage.removeItem(BOOKMARK_KEY);
-    setBookmarks([]);
+    writeLocalStorage(BOOKMARK_KEY, null);
   }
 
   return (
@@ -42,12 +38,12 @@ export default function SavedPage() {
                 Clear all
               </button>
             )}
-            <a
+            <Link
               href="/"
               className="text-xs text-slate-400 border border-cyber-600/50 rounded-lg px-3 py-1.5 hover:border-cyber-500 hover:text-slate-200 transition-colors"
             >
               ← Back to feed
-            </a>
+            </Link>
           </div>
         </div>
 

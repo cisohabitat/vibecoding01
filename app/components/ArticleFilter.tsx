@@ -3,6 +3,8 @@
 import { useState, useMemo, useEffect, ReactNode } from "react";
 import { Article, ArticleCategory } from "@/lib/types";
 import NewsCard from "./NewsCard";
+import { ViewMode, ViewModeContext } from "./ViewModeContext";
+import { useNow } from "./useNow";
 
 const CATEGORIES: ArticleCategory[] = [
   "Vulnerability",
@@ -24,8 +26,6 @@ const TIME_OPTIONS = [
 const CAT_KEY = "cyber-pulse-category";
 const VIEW_KEY = "cyber-pulse-viewmode";
 
-type ViewMode = "grid" | "list";
-
 export default function ArticleFilter({
   featured,
   recent,
@@ -39,8 +39,12 @@ export default function ArticleFilter({
   const [categories, setCategories] = useState<ArticleCategory[]>([]);
   const [timeHours, setTimeHours] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const now = useNow();
 
-  // Restore state from URL params and localStorage on mount
+  // Restore state from URL params and localStorage once, after hydration.
+  // Reading these during render would mismatch the server HTML, so a
+  // one-time setState in an effect is intended here.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q");
@@ -82,6 +86,7 @@ export default function ArticleFilter({
       if (savedView === "list" || savedView === "grid") setViewMode(savedView);
     } catch {}
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Sync URL when filters change
   useEffect(() => {
@@ -124,8 +129,7 @@ export default function ArticleFilter({
 
   const filtered = useMemo(() => {
     if (!isFiltered) return [];
-    const now = Date.now();
-    const cutoff = timeHours ? now - timeHours * 60 * 60 * 1000 : 0;
+    const cutoff = timeHours && now ? now - timeHours * 60 * 60 * 1000 : 0;
     const q = search.toLowerCase().trim();
 
     return allArticles.filter((a) => {
@@ -133,7 +137,7 @@ export default function ArticleFilter({
         a.pubDate instanceof Date
           ? a.pubDate.getTime()
           : new Date(a.pubDate as unknown as string).getTime();
-      if (timeHours && pubTime < cutoff) return false;
+      if (cutoff && pubTime < cutoff) return false;
       if (categories.length > 0 && !categories.includes(a.category)) return false;
       if (
         q &&
@@ -143,7 +147,7 @@ export default function ArticleFilter({
         return false;
       return true;
     });
-  }, [allArticles, search, categories, timeHours, isFiltered]);
+  }, [allArticles, search, categories, timeHours, isFiltered, now]);
 
   function toggleCategory(cat: ArticleCategory) {
     setCategories((prev) =>
@@ -247,7 +251,7 @@ export default function ArticleFilter({
           )}
         </div>
       ) : (
-        children
+        <ViewModeContext.Provider value={viewMode}>{children}</ViewModeContext.Provider>
       )}
     </div>
   );

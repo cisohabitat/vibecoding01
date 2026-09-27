@@ -25,9 +25,8 @@ export default function CveModal({
     dialogRef.current?.showModal();
   }, []);
 
+  // Parent keys this component by cveId, so state starts fresh per CVE
   useEffect(() => {
-    setData(null);
-    setError(false);
     fetch(`/api/cve/${encodeURIComponent(cveId)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d: CveDetail) => setData(d))
