@@ -33,7 +33,7 @@ app/
   not-found.tsx             — 404 page
   api/
     feed.json/route.ts      — JSON feed API (ISR, 15-min revalidation; CORS *, includes failedFeeds)
-    feed.xml/route.ts       — RSS/Atom feed API (ISR, 15-min revalidation)
+    feed.xml/route.ts       — RSS 2.0 feed API (ISR, 15-min revalidation; built by lib/rss.ts)
     health/route.ts         — Health check API (dynamic; 60s memo, never stale); returns { status, feedsUp, feedsDown, lastCheck }
     cve/[id]/route.ts       — NVD proxy for CveModal (1h data + CDN cache; 404 unknown, 502 NVD down/rate-limited)
   saved/layout.tsx          — Metadata for /saved (noindex)
@@ -47,7 +47,7 @@ app/
     NewsCard.tsx            — Article card (featured + default variants), read/bookmark state [client]
     CveModal.tsx            — CVE detail dialog opened from a card's CVE chip [client]
     ArticleFilter.tsx       — Search, multi-category and time filters; syncs to URL + localStorage; provides view mode [client]
-    StatsBanner.tsx         — 24h counts (stories, critical CVEs, breaches, ransomware)
+    StatsBanner.tsx         — 24h counts (stories, distinct critical CVEs, breaches, ransomware)
     ViewModeContext.tsx     — Grid/list view mode context provided by ArticleFilter [client]
     useNow.ts               — Shared minute-ticking clock; null during SSR/hydration [client]
     useLocalStorage.ts      — Hydration-safe localStorage hook + writer that notifies subscribers [client]
@@ -68,6 +68,13 @@ lib/
   trending.ts       — Trending terms (names, CVE IDs) from last-24h titles; ≥2 stories, generic words excluded
   rss.ts            — RSS 2.0 builder for /api/feed.xml (XML-safe escaping, CVEs as <category>)
   site.ts           — Absolute site URL (NEXT_PUBLIC_SITE_URL, else Vercel production domain)
+  __tests__/        — Vitest unit tests (lib modules + API route handlers)
+e2e/
+  app.spec.ts       — Playwright end-to-end tests
+  feed-server.mjs   — Fixture RSS server (dates relative to request time)
+.github/
+  workflows/ci.yml  — CI: prod-dependency audit, lint, typecheck, unit tests, build; separate e2e job
+  dependabot.yml    — Weekly grouped npm updates, monthly Actions updates
 ```
 
 ## Architecture Notes
@@ -98,4 +105,4 @@ lib/
 - `fetchAllFeeds()` returns `{ articles, failedFeeds }` — always destructure both fields; never discard `failedFeeds` silently.
 - `RankedArticles` includes `failedFeeds: string[]`; `rankArticles()` returns an empty array for it — the pipeline overrides this with the real value from the fetcher.
 - End-to-end tests (`e2e/app.spec.ts`) run a production build against `e2e/feed-server.mjs` (fixture feed with request-relative dates) via `FEED_SOURCES_OVERRIDE`. Add a case there when changing UI behaviour.
-- Unit tests use Vitest and live in `lib/__tests__/` (route handlers can be tested by importing `GET` directly; `@/` resolves via `vitest.config.mts`). Run `npm test`, `npm run lint`, and `npm run build` before pushing.
+- Unit tests use Vitest and live in `lib/__tests__/` (route handlers can be tested by importing `GET` directly; `@/` resolves via `vitest.config.mts`). Before pushing run `npx tsc --noEmit`, `npm run lint`, `npm test`, `npm run build` and `npm run test:e2e` (CI runs all of them; every commit on `main` gets a full CI run).
