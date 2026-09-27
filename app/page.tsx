@@ -1,4 +1,4 @@
-import { getArticles } from "@/lib/pipeline";
+import { getCachedArticles } from "@/lib/pipeline";
 import { computeTrending } from "@/lib/trending";
 import Header from "./components/Header";
 import FeaturedNews from "./components/FeaturedNews";
@@ -10,10 +10,8 @@ import FeedFailureBanner from "./components/FeedFailureBanner";
 import StatsBanner from "./components/StatsBanner";
 import UpdatedAgo from "./components/UpdatedAgo";
 
-export const revalidate = 900; // 15 minutes ISR
-
 export default async function Home() {
-  const { featured, recent, lastUpdated, failedFeeds } = await getArticles();
+  const { featured, recent, lastUpdated, failedFeeds } = await getCachedArticles();
   const trending = computeTrending([...featured, ...recent]);
 
   return (

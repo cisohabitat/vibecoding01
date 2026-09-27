@@ -13,7 +13,9 @@ and research blogs, then:
   24 hours become Top Stories
 - **enriches** CVE IDs with CVSS scores from the NVD
 
-The page is rebuilt at most every 15 minutes (Next.js ISR).
+Article data is refreshed at most every 15 minutes (cached with Next.js's data
+cache); pages render per request so each gets a fresh Content-Security-Policy
+nonce.
 
 ## Features
 
