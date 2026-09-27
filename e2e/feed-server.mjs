@@ -22,6 +22,12 @@ const TITLES = [
   "VMware ESXi hosts encrypted by new ransomware strain",
   "GitHub tokens leaked in public repositories",
   "Apple patches WebKit memory corruption issue",
+  "Zyxel NAS devices hit by credential stuffing",
+  "Researchers detail Bluetooth pairing weakness",
+  "npm package typosquats popular logging library",
+  "Microsoft Teams used to deliver remote access tool",
+  "Police dismantle bulletproof hosting provider",
+  "New Android spyware poses as messaging app",
 ];
 
 function rss() {

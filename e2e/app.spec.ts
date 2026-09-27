@@ -132,7 +132,7 @@ test("search and category filters sync to the URL", async ({ page }) => {
   // Search also matches the source name, not just title/description
   // (every fixture article comes from "Fixture Feed")
   await page.getByRole("searchbox", { name: "Search articles" }).fill("fixture feed");
-  await expect(page.getByRole("status").filter({ hasText: "result" })).toHaveText("17 results");
+  await expect(page.getByRole("status").filter({ hasText: "result" })).toHaveText("23 results");
 
   await page.getByRole("button", { name: "Clear ×" }).click();
   const chip = page.getByRole("button", { name: "Ransomware", exact: true });
@@ -226,6 +226,17 @@ test("pressing / focuses search, but not while typing elsewhere", async ({ page 
   await expect(search).toBeFocused();
   await page.keyboard.type("a/b");
   await expect(search).toHaveValue("a/b");
+});
+
+test("Load more moves focus to the first new article", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("article time").first()).toHaveText(/ago|just now/);
+  const latest = page.locator("section", { has: page.getByRole("heading", { name: "Latest News" }) });
+  await expect(latest.locator("article")).toHaveCount(12);
+
+  await page.getByRole("button", { name: /Load more/ }).click();
+  await expect(latest.locator("article")).toHaveCount(18);
+  await expect(latest.locator("article").nth(12).getByRole("link")).toBeFocused();
 });
 
 test("sends security headers", async ({ request }) => {
