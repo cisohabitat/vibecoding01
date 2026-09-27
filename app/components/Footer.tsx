@@ -22,6 +22,30 @@ export default function Footer({ lastUpdated }: { lastUpdated: string }) {
             RSS feed
           </a>
         </p>
+        <details className="mx-auto max-w-xl pt-3 text-left">
+          <summary className="cursor-pointer text-center text-slate-300 hover:text-cyber-accent">
+            How stories are ranked
+          </summary>
+          <ul className="mt-2 list-disc pl-5 space-y-1 text-xs">
+            <li>
+              <strong className="text-slate-300">Source:</strong> government advisories score
+              highest, then established security journalism, then other sources.
+            </li>
+            <li>
+              <strong className="text-slate-300">Threat keywords:</strong> zero-days, ransomware,
+              breaches and CVEs weigh more than general terms like patches or updates.
+            </li>
+            <li>
+              <strong className="text-slate-300">Recency:</strong> a boost for the last few hours,
+              fading out over a day.
+            </li>
+            <li>
+              Top Stories are the five highest-scoring stories from the last 24 hours, at most two
+              per source. The same story from several outlets is merged and listed under
+              &ldquo;also&rdquo;.
+            </li>
+          </ul>
+        </details>
       </div>
     </footer>
   );
