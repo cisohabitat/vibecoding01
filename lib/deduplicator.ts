@@ -1,4 +1,5 @@
 import { Article } from "./types";
+import { extractCveIds } from "./cve";
 
 const STOP_WORDS = new Set([
   "a", "an", "the", "in", "on", "at", "to", "for", "of", "and", "or",
@@ -24,6 +25,14 @@ function jaccardSimilarity(a: Set<string>, b: Set<string>): number {
 
 const SIMILARITY_THRESHOLD = 0.5;
 
+/**
+ * Titles that name CVEs, but no CVE in common, are different stories even
+ * when the rest of the wording matches ("Vendor patches CVE-A" vs "... CVE-B").
+ */
+function differentCves(a: string[], b: string[]): boolean {
+  return a.length > 0 && b.length > 0 && !a.some((id) => b.includes(id));
+}
+
 export function deduplicateArticles(articles: Article[]): Article[] {
   // Prefer lower tier number (tier 1 = most authoritative), then more recent
   const sorted = [...articles].sort((a, b) => {
@@ -31,14 +40,18 @@ export function deduplicateArticles(articles: Article[]): Article[] {
     return b.pubDate.getTime() - a.pubDate.getTime();
   });
 
-  const kept: Array<{ article: Article; tokens: Set<string> }> = [];
+  const kept: Array<{ article: Article; tokens: Set<string>; cves: string[] }> = [];
 
   for (const article of sorted) {
     const tokens = tokenize(article.title);
+    const cves = extractCveIds(article.title);
     let merged = false;
 
     for (const entry of kept) {
-      if (jaccardSimilarity(tokens, entry.tokens) >= SIMILARITY_THRESHOLD) {
+      if (
+        !differentCves(cves, entry.cves) &&
+        jaccardSimilarity(tokens, entry.tokens) >= SIMILARITY_THRESHOLD
+      ) {
         if (
           article.source !== entry.article.source &&
           !entry.article.alsoReportedBy.includes(article.source)
@@ -51,7 +64,7 @@ export function deduplicateArticles(articles: Article[]): Article[] {
     }
 
     if (!merged) {
-      kept.push({ article: { ...article, alsoReportedBy: [...article.alsoReportedBy] }, tokens });
+      kept.push({ article: { ...article, alsoReportedBy: [...article.alsoReportedBy] }, tokens, cves });
     }
   }
 

@@ -37,6 +37,16 @@ describe("deduplicateArticles", () => {
     expect(result).toHaveLength(2);
   });
 
+  it("keeps stories about different CVEs apart", () => {
+    const result = deduplicateArticles([
+      article({ title: "Microsoft patches exploited CVE-2026-1111 in Windows" }),
+      article({ title: "Microsoft patches exploited CVE-2026-2222 in Windows" }),
+      article({ title: "Microsoft patches exploited CVE-2026-1111 flaw in Windows", source: "Other" }),
+    ]);
+    expect(result).toHaveLength(2);
+    expect(result.find((a) => a.title.includes("1111"))?.alsoReportedBy).toEqual(["Other"]);
+  });
+
   it("does not list the primary source as also reporting", () => {
     const result = deduplicateArticles([
       article({ title: "Chrome update fixes exploited zero-day flaw", source: "BleepingComputer" }),
