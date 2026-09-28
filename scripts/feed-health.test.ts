@@ -56,8 +56,17 @@ it("every feed can be fetched and parsed", async () => {
     `Top Stories:\n\n${ranked.featured.map(line).join("\n")}\n\n` +
     `Next highest:\n\n${next.map(line).join("\n")}\n\n` +
     `${articles.length} items, ${deduped.length} after merging duplicates`;
+  // A few titles per category, to spot-check precision (e.g. what "AI" catches)
+  const samples = [...counts.keys()]
+    .filter((c) => c !== "Other")
+    .map((c) => {
+      const titles = tagged.filter((a) => a.category === c).slice(0, 6);
+      return `${c}:\n${titles.map((a) => `- ${a.title.replace(/[|\n]/g, " ")} (${a.source})`).join("\n")}`;
+    })
+    .join("\n\n");
   const tagging =
-    `Categories: ${mix}\n\nTrending: ${trending}\n\n${ranking}\n\nSample of untagged titles:\n\n${untagged}`;
+    `Categories: ${mix}\n\nTrending: ${trending}\n\n${ranking}\n\n` +
+    `Sample per category:\n\n${samples}\n\nSample of untagged titles:\n\n${untagged}`;
 
   console.log(report);
   console.log(tagging);
