@@ -44,7 +44,7 @@ test("counts known-exploited CVEs and ranks their story first", async ({ page })
 
   // The tile shows its stories: last 24h, known exploited
   await stat.click();
-  await expect(page.getByRole("status").filter({ hasText: "result" })).toHaveText("1 result");
+  await expect(page.getByRole("status").filter({ hasText: "result" })).toHaveText("2 results");
   // Focus follows to the results, so keyboard/screen-reader users land there
   await expect(page.locator("#filtered-heading")).toBeFocused();
   await expect(page).toHaveURL(/t=24/);
@@ -283,18 +283,18 @@ test("triage filters narrow to CVE, KEV and CVSS 9+ stories", async ({ page }) =
   const results = page.getByRole("status").filter({ hasText: "result" });
 
   await page.getByRole("button", { name: "Only known-exploited CVEs (CISA KEV)" }).click();
-  await expect(results).toHaveText("1 result");
+  await expect(results).toHaveText("2 results");
   await expect(page.locator("article")).toContainText(["Critical RCE in Jenkins"]);
   await expect(page).toHaveURL(/f=kev/);
 
   await page.getByRole("button", { name: "Clear ×" }).click();
   await page.getByRole("button", { name: "Only CVSS 9.0 or higher" }).click();
-  await expect(results).toHaveText("2 results");
+  await expect(results).toHaveText("3 results");
 
   // A shared triage link restores the filter
   await page.goto("/?f=cve");
   await expect(page.getByRole("button", { name: "Only stories naming a CVE" })).toHaveAttribute("aria-pressed", "true");
-  await expect(results).toHaveText("2 results");
+  await expect(results).toHaveText("3 results");
 });
 
 test("My stack: watchlist marks and filters matching stories", async ({ page }) => {
@@ -372,7 +372,7 @@ test("CVE chip opens the detail dialog without leaving the page", async ({ page,
   let opened = false;
   context.on("page", () => (opened = true));
   // Enriched from the fixture NVD and KEV catalog
-  const chip = page.getByRole("button", { name: /CVE-2024-23897 details, CVSS 9\.8 critical, known exploited/ });
+  const chip = card(page, "Critical RCE in Jenkins").getByRole("button", { name: /CVE-2024-23897 details, CVSS 9\.8 critical, known exploited/ });
   await expect(chip).toContainText("KEV");
   await chip.click();
   const dialog = page.getByRole("dialog", { name: "CVE-2024-23897" });
@@ -380,6 +380,9 @@ test("CVE chip opens the detail dialog without leaving the page", async ({ page,
   await expect(dialog.getByText("Fixture description for CVE-2024-23897.")).toBeVisible();
   await expect(dialog.getByText("CRITICAL")).toBeVisible();
   await expect(dialog.getByText("Known exploited.")).toBeVisible();
+  // Other current stories naming the same CVE
+  const others = dialog.getByRole("heading", { name: "In other stories" }).locator("xpath=..");
+  await expect(others.getByRole("link", { name: "New Android spyware poses as messaging app" })).toBeVisible();
   await expect(dialog.getByRole("link", { name: "Known Exploited Vulnerabilities catalog" })).toHaveAttribute(
     "href",
     /cisa\.gov\/known-exploited-vulnerabilities-catalog\?search_api_fulltext=CVE-2024-23897/
@@ -405,7 +408,7 @@ test("high EPSS is flagged on the chip and explained in the dialog", async ({ pa
 test("closing the CVE dialog returns focus to its chip", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("article time").first()).toHaveText(/ago|just now/);
-  const chip = page.getByRole("button", { name: /CVE-2024-23897 details/ });
+  const chip = card(page, "Critical RCE in Jenkins").getByRole("button", { name: /CVE-2024-23897 details/ });
   for (const closeWith of ["Escape", "button"] as const) {
     await chip.focus();
     await page.keyboard.press("Enter");
@@ -527,7 +530,7 @@ test.describe("accessibility (axe-core)", () => {
     }],
     ["CVE dialog", async (page) => {
       await page.goto("/");
-      await page.getByRole("button", { name: /CVE-2024-23897 details/ }).click();
+      await card(page, "Critical RCE in Jenkins").getByRole("button", { name: /CVE-2024-23897 details/ }).click();
       // Audit the loaded state (score, vector, dates, references)
       await page.getByText("Fixture description for CVE-2024-23897.").waitFor();
     }],
@@ -644,7 +647,7 @@ test("filtered RSS feeds carry only matching stories", async ({ request }) => {
   expect(body).toMatch(/<atom:link href="https?:\/\/[^"]+\/api\/feed\/kev"/);
 
   const critical = await (await request.get("/api/feed/critical")).text();
-  expect(critical.match(/<item>/g)).toHaveLength(2);
+  expect(critical.match(/<item>/g)).toHaveLength(3);
 
   expect((await request.get("/api/feed/nope")).status()).toBe(404);
 });

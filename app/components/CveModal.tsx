@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import type { CveDetail } from "@/app/api/cve/[id]/route";
+import type { Article } from "@/lib/types";
 import { formatPercentile, formatProbability, HIGH_EPSS } from "@/lib/epss-format";
 
 const severityColor: Record<string, string> = {
@@ -14,9 +15,12 @@ const severityColor: Record<string, string> = {
 export default function CveModal({
   cveId,
   onClose,
+  related = [],
 }: {
   cveId: string;
   onClose: () => void;
+  /** Other current stories naming this CVE */
+  related?: Pick<Article, "title" | "link" | "source">[];
 }) {
   const [data, setData] = useState<CveDetail | null>(null);
   const [error, setError] = useState<"not-found" | "not-tracked" | "unavailable" | null>(null);
@@ -228,6 +232,27 @@ export default function CveModal({
                 View full record on NVD →
               </a>
             </div>
+          </div>
+        )}
+
+        {related.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-cyber-600/40">
+            <h3 className="text-xs text-slate-400 uppercase tracking-wide mb-2">In other stories</h3>
+            <ul className="space-y-1.5">
+              {related.slice(0, 5).map((a) => (
+                <li key={a.link} className="text-sm">
+                  <a
+                    href={a.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-slate-200 hover:text-cyber-accent"
+                  >
+                    {a.title}
+                  </a>{" "}
+                  <span className="text-xs text-slate-400">({a.source})</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </div>

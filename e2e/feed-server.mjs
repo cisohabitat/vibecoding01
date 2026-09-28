@@ -33,6 +33,7 @@ const TITLES = [
 // Descriptions default to "Story <i>: <title>."; a few say more
 const DESCRIPTIONS = {
   21: "Story 21: Police dismantle bulletproof hosting provider used by gangs targeting Singapore banks.",
+  22: "Story 22: New Android spyware poses as messaging app; its operators also exploit CVE-2024-23897.",
 };
 
 function rss() {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Article, ArticleCategory, CveInfo, CveSeverity } from "@/lib/types";
 import { formatProbability, HIGH_EPSS } from "@/lib/epss-format";
 import CveModal from "./CveModal";
@@ -11,6 +11,7 @@ import { parseWatchlist, WATCHLIST_KEY, watchlistMatcher } from "@/lib/watchlist
 import { mentionsSingapore } from "@/lib/region";
 import type { FilterState } from "@/lib/filters";
 import { showFiltered } from "./filterEvents";
+import { ArticlesContext } from "./ArticlesContext";
 import { toDate } from "@/lib/dates";
 
 function timeAgo(date: Date, now: number): string {
@@ -106,6 +107,7 @@ export default function NewsCard({
   filterable?: boolean;
 }) {
   const [openCve, setOpenCve] = useState<string | null>(null);
+  const allArticles = useContext(ArticlesContext);
   const [copied, setCopied] = useState(false);
   const now = useNow();
   const readRaw = useLocalStorage(READ_KEY);
@@ -347,7 +349,14 @@ export default function NewsCard({
       </article>
 
       {openCve && (
-        <CveModal key={openCve} cveId={openCve} onClose={() => setOpenCve(null)} />
+        <CveModal
+          key={openCve}
+          cveId={openCve}
+          onClose={() => setOpenCve(null)}
+          related={(allArticles ?? []).filter(
+            (a) => a.link !== article.link && (a.cves ?? []).some((c) => c.id === openCve)
+          )}
+        />
       )}
     </>
   );
