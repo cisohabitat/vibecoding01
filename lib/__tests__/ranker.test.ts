@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { computeKeywordScore, EPSS_BOOST, KEV_BOOST, pickFeatured, rankArticles, SG_BOOST } from "../ranker";
+import {
+  COVERAGE_BOOST,
+  computeKeywordScore,
+  EPSS_BOOST,
+  KEV_BOOST,
+  MAX_COVERAGE_SOURCES,
+  pickFeatured,
+  rankArticles,
+  SG_BOOST,
+} from "../ranker";
 import { Article } from "../types";
 
 function article(overrides: Partial<Article>): Article {
@@ -110,5 +119,17 @@ describe("rankArticles Singapore boost", () => {
     const { featured } = rankArticles([a, b]);
     expect(featured[0].description).toBe("In Singapore");
     expect(featured[0].score - featured[1].score).toBe(SG_BOOST);
+  });
+});
+
+describe("rankArticles coverage boost", () => {
+  it("boosts stories reported by more outlets, up to a cap", () => {
+    const solo = article({ title: "Outage" });
+    const two = article({ title: "Outage", alsoReportedBy: ["A"] });
+    const many = article({ title: "Outage", alsoReportedBy: ["A", "B", "C", "D", "E"] });
+    const { featured } = rankArticles([solo, two, many]);
+    const score = (a: Article) => featured.find((f) => f.link === a.link)!.score;
+    expect(score(two) - score(solo)).toBe(COVERAGE_BOOST);
+    expect(score(many) - score(solo)).toBe(COVERAGE_BOOST * MAX_COVERAGE_SOURCES);
   });
 });

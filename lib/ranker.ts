@@ -46,6 +46,10 @@ export const KEV_BOOST = 3;
 export const EPSS_BOOST = 2;
 /** Boost for stories about Singapore, the site's audience. */
 export const SG_BOOST = 1.5;
+/** Boost per additional outlet reporting the same story (merged duplicates)... */
+export const COVERAGE_BOOST = 0.75;
+/** ...counting at most this many, so wide coverage can't outweigh the threat itself. */
+export const MAX_COVERAGE_SOURCES = 3;
 
 /**
  * The strongest exploitation signal among the article's CVEs. KEV and a
@@ -63,7 +67,15 @@ function scoreArticle(article: Article, kevIds: Set<string>, epss: Map<string, E
   const keywordScore = computeKeywordScore(text);
   const recencyBoost = computeRecencyBoost(article.pubDate);
   const regionBoost = mentionsSingapore(article) ? SG_BOOST : 0;
-  return tierWeight + keywordScore + recencyBoost + regionBoost + exploitBoost(extractCveIds(text), kevIds, epss);
+  const coverageBoost = Math.min(article.alsoReportedBy?.length ?? 0, MAX_COVERAGE_SOURCES) * COVERAGE_BOOST;
+  return (
+    tierWeight +
+    keywordScore +
+    recencyBoost +
+    regionBoost +
+    coverageBoost +
+    exploitBoost(extractCveIds(text), kevIds, epss)
+  );
 }
 
 const FEATURED_COUNT = 5;

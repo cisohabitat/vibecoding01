@@ -59,6 +59,10 @@ export default function Footer({ lastUpdated }: { lastUpdated: string }) {
               days, marked <span className="font-mono text-orange-300">EPSS</span>.
             </li>
             <li>
+              <strong className="text-slate-300">Coverage:</strong> a story reported by several outlets
+              gets a boost for each extra one (up to three).
+            </li>
+            <li>
               <strong className="text-slate-300">Singapore:</strong> stories that mention Singapore get
               a boost and are marked <span className="font-semibold text-red-300">SG</span>.
             </li>

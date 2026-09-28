@@ -9,7 +9,7 @@ and research blogs, then:
 - **tags** each article with a category (Ransomware, APT, Vulnerability, …)
 - **deduplicates** the same story reported by several outlets, keeping the most
   authoritative copy and listing the others under "also"
-- **ranks** by source tier, threat keywords, recency and Singapore relevance; the top 5 from the last
+- **ranks** by source tier, threat keywords, recency, how many outlets report it and Singapore relevance; the top 5 from the last
   24 hours become Top Stories
 - **enriches** CVE IDs with CVSS scores from the NVD and flags those in CISA's
   Known Exploited Vulnerabilities (KEV) catalog, boosting their stories; FIRST's
