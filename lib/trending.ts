@@ -1,4 +1,5 @@
 import { Article } from "./types";
+import { pubTime } from "./dates";
 
 const STOP_WORDS = new Set([
   "a", "an", "the", "in", "on", "at", "to", "for", "of", "and", "or",
@@ -58,11 +59,7 @@ export function computeTrending(articles: Article[], topN = 12): TrendingTopic[]
   const counts = new Map<string, number>();
 
   for (const article of articles) {
-    const pubTime =
-      article.pubDate instanceof Date
-        ? article.pubDate.getTime()
-        : new Date(article.pubDate as unknown as string).getTime();
-    if (pubTime < cutoff) continue;
+    if (pubTime(article) < cutoff) continue;
 
     // Count each term once per article
     for (const term of extractTerms(article.title)) {

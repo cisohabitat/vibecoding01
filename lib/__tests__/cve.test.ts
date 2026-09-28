@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { enrichWithCves, extractCveIds, MAX_CVE_LOOKUPS } from "../cve";
+import { enrichWithCves, extractCveIds, MAX_CVE_LOOKUPS, pickCvss } from "../cve";
 import { Article } from "../types";
 
 function article(title: string): Article {
@@ -83,5 +83,37 @@ describe("enrichWithCves KEV flag", () => {
     const [result] = await enrichWithCves([article(ids.join(" "))], new Set([last]));
     expect(result.cves.find((c) => c.id === last)?.kev).toBe(true);
     expect(result.cves.filter((c) => c.kev)).toHaveLength(1);
+  });
+});
+
+describe("pickCvss", () => {
+  it("prefers CVSS v3.1 over older versions", () => {
+    const score = pickCvss({
+      cvssMetricV2: [{ baseSeverity: "HIGH", cvssData: { baseScore: 7.5 } }],
+      cvssMetricV31: [
+        { cvssData: { baseScore: 9.8, baseSeverity: "CRITICAL", vectorString: "CVSS:3.1/AV:N" } },
+      ],
+    });
+    expect(score).toEqual({ cvss: 9.8, severity: "CRITICAL", vectorString: "CVSS:3.1/AV:N" });
+  });
+
+  it("reads the v2 severity from the metric, not cvssData", () => {
+    const score = pickCvss({
+      cvssMetricV2: [{ baseSeverity: "HIGH", cvssData: { baseScore: 7.5, vectorString: "AV:N/AC:L" } }],
+    });
+    expect(score).toEqual({ cvss: 7.5, severity: "HIGH", vectorString: "AV:N/AC:L" });
+  });
+
+  it("skips metrics without a score and rejects unknown severities", () => {
+    expect(
+      pickCvss({
+        cvssMetricV31: [{ cvssData: {} }],
+        cvssMetricV30: [{ cvssData: { baseScore: 5, baseSeverity: "bogus" } }],
+      })
+    ).toEqual({ cvss: 5, severity: null, vectorString: null });
+  });
+
+  it("returns nulls for missing metrics", () => {
+    expect(pickCvss(undefined)).toEqual({ cvss: null, severity: null, vectorString: null });
   });
 });

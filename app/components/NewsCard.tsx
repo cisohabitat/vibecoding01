@@ -6,6 +6,7 @@ import CveModal from "./CveModal";
 import { useNow } from "./useNow";
 import { useLastVisit } from "./useLastVisit";
 import { parseStoredList, useLocalStorage, writeLocalStorage } from "./useLocalStorage";
+import { toDate } from "@/lib/dates";
 
 function timeAgo(date: Date, now: number): string {
   const seconds = Math.floor((now - date.getTime()) / 1000);
@@ -71,10 +72,7 @@ export default function NewsCard({
   const isRead = readUrls.includes(article.link);
   const isBookmarked = bookmarks.some((a) => a.link === article.link);
 
-  const pubDate =
-    article.pubDate instanceof Date
-      ? article.pubDate
-      : new Date(article.pubDate as unknown as string);
+  const pubDate = toDate(article.pubDate);
   // Relative times are client-only (now is null during SSR/hydration)
   const isBreaking = now !== null && now - pubDate.getTime() < 60 * 60 * 1000;
   const lastVisit = useLastVisit();

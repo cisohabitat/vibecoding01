@@ -1,4 +1,4 @@
-import { Article, CveInfo } from "./types";
+import { Article, CveInfo, CveSeverity } from "./types";
 
 const CVE_REGEX = /CVE-\d{4}-\d{4,}/gi;
 
@@ -20,6 +20,43 @@ export function nvdHeaders(): HeadersInit | undefined {
   return key ? { apiKey: key } : undefined;
 }
 
+interface NvdCvssMetric {
+  baseSeverity?: string; // CVSS v2 keeps the severity here
+  cvssData?: { baseScore?: number; baseSeverity?: string; vectorString?: string };
+}
+
+const SEVERITIES = new Set<string>(["CRITICAL", "HIGH", "MEDIUM", "LOW", "NONE"]);
+
+function toSeverity(value: unknown): CveSeverity | null {
+  const upper = typeof value === "string" ? value.toUpperCase() : "";
+  return SEVERITIES.has(upper) ? (upper as CveSeverity) : null;
+}
+
+export interface CvssScore {
+  cvss: number | null;
+  severity: CveSeverity | null;
+  vectorString: string | null;
+}
+
+/**
+ * The best available CVSS score from an NVD `metrics` object: v3.1, then
+ * v3.0, then v2. v2 metrics carry the severity outside `cvssData`.
+ */
+export function pickCvss(metrics: unknown): CvssScore {
+  const m = (metrics ?? {}) as Record<string, NvdCvssMetric[] | undefined>;
+  for (const key of ["cvssMetricV31", "cvssMetricV30", "cvssMetricV2"]) {
+    const metric = m[key]?.[0];
+    const data = metric?.cvssData;
+    if (typeof data?.baseScore !== "number") continue;
+    return {
+      cvss: data.baseScore,
+      severity: toSeverity(data.baseSeverity ?? metric?.baseSeverity),
+      vectorString: data.vectorString ?? null,
+    };
+  }
+  return { cvss: null, severity: null, vectorString: null };
+}
+
 async function fetchCveScore(cveId: string): Promise<CveInfo> {
   try {
     const res = await fetch(
@@ -33,17 +70,8 @@ async function fetchCveScore(cveId: string): Promise<CveInfo> {
     if (!res.ok) return { id: cveId, cvss: null, severity: null };
 
     const data = await res.json();
-    const metrics = data.vulnerabilities?.[0]?.cve?.metrics;
-    const cvssData =
-      metrics?.cvssMetricV31?.[0]?.cvssData ||
-      metrics?.cvssMetricV30?.[0]?.cvssData ||
-      metrics?.cvssMetricV2?.[0]?.cvssData;
-
-    return {
-      id: cveId,
-      cvss: cvssData?.baseScore ?? null,
-      severity: cvssData?.baseSeverity ?? null,
-    };
+    const { cvss, severity } = pickCvss(data.vulnerabilities?.[0]?.cve?.metrics);
+    return { id: cveId, cvss, severity };
   } catch {
     return { id: cveId, cvss: null, severity: null };
   }

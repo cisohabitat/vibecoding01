@@ -1,5 +1,6 @@
 import { FEED_SOURCES } from "./feeds";
 import { Article } from "./types";
+import { toDate } from "./dates";
 
 // Characters not allowed in XML 1.0 (control chars other than tab/LF/CR,
 // lone surrogates, U+FFFE/U+FFFF) would make the whole feed unparseable.
@@ -16,7 +17,7 @@ export function escapeXml(str: string): string {
 }
 
 function toRfc822(date: Date | string): string {
-  return (date instanceof Date ? date : new Date(date)).toUTCString();
+  return toDate(date).toUTCString();
 }
 
 const SOURCE_URLS = new Map(FEED_SOURCES.map((s) => [s.name, s.url]));

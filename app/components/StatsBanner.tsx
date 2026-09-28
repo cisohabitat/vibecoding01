@@ -1,4 +1,5 @@
 import { Article } from "@/lib/types";
+import { pubTime } from "@/lib/dates";
 
 interface Stats {
   totalToday: number;
@@ -12,13 +13,7 @@ function computeStats(featured: Article[], recent: Article[]): Stats {
   const cutoff = Date.now() - 24 * 60 * 60 * 1000;
   const all = [...featured, ...recent];
 
-  const today = all.filter((a) => {
-    const t =
-      a.pubDate instanceof Date
-        ? a.pubDate.getTime()
-        : new Date(a.pubDate as unknown as string).getTime();
-    return t >= cutoff;
-  });
+  const today = all.filter((a) => pubTime(a) >= cutoff);
 
   // Distinct CVE IDs: the same CVE covered by several stories counts once
   const criticalCves = new Set(

@@ -68,11 +68,12 @@ lib/
   ranker.ts         — Relevance scoring (tier weight + keyword match + recency boost)
   tagger.ts         — Keyword-based category tagging (first-match rules; title decides, description only as fallback)
   deduplicator.ts   — Deduplication by identical link, or title similarity across *different* outlets within 72h (never merges titles naming different CVEs); keeps the lowest-tier, newest copy
-  cve.ts            — CVE ID extraction + CVSS enrichment via NVD API (capped lookups, optional NVD_API_KEY; NVD_API_URL override for tests); flags KEV CVEs
+  cve.ts            — CVE ID extraction + CVSS enrichment via NVD API (pickCvss: v3.1 > v3.0 > v2, shared with the CVE route; capped lookups, optional NVD_API_KEY; NVD_API_URL override for tests); flags KEV CVEs
   kev.ts            — CISA Known Exploited Vulnerabilities catalog IDs (6h memo, empty set on failure; KEV_URL override for tests)
   trending.ts       — Trending terms (names, CVE IDs) from last-24h titles; ≥2 stories, generic words excluded
   rss.ts            — RSS 2.0 builder for /api/feed.xml (XML-safe escaping, CVEs as <category>)
   site.ts           — Absolute site URL (NEXT_PUBLIC_SITE_URL, else Vercel production domain)
+  dates.ts          — toDate()/pubTime(): pubDate is a Date on the server but an ISO string once serialised (client props, localStorage)
   url.ts            — safeLink(): only absolute http(s) URLs may become hrefs (feed links, NVD references)
   __tests__/        — Vitest unit tests (lib modules + API route handlers)
 e2e/

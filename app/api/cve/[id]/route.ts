@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { NVD_API_URL, nvdHeaders } from "@/lib/cve";
+import { NVD_API_URL, nvdHeaders, pickCvss } from "@/lib/cve";
 import { getKevIds } from "@/lib/kev";
 import { getKnownCveIds } from "@/lib/pipeline";
 import { safeLink } from "@/lib/url";
@@ -82,11 +82,6 @@ export async function GET(
       );
     }
 
-    const metrics = vuln.metrics;
-    const cvssData =
-      metrics?.cvssMetricV31?.[0]?.cvssData ||
-      metrics?.cvssMetricV30?.[0]?.cvssData ||
-      metrics?.cvssMetricV2?.[0]?.cvssData;
 
     const englishDesc = (vuln.descriptions as { lang: string; value: string }[])?.find(
       (d) => d.lang === "en"
@@ -101,9 +96,7 @@ export async function GET(
     const detail: CveDetail = {
       id: cveId,
       description: englishDesc,
-      cvss: cvssData?.baseScore ?? null,
-      severity: cvssData?.baseSeverity ?? null,
-      vectorString: cvssData?.vectorString ?? null,
+      ...pickCvss(vuln.metrics),
       published: vuln.published ?? null,
       lastModified: vuln.lastModified ?? null,
       references,

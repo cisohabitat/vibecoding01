@@ -6,6 +6,7 @@ import { matchesTriage, sortArticles, SortKey, TriageKey, TRIAGE_KEYS } from "@/
 import NewsListClient from "./NewsListClient";
 import { ViewMode, ViewModeContext } from "./ViewModeContext";
 import { useNow } from "./useNow";
+import { pubTime } from "@/lib/dates";
 
 const CATEGORIES: ArticleCategory[] = [
   "Vulnerability",
@@ -186,11 +187,7 @@ export default function ArticleFilter({
     const q = search.toLowerCase().trim();
 
     const matches = allArticles.filter((a) => {
-      const pubTime =
-        a.pubDate instanceof Date
-          ? a.pubDate.getTime()
-          : new Date(a.pubDate as unknown as string).getTime();
-      if (cutoff && pubTime < cutoff) return false;
+      if (cutoff && pubTime(a) < cutoff) return false;
       if (categories.length > 0 && !categories.includes(a.category)) return false;
       if (q && !searchText(a).includes(q)) return false;
       return matchesTriage(a, triage);

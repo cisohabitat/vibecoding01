@@ -1,4 +1,5 @@
 import { Article } from "./types";
+import { pubTime } from "./dates";
 
 /** Triage filters: narrow to stories that matter for patching. */
 export type TriageKey = "cve" | "kev" | "critical";
@@ -20,13 +21,10 @@ export function matchesTriage(a: Article, triage: TriageKey[]): boolean {
   });
 }
 
-function time(a: Article): number {
-  return (a.pubDate instanceof Date ? a.pubDate : new Date(a.pubDate as unknown as string)).getTime();
-}
 
 /** "new": newest first. "top": highest relevance score first, newest breaking ties. */
 export function sortArticles(articles: Article[], sort: SortKey): Article[] {
   return [...articles].sort((a, b) =>
-    sort === "top" ? b.score - a.score || time(b) - time(a) : time(b) - time(a)
+    sort === "top" ? b.score - a.score || pubTime(b) - pubTime(a) : pubTime(b) - pubTime(a)
   );
 }
