@@ -7,6 +7,9 @@ import NewsListClient from "./NewsListClient";
 import { ViewMode, ViewModeContext } from "./ViewModeContext";
 import { useNow } from "./useNow";
 import { pubTime } from "@/lib/dates";
+import { parseWatchlist, WATCHLIST_KEY, watchlistMatcher } from "@/lib/watchlist";
+import { useLocalStorage } from "./useLocalStorage";
+import StackEditor from "./StackEditor";
 
 const CATEGORIES: ArticleCategory[] = [
   "Vulnerability",
@@ -29,6 +32,7 @@ const TRIAGE_OPTIONS: Array<{ key: TriageKey; label: string; description: string
   { key: "cve", label: "Has CVE", description: "Only stories naming a CVE" },
   { key: "kev", label: "KEV", description: "Only known-exploited CVEs (CISA KEV)" },
   { key: "critical", label: "CVSS 9+", description: "Only CVSS 9.0 or higher" },
+  { key: "stack", label: "My stack", description: "Only stories about your stack" },
 ];
 
 /** Everything a search can match: text, sources, category and CVE IDs. */
@@ -63,6 +67,9 @@ export default function ArticleFilter({
   const [triage, setTriage] = useState<TriageKey[]>([]);
   const [sort, setSort] = useState<SortKey>("new");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [editingStack, setEditingStack] = useState(false);
+  const stackRaw = useLocalStorage(WATCHLIST_KEY);
+  const stackTerms = useMemo(() => parseWatchlist(stackRaw), [stackRaw]);
   const now = useNow();
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -185,15 +192,16 @@ export default function ArticleFilter({
     if (!isFiltered) return [];
     const cutoff = timeHours && now ? now - timeHours * 60 * 60 * 1000 : 0;
     const q = search.toLowerCase().trim();
+    const inStack = watchlistMatcher(stackTerms);
 
     const matches = allArticles.filter((a) => {
       if (cutoff && pubTime(a) < cutoff) return false;
       if (categories.length > 0 && !categories.includes(a.category)) return false;
       if (q && !searchText(a).includes(q)) return false;
-      return matchesTriage(a, triage);
+      return matchesTriage(a, triage, inStack);
     });
     return sortArticles(matches, sort);
-  }, [allArticles, search, categories, timeHours, triage, sort, isFiltered, now]);
+  }, [allArticles, search, categories, timeHours, triage, sort, isFiltered, now, stackTerms]);
 
   function toggleCategory(cat: ArticleCategory) {
     categoriesChangedByUser.current = true;
@@ -203,6 +211,8 @@ export default function ArticleFilter({
   }
 
   function toggleTriage(key: TriageKey) {
+    // Turning on an empty stack filter: help the reader fill it in
+    if (key === "stack" && !triage.includes(key) && stackTerms.length === 0) setEditingStack(true);
     setTriage((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
   }
 
@@ -300,15 +310,28 @@ export default function ArticleFilter({
               aria-label={description}
               title={description}
               className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                triage.includes(key)
-                  ? "bg-red-500/15 border-red-400/50 text-red-300"
-                  : "border-cyber-600/50 text-slate-400 hover:border-cyber-500 hover:text-slate-200"
+                !triage.includes(key)
+                  ? "border-cyber-600/50 text-slate-400 hover:border-cyber-500 hover:text-slate-200"
+                  : key === "stack"
+                    ? "bg-cyber-blue/20 border-cyber-blue/50 text-cyber-blue"
+                    : "bg-red-500/15 border-red-400/50 text-red-300"
               }`}
             >
               {label}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setEditingStack((v) => !v)}
+            aria-expanded={editingStack}
+            aria-controls={editingStack ? "stack-editor" : undefined}
+            className="px-1 text-xs text-slate-400 hover:text-slate-200 underline-offset-2 hover:underline"
+          >
+            {stackTerms.length > 0 ? `Edit stack (${stackTerms.length})` : "Set up stack"}
+          </button>
         </div>
+
+        {editingStack && <StackEditor id="stack-editor" terms={stackTerms} />}
       </div>
 
       {/* Content: filtered view or default server-rendered content */}
@@ -342,13 +365,15 @@ export default function ArticleFilter({
           </div>
           {filtered.length === 0 ? (
             <p className="text-slate-400 text-center py-16 text-sm">
-              No articles match your filters.
+              {triage.includes("stack") && stackTerms.length === 0
+                ? "Your stack is empty: add the vendors and products you run."
+                : "No articles match your filters."}
             </p>
           ) : (
             <ViewModeContext.Provider value={viewMode}>
               {/* Paginated like the default list; keyed so filter/sort changes start from page 1 */}
               <NewsListClient
-                key={JSON.stringify([search.trim(), categories, timeHours, triage, sort])}
+                key={JSON.stringify([search.trim(), categories, timeHours, triage, sort, stackTerms])}
                 articles={filtered}
               />
             </ViewModeContext.Provider>

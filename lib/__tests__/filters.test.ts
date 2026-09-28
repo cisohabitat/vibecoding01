@@ -56,3 +56,12 @@ describe("sortArticles", () => {
     expect(input[0]).toBe(older);
   });
 });
+
+describe("matchesTriage stack", () => {
+  it("uses the watchlist predicate, matching nothing without one", () => {
+    const a = article("Fortinet patches FortiOS");
+    expect(matchesTriage(a, ["stack"])).toBe(false);
+    expect(matchesTriage(a, ["stack"], () => true)).toBe(true);
+    expect(matchesTriage(a, ["stack", "cve"], () => true)).toBe(false);
+  });
+});

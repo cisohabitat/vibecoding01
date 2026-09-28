@@ -7,6 +7,7 @@ import CveModal from "./CveModal";
 import { useNow } from "./useNow";
 import { useLastVisit } from "./useLastVisit";
 import { parseStoredList, useLocalStorage, writeLocalStorage } from "./useLocalStorage";
+import { parseWatchlist, WATCHLIST_KEY, watchlistMatcher } from "@/lib/watchlist";
 import { toDate } from "@/lib/dates";
 
 function timeAgo(date: Date, now: number): string {
@@ -73,10 +74,12 @@ export default function NewsCard({
   const now = useNow();
   const readRaw = useLocalStorage(READ_KEY);
   const bookmarksRaw = useLocalStorage(BOOKMARK_KEY);
+  const stackRaw = useLocalStorage(WATCHLIST_KEY);
 
   const readUrls = parseStoredList<string>(READ_KEY, readRaw, isString);
   const bookmarks = parseStoredList<Article>(BOOKMARK_KEY, bookmarksRaw, isStoredArticle);
   const isRead = readUrls.includes(article.link);
+  const inStack = watchlistMatcher(parseWatchlist(stackRaw))(article);
   const isBookmarked = bookmarks.some((a) => a.link === article.link);
 
   const pubDate = toDate(article.pubDate);
@@ -260,6 +263,14 @@ export default function NewsCard({
               }`}
             >
               {article.category}
+            </span>
+          )}
+          {inStack && (
+            <span
+              className="px-1.5 py-0.5 rounded border border-cyber-blue/40 text-cyber-blue font-semibold"
+              title="Mentions a vendor or product in your stack"
+            >
+              STACK
             </span>
           )}
           {isNew && (

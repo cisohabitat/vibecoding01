@@ -22,11 +22,13 @@ nonce.
 ## Features
 
 - Search (press <kbd>/</kbd>), category, time-window and triage filters (Has CVE, KEV,
-  CVSS 9+) with Newest/Top sorting, all shareable via the URL
+  CVSS 9+, My stack) with Newest/Top sorting, all shareable via the URL
+- **My stack**: save the vendors and products you run; stories that mention them
+  are marked on their cards and can be filtered to (stored in the browser)
 - Grid/list view, "Load more" pagination
 - **NEW** badges for stories published since your last visit
 - Bookmarks (`/saved`) and read tracking, stored in the browser
-- CVE detail dialog with CVSS score, vector and references
+- CVE detail dialog with CVSS score, vector, EPSS forecast, KEV status and references
 - Trending names and CVEs from the last 24 hours (sidebar on desktop, chip strip on mobile)
 - Top Stories capped at two per source; a footer explainer describes the ranking
 - Warning banner when two or more feeds fail; if every feed fails, the last good page stays up

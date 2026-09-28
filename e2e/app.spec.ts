@@ -256,6 +256,35 @@ test("triage filters narrow to CVE, KEV and CVSS 9+ stories", async ({ page }) =
   await expect(results).toHaveText("2 results");
 });
 
+test("My stack: watchlist marks and filters matching stories", async ({ page }) => {
+  await page.goto("/");
+  const results = page.getByRole("status").filter({ hasText: "result" });
+
+  // Turning on an empty stack opens the editor and explains the empty result
+  await page.getByRole("button", { name: "Only stories about your stack" }).click();
+  await expect(page.getByText("Your stack is empty")).toBeVisible();
+  const input = page.getByLabel("Add vendors or products to your stack");
+  await expect(input).toBeFocused();
+
+  await input.fill("Fortinet, ivanti , x");
+  await input.press("Enter");
+  const list = page.getByRole("list", { name: "Your stack" });
+  // Too-short terms are dropped; case is kept as typed
+  await expect(list.getByRole("listitem")).toHaveText(["Fortinet×", "ivanti×"]);
+  await expect(results).toHaveText("2 results");
+  await expect(page).toHaveURL(/f=stack/);
+  await expect(page.locator("article").filter({ hasText: "STACK" })).toHaveCount(2);
+
+  await page.getByRole("button", { name: "Remove Fortinet" }).click();
+  await expect(results).toHaveText("1 result");
+  await expect(page.locator("article")).toContainText(["Ivanti Connect Secure"]);
+
+  // Saved across visits; cards are marked on the unfiltered page too
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Edit stack (1)" })).toBeVisible();
+  await expect(page.locator("article").filter({ hasText: "STACK" })).toHaveCount(1);
+});
+
 test("filtered results can be sorted and are paginated", async ({ page }) => {
   await page.goto("/?q=fixture+feed");
   const results = page.getByRole("status").filter({ hasText: "result" });
@@ -386,6 +415,13 @@ test.describe("accessibility (axe-core)", () => {
       await page.getByRole("button", { name: /CVE-2024-23897 details/ }).click();
       // Audit the loaded state (score, vector, dates, references)
       await page.getByText("Fixture description for CVE-2024-23897.").waitFor();
+    }],
+    ["stack editor", async (page) => {
+      await page.goto("/");
+      await page.getByRole("button", { name: "Set up stack" }).click();
+      await page.getByLabel("Add vendors or products to your stack").fill("Fortinet, Ivanti");
+      await page.keyboard.press("Enter");
+      await page.getByRole("button", { name: "Only stories about your stack" }).click();
     }],
     ["saved", async (page) => { await page.goto("/saved"); }],
   ];

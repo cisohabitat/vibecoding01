@@ -47,7 +47,7 @@ app/
     NewsListClient.tsx      — Paginated "Load more" grid for recent articles [client]
     NewsCard.tsx            — Article card (featured + default variants), read/bookmark state [client]
     CveModal.tsx            — CVE detail dialog opened from a card's CVE chip [client]
-    ArticleFilter.tsx       — Search, category, time and triage (Has CVE / KEV / CVSS 9+) filters, Newest/Top sort; syncs to URL + localStorage; filtered results paginate via NewsListClient; provides view mode [client]
+    ArticleFilter.tsx       — Search, category, time and triage (Has CVE / KEV / CVSS 9+ / My stack) filters, Newest/Top sort; syncs to URL + localStorage; filtered results paginate via NewsListClient; provides view mode [client]
     StatsBanner.tsx         — 24h counts (stories, distinct critical CVEs, breaches, ransomware)
     UpdatedAgo.tsx          — Live "Updated Nm ago" for the page's data [client]
     AutoRefresh.tsx         — router.refresh() when data is >15 min old and the tab is visible (≤1 per 5 min) [client]
@@ -56,6 +56,7 @@ app/
     useLocalStorage.ts      — Hydration-safe localStorage hook + writer that notifies subscribers [client]
     useLastVisit.ts         — Previous visit end time for NEW badges (recorded on hide/close; baseline kept across reloads, new visit after >30 min away) [client]
     FeedFailureBanner.tsx   — Dismissible warning banner shown when ≥2 feeds fail [client]
+    StackEditor.tsx         — "My stack" watchlist editor (add comma-separated terms, remove); writes via writeLocalStorage so cards update [client]
     TrendingTopics.tsx      — Trending sidebar (lg+) and TrendingStrip chips (below lg); click dispatches a search event [client]
     Footer.tsx              — Last-updated timestamp, source list (from FEED_SOURCES), RSS link, "How stories are ranked" explainer (keep in sync with ranker.ts)
 lib/
@@ -65,6 +66,7 @@ lib/
   pipeline.ts       — Orchestrates fetch → tag → deduplicate → rank → enrich; threads failedFeeds through; 60s in-process memo; getCachedArticles() = same behind Next's data cache (15 min)
   keywords.ts       — Word-boundary keyword matching shared by ranker and tagger
   filters.ts        — Triage filter predicates and result sorting used by ArticleFilter
+  watchlist.ts      — "My stack" terms (localStorage `cyber-pulse-watchlist`, ≤30 terms of 2–40 chars): parse/add/remove, word-boundary matcher (keywords.ts) over title, description and CVE IDs
   ranker.ts         — Relevance scoring (tier weight + keyword match + recency boost)
   tagger.ts         — Keyword-based category tagging (first-match rules; title decides, description only as fallback)
   deduplicator.ts   — Deduplication by identical link, or title similarity across *different* outlets within 72h (never merges titles naming different CVEs); keeps the lowest-tier, newest copy
