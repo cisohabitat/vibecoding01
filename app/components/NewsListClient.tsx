@@ -35,7 +35,7 @@ export default function NewsListClient({ articles }: { articles: Article[] }) {
     <>
       <div ref={gridRef} className={viewMode === "grid" ? gridClass : listClass}>
         {visible.map((article) => (
-          <NewsCard key={article.link} article={article} />
+          <NewsCard key={article.link} article={article} filterable />
         ))}
       </div>
       {hasMore && (

@@ -26,12 +26,12 @@ export default function FeaturedNews({ articles }: { articles: Article[] }) {
         {/* First article takes full width on larger screens */}
         {articles[0] && (
           <div className="sm:col-span-2 lg:col-span-2">
-            <NewsCard article={articles[0]} featured />
+            <NewsCard article={articles[0]} featured filterable />
           </div>
         )}
         {articles.slice(1).map((article) => (
           <div key={article.link}>
-            <NewsCard article={article} featured />
+            <NewsCard article={article} featured filterable />
           </div>
         ))}
       </div>

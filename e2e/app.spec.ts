@@ -340,7 +340,7 @@ test("a notice counts new stories about your stack since the last visit", async 
   const savedCategory = JSON.stringify(["Vulnerability"]);
   const notice = page.getByText("1 new story mentions your stack since your last visit.");
   await expect(notice).toBeVisible();
-  await page.getByRole("button", { name: "Show it" }).click();
+  await page.getByRole("button", { name: "Show it", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "result" })).toHaveText("2 results");
   // Newest first, so the new story leads
   await expect(page.locator("article").first()).toContainText("Fortinet");
@@ -468,6 +468,27 @@ test("stories about Singapore are marked SG", async ({ page }) => {
   await expect(card(page, "Police dismantle").getByText("SG", { exact: true })).toBeVisible();
   await page.goto("/?q=lockbit");
   await expect(card(page, "LockBit ransomware").getByText("SG", { exact: true })).toHaveCount(0);
+});
+
+test("a card's source and category labels show matching stories", async ({ page }) => {
+  await page.goto("/");
+  const results = page.getByRole("status").filter({ hasText: "result" });
+  await card(page, "LockBit ransomware").getByRole("button", { name: /^Ransomware: show all/ }).click();
+  await expect(page).toHaveURL(/cat=Ransomware/);
+  await expect(results).toHaveText("2 results");
+  await expect(page.locator("#filtered-heading")).toBeFocused();
+
+  await card(page, "LockBit ransomware").getByRole("button", { name: /^Fixture Feed: show its stories/ }).click();
+  await expect(page.getByRole("searchbox", { name: "Search articles" })).toHaveValue("Fixture Feed");
+  await expect(results).toHaveText("23 results");
+});
+
+test("labels on the saved page are plain text", async ({ page }) => {
+  await page.goto("/");
+  await card(page, "LockBit ransomware").getByRole("button", { name: "Save for later" }).click();
+  await page.goto("/saved");
+  await expect(page.locator("article").getByText("Ransomware", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /show all Ransomware stories/ })).toHaveCount(0);
 });
 
 test("j and k move between stories", async ({ page }) => {

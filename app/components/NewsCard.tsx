@@ -9,6 +9,8 @@ import { useLastVisit } from "./useLastVisit";
 import { parseStoredList, useLocalStorage, writeLocalStorage } from "./useLocalStorage";
 import { parseWatchlist, WATCHLIST_KEY, watchlistMatcher } from "@/lib/watchlist";
 import { mentionsSingapore } from "@/lib/region";
+import type { FilterState } from "@/lib/filters";
+import { showFiltered } from "./filterEvents";
 import { toDate } from "@/lib/dates";
 
 function timeAgo(date: Date, now: number): string {
@@ -64,12 +66,44 @@ export const isString = (v: unknown): v is string => typeof v === "string";
 export const isStoredArticle = (v: unknown): v is Article =>
   typeof v === "object" && v !== null && typeof (v as Article).link === "string" && typeof (v as Article).title === "string";
 
+/**
+ * A source or category label. On the home page (`filter` given) it's a
+ * button that shows the matching stories; elsewhere (/saved) plain text.
+ */
+function Label({
+  filter,
+  label,
+  className,
+  children,
+}: {
+  filter?: Partial<FilterState>;
+  label: string;
+  className: string;
+  children: React.ReactNode;
+}) {
+  if (!filter) return <span className={className}>{children}</span>;
+  return (
+    <button
+      type="button"
+      onClick={() => showFiltered(filter)}
+      aria-label={label}
+      title={label.slice(label.indexOf(":") + 2).replace(/^./, (c) => c.toUpperCase())}
+      className={`relative z-10 hover:brightness-125 ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function NewsCard({
   article,
   featured = false,
+  filterable = false,
 }: {
   article: Article;
   featured?: boolean;
+  /** Source and category labels filter the page (home page only) */
+  filterable?: boolean;
 }) {
   const [openCve, setOpenCve] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -251,21 +285,25 @@ export default function NewsCard({
         )}
 
         <div className="flex items-center flex-wrap gap-2 text-xs">
-          <span
+          <Label
+            filter={filterable ? { search: article.source } : undefined}
+            label={`${article.source}: show its stories`}
             className={`px-2 py-0.5 rounded border font-medium ${
               tierColors[article.sourceTier] || tierColors[3]
             }`}
           >
             {article.source}
-          </span>
+          </Label>
           {article.category !== "Other" && (
-            <span
+            <Label
+              filter={filterable ? { categories: [article.category] } : undefined}
+              label={`${article.category}: show all ${article.category} stories`}
               className={`px-2 py-0.5 rounded border font-medium ${
                 categoryStyles[article.category]
               }`}
             >
               {article.category}
-            </span>
+            </Label>
           )}
           {mentionsSingapore(article) && (
             <span
