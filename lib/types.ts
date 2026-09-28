@@ -22,6 +22,10 @@ export interface CveInfo {
   severity: CveSeverity | null;
   /** Listed in CISA's Known Exploited Vulnerabilities catalog */
   kev?: boolean;
+  /** EPSS: probability of exploitation in the next 30 days (0–1) */
+  epss?: number;
+  /** EPSS percentile among all scored CVEs (0–1) */
+  epssPercentile?: number;
 }
 
 export interface Article {

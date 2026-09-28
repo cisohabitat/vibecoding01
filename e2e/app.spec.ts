@@ -248,12 +248,12 @@ test("triage filters narrow to CVE, KEV and CVSS 9+ stories", async ({ page }) =
 
   await page.getByRole("button", { name: "Clear ×" }).click();
   await page.getByRole("button", { name: "Only CVSS 9.0 or higher" }).click();
-  await expect(results).toHaveText("1 result");
+  await expect(results).toHaveText("2 results");
 
   // A shared triage link restores the filter
   await page.goto("/?f=cve");
   await expect(page.getByRole("button", { name: "Only stories naming a CVE" })).toHaveAttribute("aria-pressed", "true");
-  await expect(results).toHaveText("1 result");
+  await expect(results).toHaveText("2 results");
 });
 
 test("filtered results can be sorted and are paginated", async ({ page }) => {
@@ -293,6 +293,19 @@ test("CVE chip opens the detail dialog without leaving the page", async ({ page,
   expect(opened).toBe(false);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("high EPSS is flagged on the chip and explained in the dialog", async ({ page }) => {
+  await page.goto("/");
+  // Not in KEV, but the fixture EPSS gives it 41%
+  const chip = page.getByRole("button", { name: /CVE-2024-3400 details, .*41% chance of exploitation \(EPSS\)/ });
+  await expect(chip).toContainText("EPSS 41%");
+  // KEV CVEs show KEV, not EPSS as well
+  await expect(page.getByRole("button", { name: /CVE-2024-23897 details/ }).first()).not.toContainText("EPSS");
+  await chip.click();
+  const dialog = page.getByRole("dialog", { name: "CVE-2024-3400" });
+  await expect(dialog).toContainText("41% chance of exploitation in the next 30 days (98th percentile)");
+  await expect(dialog.getByText("Known exploited.")).toHaveCount(0);
 });
 
 test("closing the CVE dialog returns focus to its chip", async ({ page }) => {
@@ -460,7 +473,7 @@ test("CVE API only serves CVEs the site shows", async ({ request }) => {
   expect(await untracked.json()).toEqual({ error: "CVE not tracked" });
   const tracked = await request.get("/api/cve/CVE-2024-23897");
   expect(tracked.status()).toBe(200);
-  expect(await tracked.json()).toMatchObject({ id: "CVE-2024-23897", kev: true });
+  expect(await tracked.json()).toMatchObject({ id: "CVE-2024-23897", kev: true, epss: 0.94462, epssPercentile: 0.9995 });
 });
 
 test("RSS feed is served", async ({ request }) => {

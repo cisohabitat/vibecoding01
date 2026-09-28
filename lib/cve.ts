@@ -1,4 +1,5 @@
 import { Article, CveInfo, CveSeverity } from "./types";
+import type { EpssScore } from "./epss";
 
 const CVE_REGEX = /CVE-\d{4}-\d{4,}/gi;
 
@@ -80,11 +81,13 @@ async function fetchCveScore(cveId: string): Promise<CveInfo> {
 /**
  * Attaches CVE info to articles. `articles` must be in priority order
  * (most important first): NVD lookups go to the earliest CVE IDs, up to
- * MAX_CVE_LOOKUPS; later IDs are listed without a score.
+ * MAX_CVE_LOOKUPS; later IDs are listed without a score. KEV status and
+ * EPSS (already fetched in bulk) apply to every ID.
  */
 export async function enrichWithCves(
   articles: Article[],
-  kevIds: Set<string> = new Set()
+  kevIds: Set<string> = new Set(),
+  epss: Map<string, EpssScore> = new Map()
 ): Promise<Article[]> {
   // Extract CVE IDs for all articles up-front (cheap regex, no network)
   const articleCves = articles.map((a) => ({
@@ -111,9 +114,15 @@ export async function enrichWithCves(
   return articleCves.map(({ article, ids }) => {
     if (ids.length === 0) return article;
     const cves = ids.map((id): CveInfo => {
-      const info = cveMap.get(id) ?? { id, cvss: null, severity: null };
-      // KEV applies to every CVE (a set lookup), not just the NVD-capped ones
-      return kevIds.has(id) ? { ...info, kev: true } : info;
+      const info: CveInfo = { ...(cveMap.get(id) ?? { id, cvss: null, severity: null }) };
+      // Not limited by the NVD lookup cap: these are local lookups
+      if (kevIds.has(id)) info.kev = true;
+      const score = epss.get(id);
+      if (score) {
+        info.epss = score.epss;
+        info.epssPercentile = score.percentile;
+      }
+      return info;
     });
     return { ...article, cves };
   });

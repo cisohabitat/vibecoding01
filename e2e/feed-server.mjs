@@ -16,7 +16,7 @@ const TITLES = [
   "Cisco warns of IOS XE privilege escalation",
   "Google fixes Chrome zero-day used in the wild",
   "Okta support system breach exposes customer data",
-  "SonicWall firewall bug allows remote takeover",
+  "SonicWall firewall bug CVE-2024-3400 allows remote takeover",
   "Atlassian Confluence servers targeted by botnet",
   "Citrix NetScaler session hijacking warning",
   "VMware ESXi hosts encrypted by new ransomware strain",
@@ -74,6 +74,17 @@ createServer((req, res) => {
   if (url.pathname === "/kev") {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ vulnerabilities: [{ cveID: "CVE-2024-23897" }] }));
+    return;
+  }
+  // Minimal FIRST EPSS API: scores the fixture CVEs (numbers as strings, like the real API)
+  if (url.pathname === "/epss") {
+    const scores = { "CVE-2024-23897": ["0.944620000", "0.999500000"], "CVE-2024-3400": ["0.412300000", "0.982000000"] };
+    const ids = (url.searchParams.get("cve") ?? "").split(",");
+    const data = ids
+      .filter((id) => scores[id])
+      .map((id) => ({ cve: id, epss: scores[id][0], percentile: scores[id][1], date: "2026-01-01" }));
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "OK", total: data.length, data }));
     return;
   }
   if (url.pathname === "/nvd") {

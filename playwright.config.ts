@@ -39,6 +39,7 @@ export default defineConfig({
         ]),
         NVD_API_URL: `http://localhost:${FEED_PORT}/nvd`,
         KEV_URL: `http://localhost:${FEED_PORT}/kev`,
+        EPSS_URL: `http://localhost:${FEED_PORT}/epss`,
         NO_PROXY: "localhost,127.0.0.1",
       },
       // Always build fresh: reusing a server left running from an older build

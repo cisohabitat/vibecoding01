@@ -86,6 +86,21 @@ describe("enrichWithCves KEV flag", () => {
   });
 });
 
+describe("enrichWithCves EPSS", () => {
+  it("attaches EPSS to every CVE, beyond the NVD lookup cap", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 503 })));
+    const ids = Array.from({ length: MAX_CVE_LOOKUPS + 2 }, (_, i) => `CVE-2024-${3000 + i}`);
+    const last = ids[ids.length - 1];
+    const [result] = await enrichWithCves(
+      [article(ids.join(" "))],
+      new Set(),
+      new Map([[last, { epss: 0.42, percentile: 0.97 }]])
+    );
+    expect(result.cves.find((c) => c.id === last)).toMatchObject({ epss: 0.42, epssPercentile: 0.97 });
+    expect(result.cves.filter((c) => c.epss !== undefined)).toHaveLength(1);
+  });
+});
+
 describe("pickCvss", () => {
   it("prefers CVSS v3.1 over older versions", () => {
     const score = pickCvss({

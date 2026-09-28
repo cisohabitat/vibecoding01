@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeKeywordScore, KEV_BOOST, pickFeatured, rankArticles } from "../ranker";
+import { computeKeywordScore, EPSS_BOOST, KEV_BOOST, pickFeatured, rankArticles } from "../ranker";
 import { Article } from "../types";
 
 function article(overrides: Partial<Article>): Article {
@@ -73,5 +73,32 @@ describe("KEV boost", () => {
   it("changes nothing without KEV data", () => {
     const a = article({ title: "Vendor fixes CVE-2024-1111" });
     expect(rankArticles([a]).featured[0].score).toBe(rankArticles([a], new Set()).featured[0].score);
+  });
+});
+
+describe("rankArticles EPSS boost", () => {
+  const score = (epss: number) => ({ epss, percentile: 0.9 });
+
+  it("boosts stories naming a CVE with EPSS of 10% or more", () => {
+    const a = article({ title: "Vendor fixes CVE-2024-1111" });
+    const b = article({ title: "Vendor fixes CVE-2024-2222" });
+    const epss = new Map([
+      ["CVE-2024-1111", score(0.09)],
+      ["CVE-2024-2222", score(0.1)],
+    ]);
+    const { featured } = rankArticles([a, b], new Set(), epss);
+    expect(featured[0].title).toBe(b.title);
+    expect(featured[0].score - featured[1].score).toBe(EPSS_BOOST);
+  });
+
+  it("doesn't add EPSS on top of KEV", () => {
+    const a = article({ title: "Vendor fixes CVE-2024-1111" });
+    const b = article({ title: "Vendor fixes CVE-2024-2222" });
+    const { featured } = rankArticles(
+      [a, b],
+      new Set(["CVE-2024-1111", "CVE-2024-2222"]),
+      new Map([["CVE-2024-2222", score(0.9)]])
+    );
+    expect(featured[0].score).toBe(featured[1].score);
   });
 });

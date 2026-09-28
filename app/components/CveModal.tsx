@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import type { CveDetail } from "@/app/api/cve/[id]/route";
+import { formatPercentile, formatProbability, HIGH_EPSS } from "@/lib/epss-format";
 
 const severityColor: Record<string, string> = {
   CRITICAL: "text-red-400 border-red-500/50 bg-red-500/10",
@@ -148,6 +149,32 @@ export default function CveModal({
                 </a>
                 : attackers are using it in the wild, so patch it first.
               </div>
+            )}
+
+            {data.epss !== null && (
+              <p className="text-sm text-slate-300">
+                <span
+                  className={`font-mono font-bold ${
+                    data.epss >= HIGH_EPSS ? "text-orange-300" : "text-slate-200"
+                  }`}
+                >
+                  {formatProbability(data.epss)}
+                </span>{" "}
+                chance of exploitation in the next 30 days
+                {data.epssPercentile !== null && (
+                  <> ({formatPercentile(data.epssPercentile)} percentile)</>
+                )}
+                , per{" "}
+                <a
+                  href="https://www.first.org/epss/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-white"
+                >
+                  FIRST&rsquo;s EPSS
+                </a>
+                .
+              </p>
             )}
 
             {/* Description */}

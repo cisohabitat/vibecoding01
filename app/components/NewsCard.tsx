@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Article, ArticleCategory, CveSeverity } from "@/lib/types";
+import { Article, ArticleCategory, CveInfo, CveSeverity } from "@/lib/types";
+import { formatProbability, HIGH_EPSS } from "@/lib/epss-format";
 import CveModal from "./CveModal";
 import { useNow } from "./useNow";
 import { useLastVisit } from "./useLastVisit";
@@ -24,6 +25,12 @@ const tierColors: Record<number, string> = {
   2: "bg-cyber-accent/10 text-cyber-accent border-cyber-accent/30",
   3: "bg-cyber-blue/10 text-cyber-blue border-sky-500/30",
 };
+
+// EPSS is shown on the chip only when it's high enough to affect ranking
+// (and not already covered by KEV); the dialog shows it for every CVE.
+function showEpss(cve: CveInfo): boolean {
+  return !cve.kev && (cve.epss ?? 0) >= HIGH_EPSS;
+}
 
 const cveSeverityStyles: Record<CveSeverity | "null", string> = {
   CRITICAL: "bg-red-500/10 text-red-400 border-red-500/40 hover:bg-red-500/20",
@@ -205,6 +212,8 @@ export default function NewsCard({
                   cve.cvss !== null ? `, CVSS ${cve.cvss.toFixed(1)}` : ""
                 }${cve.severity ? ` ${cve.severity.toLowerCase()}` : ""}${
                   cve.kev ? ", known exploited (CISA KEV)" : ""
+                }${
+                  showEpss(cve) ? `, ${formatProbability(cve.epss ?? 0)} chance of exploitation (EPSS)` : ""
                 }`}
                 aria-haspopup="dialog"
                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-mono transition-colors cursor-pointer ${
@@ -221,6 +230,14 @@ export default function NewsCard({
                     title="Known exploited (CISA KEV)"
                   >
                     KEV
+                  </span>
+                )}
+                {showEpss(cve) && (
+                  <span
+                    className="ml-0.5 px-1 rounded-sm bg-orange-500/20 text-orange-200 font-sans font-bold text-[10px] tracking-wide"
+                    title="EPSS: probability of exploitation in the next 30 days"
+                  >
+                    EPSS {formatProbability(cve.epss ?? 0)}
                   </span>
                 )}
               </button>

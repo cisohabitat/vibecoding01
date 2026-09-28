@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { NVD_API_URL, nvdHeaders, pickCvss } from "@/lib/cve";
+import { fetchEpss } from "@/lib/epss";
 import { getKevIds } from "@/lib/kev";
 import { getKnownCveIds } from "@/lib/pipeline";
 import { safeLink } from "@/lib/url";
@@ -19,6 +20,9 @@ export interface CveDetail {
   references: string[];
   /** Listed in CISA's Known Exploited Vulnerabilities catalog */
   kev: boolean;
+  /** EPSS probability of exploitation in the next 30 days (0–1), if scored */
+  epss: number | null;
+  epssPercentile: number | null;
 }
 
 // Let the CDN cache answers so repeated modal opens don't hit NVD
@@ -52,6 +56,8 @@ export async function GET(
   }
 
   try {
+    // EPSS runs alongside NVD too (never throws; empty on failure)
+    const epss = fetchEpss([cveId]);
     const res = await fetch(
       `${NVD_API_URL}?cveId=${cveId}`,
       {
@@ -101,6 +107,8 @@ export async function GET(
       lastModified: vuln.lastModified ?? null,
       references,
       kev: (await kevIds).has(cveId),
+      epss: (await epss).get(cveId)?.epss ?? null,
+      epssPercentile: (await epss).get(cveId)?.percentile ?? null,
     };
 
     return NextResponse.json(detail, { headers: { "Cache-Control": CACHE_OK } });

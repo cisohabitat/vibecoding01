@@ -2,7 +2,8 @@ import { unstable_cache } from "next/cache";
 import { fetchAllFeeds } from "./fetcher";
 import { tagArticles } from "./tagger";
 import { deduplicateArticles } from "./deduplicator";
-import { enrichWithCves, NVD_API_URL } from "./cve";
+import { enrichWithCves, extractCveIds, NVD_API_URL } from "./cve";
+import { EPSS_URL, fetchEpss } from "./epss";
 import { rankArticles } from "./ranker";
 import { FEED_SOURCES } from "./feeds";
 import { getKevIds, KEV_URL } from "./kev";
@@ -15,7 +16,7 @@ export class AllFeedsFailedError extends Error {
 }
 
 /**
- * Full article pipeline: fetch → tag → deduplicate → rank → CVE-enrich.
+ * Full article pipeline: fetch (+ KEV) → tag → deduplicate → EPSS → rank → CVE-enrich.
  * Ranking runs before enrichment so the limited NVD lookups go to the
  * featured articles first. Used by both the main page and the API routes.
  *
@@ -60,8 +61,10 @@ async function runPipeline() {
 
   const tagged = tagArticles(raw);
   const deduped = deduplicateArticles(tagged);
-  const ranked = rankArticles(deduped, kevIds);
-  const enriched = await enrichWithCves([...ranked.featured, ...ranked.recent], kevIds);
+  // EPSS is one bulk lookup for every CVE mentioned, so ranking can use it
+  const epss = await fetchEpss(deduped.flatMap((a) => extractCveIds(a.title + " " + a.description)));
+  const ranked = rankArticles(deduped, kevIds, epss);
+  const enriched = await enrichWithCves([...ranked.featured, ...ranked.recent], kevIds, epss);
   return {
     ...ranked,
     featured: enriched.slice(0, ranked.featured.length),
@@ -84,7 +87,7 @@ const cachedPipeline = unstable_cache(() => getArticles(), cacheKey(), {
 /**
  * The data cache outlives builds (and, on Vercel, deployments), so the key
  * includes what defines the result: the deployment (ranking/shape changes),
- * the feed list and the NVD endpoint (test overrides).
+ * the feed list and the NVD/KEV/EPSS endpoints (test overrides).
  */
 function cacheKey(): string[] {
   return [
@@ -93,6 +96,7 @@ function cacheKey(): string[] {
     JSON.stringify(FEED_SOURCES),
     NVD_API_URL,
     KEV_URL,
+    EPSS_URL,
   ];
 }
 

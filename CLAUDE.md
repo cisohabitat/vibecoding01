@@ -70,6 +70,8 @@ lib/
   deduplicator.ts   — Deduplication by identical link, or title similarity across *different* outlets within 72h (never merges titles naming different CVEs); keeps the lowest-tier, newest copy
   cve.ts            — CVE ID extraction + CVSS enrichment via NVD API (pickCvss: v3.1 > v3.0 > v2, shared with the CVE route; capped lookups, optional NVD_API_KEY; NVD_API_URL override for tests); flags KEV CVEs
   kev.ts            — CISA Known Exploited Vulnerabilities catalog IDs (6h memo, empty set on failure; KEV_URL override for tests)
+  epss.ts           — FIRST EPSS scores, bulk-fetched in batches of 50 (empty on failure; EPSS_URL override for tests)
+  epss-format.ts    — HIGH_EPSS threshold + percentage/percentile formatting, safe for client components
   trending.ts       — Trending terms (names, CVE IDs) from last-24h titles; ≥2 stories, generic words excluded
   rss.ts            — RSS 2.0 builder for /api/feed.xml (XML-safe escaping, CVEs as <category>)
   site.ts           — Absolute site URL (NEXT_PUBLIC_SITE_URL, else Vercel production domain)
@@ -78,7 +80,7 @@ lib/
   __tests__/        — Vitest unit tests (lib modules + API route handlers)
 e2e/
   app.spec.ts       — Playwright end-to-end tests
-  feed-server.mjs   — Fixture RSS server (dates relative to request time), fixture NVD API at /nvd, KEV catalog at /kev, 503s for /broken-* (two failing sources trigger the banner)
+  feed-server.mjs   — Fixture RSS server (dates relative to request time), fixture NVD API at /nvd, KEV catalog at /kev, EPSS API at /epss, 503s for /broken-* (two failing sources trigger the banner)
 .github/
   workflows/ci.yml  — CI: prod-dependency audit, lint, typecheck, unit tests, build; separate e2e job
   dependabot.yml    — Weekly grouped npm updates, monthly Actions updates
@@ -95,6 +97,7 @@ e2e/
 - Article pipeline: fetch → tag categories → deduplicate → rank → enrich CVEs. Top 5 from the last 24h become "featured" (at most 2 per source, see `pickFeatured`).
 - CVE IDs are extracted from titles/descriptions and enriched with CVSS scores via the NVD API. Lookups go to featured articles first and are capped per regeneration (`MAX_CVE_LOOKUPS`: 5 without a key, 20 with `NVD_API_KEY`) to stay within NVD rate limits. Set `NVD_API_KEY` in the Vercel env to raise the cap.
 - CISA KEV: the catalog is loaded alongside the feeds (`getKevIds()`); every CVE in it gets `kev: true` (not limited by the NVD cap), stories naming one get `KEV_BOOST` in ranking, and the UI marks them (chip badge, CVE dialog notice, "Exploited CVEs" stat). KEV failure must never break the page: it degrades to an empty set.
+- EPSS: after deduplication the pipeline bulk-fetches EPSS for every CVE mentioned (`fetchEpss`), so ranking can use it. The exploitation boost is the larger of `KEV_BOOST` and `EPSS_BOOST` (EPSS ≥ `HIGH_EPSS`, 10%); they don't stack. Cards show an EPSS badge only when it's high and the CVE isn't KEV; the CVE dialog shows every score. Client components import from `epss-format.ts`, not `epss.ts`.
 - Keywords match at word boundaries with common inflections (`lib/keywords.ts`), so "apt" doesn't match "adapt" and "conti" doesn't match "continues". A keyword ending in a non-alphanumeric character (e.g. `cve-`) acts as a prefix.
 - Duplicate articles (same story from multiple sources) are merged; `alsoReportedBy` tracks secondary sources.
 - Content-Security-Policy is set per request in `proxy.ts`: `script-src 'self' 'nonce-…' 'strict-dynamic'` (no `'unsafe-inline'`). Next.js nonces its own scripts automatically; scripts injected from JS by a nonced script (Vercel Analytics/Speed Insights) are allowed by `'strict-dynamic'`. Any hand-written inline `<script>` must use the nonce from `headers().get("x-nonce")`. `style-src` keeps `'unsafe-inline'` (inline style attributes). `connect-src` is `'self'` only: browser-side fetches must go through an API route (e.g. `/api/cve/[id]`). The other security headers (X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy) are in `next.config.ts`.

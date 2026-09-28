@@ -1,6 +1,7 @@
 import { Article, RankedArticles } from "./types";
 import { compileKeywords } from "./keywords";
 import { extractCveIds } from "./cve";
+import { EpssScore, HIGH_EPSS } from "./epss";
 
 const CRITICAL_KEYWORDS = ["zero-day", "0day", "0-day", "cve-", "ransomware", "breach", "apt"];
 const HIGH_KEYWORDS = ["vulnerability", "vulnerabilities", "exploit", "malware", "attack", "critical", "rce", "backdoor"];
@@ -40,14 +41,25 @@ function computeRecencyBoost(pubDate: Date): number {
 
 /** Boost for naming a CVE with confirmed in-the-wild exploitation (CISA KEV). */
 export const KEV_BOOST = 3;
+/** Boost for naming a CVE with a high predicted exploitation probability (EPSS). */
+export const EPSS_BOOST = 2;
 
-function scoreArticle(article: Article, kevIds: Set<string>): number {
+/**
+ * The strongest exploitation signal among the article's CVEs. KEV and a
+ * high EPSS usually coincide, so the boosts don't add up.
+ */
+function exploitBoost(cveIds: string[], kevIds: Set<string>, epss: Map<string, EpssScore>): number {
+  if (cveIds.some((id) => kevIds.has(id))) return KEV_BOOST;
+  if (cveIds.some((id) => (epss.get(id)?.epss ?? 0) >= HIGH_EPSS)) return EPSS_BOOST;
+  return 0;
+}
+
+function scoreArticle(article: Article, kevIds: Set<string>, epss: Map<string, EpssScore>): number {
   const text = article.title + " " + article.description;
   const tierWeight = TIER_WEIGHTS[article.sourceTier] || 1;
   const keywordScore = computeKeywordScore(text);
   const recencyBoost = computeRecencyBoost(article.pubDate);
-  const kevBoost = kevIds.size > 0 && extractCveIds(text).some((id) => kevIds.has(id)) ? KEV_BOOST : 0;
-  return tierWeight + keywordScore + recencyBoost + kevBoost;
+  return tierWeight + keywordScore + recencyBoost + exploitBoost(extractCveIds(text), kevIds, epss);
 }
 
 const FEATURED_COUNT = 5;
@@ -75,12 +87,16 @@ export function pickFeatured(sorted: Article[], count = FEATURED_COUNT): Article
   return picked.sort((a, b) => b.score - a.score);
 }
 
-export function rankArticles(articles: Article[], kevIds: Set<string> = new Set()): RankedArticles {
+export function rankArticles(
+  articles: Article[],
+  kevIds: Set<string> = new Set(),
+  epss: Map<string, EpssScore> = new Map()
+): RankedArticles {
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
   // Score all articles
-  const scored = articles.map((a) => ({ ...a, score: scoreArticle(a, kevIds) }));
+  const scored = articles.map((a) => ({ ...a, score: scoreArticle(a, kevIds, epss) }));
 
   // Split into last 24h and older
   const last24h = scored
