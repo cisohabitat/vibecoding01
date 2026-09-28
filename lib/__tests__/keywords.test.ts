@@ -19,6 +19,13 @@ describe("compileKeyword", () => {
     expect(matches("rce", "RCEs galore")).toBe(false);
   });
 
+  it("doesn't let a keyword ending in a digit match a longer number", () => {
+    expect(matches("CVE-2024-3400", "Exploited CVE-2024-34001")).toBe(false);
+    expect(matches("CVE-2024-3400", "Exploited CVE-2024-3400 in PAN-OS")).toBe(true);
+    expect(matches("Chrome 12", "Chrome 125 released")).toBe(false);
+    expect(matches("Chrome 12", "Chrome 12 is ancient")).toBe(true);
+  });
+
   it("matches whole words, inflections and group numbers", () => {
     expect(matches("apt", "APT28 targets embassies")).toBe(true);
     expect(matches("apt", "Chinese APT group")).toBe(true);

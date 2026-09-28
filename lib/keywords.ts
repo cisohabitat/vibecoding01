@@ -17,10 +17,13 @@ export function compileKeyword(keyword: string): RegExp {
   const kw = keyword.toLowerCase();
   const startsAlnum = /^[a-z0-9]/.test(kw);
   const endsAlnum = /[a-z0-9]$/.test(kw);
+  // A keyword ending in a digit can't be followed by more digits
+  // ("CVE-2024-3400" must not match "CVE-2024-34001", "Chrome 12" not "Chrome 125")
+  const endsDigit = /[0-9]$/.test(kw);
   return new RegExp(
     (startsAlnum ? "(?<![a-z0-9])" : "") +
       escapeRegExp(kw) +
-      (endsAlnum ? `${kw.length > 3 ? SUFFIXES : ""}(?![a-z])` : "")
+      (endsDigit ? "(?![a-z0-9])" : endsAlnum ? `${kw.length > 3 ? SUFFIXES : ""}(?![a-z])` : "")
   );
 }
 

@@ -184,7 +184,13 @@ export default function ArticleFilter({
     return allArticles.filter((a) => pubTime(a) > lastVisit && !read.has(a.link) && inStack(a)).length;
   }, [allArticles, lastVisit, readRaw, stackTerms]);
 
+  // Only the stack filter, newest first: the new stories lead the list
+  // (marked NEW), and no other filter can hide them
   function showNewInStack() {
+    categoriesChangedByUser.current = true;
+    setSearch("");
+    setCategories([]);
+    setTimeHours(null);
     setTriage(["stack"]);
     setSort("new");
   }
@@ -293,7 +299,8 @@ export default function ArticleFilter({
               key={key}
               onClick={() => toggleTriage(key)}
               aria-pressed={triage.includes(key)}
-              aria-label={description}
+              // Starts with the visible label, so voice control ("click KEV") finds it
+              aria-label={`${label}: ${description}`}
               title={description}
               className={`px-3 py-1 text-xs rounded-full border transition-colors ${
                 !triage.includes(key)

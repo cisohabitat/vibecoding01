@@ -37,7 +37,7 @@ describe("getKevIds", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("returns an empty set on failure and retries next time", async () => {
+  it("returns an empty set on failure and retries after 5 minutes, not on every call", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const fetchMock = vi
       .fn()
@@ -47,8 +47,16 @@ describe("getKevIds", () => {
     const { getKevIds } = await import("../kev");
 
     expect((await getKevIds()).size).toBe(0);
-    await new Promise((r) => setTimeout(r, 0)); // let the failed memo clear
-    expect((await getKevIds()).has("CVE-2024-3400")).toBe(true);
+    await new Promise((r) => setTimeout(r, 0)); // let the failure be recorded
+    expect((await getKevIds()).size).toBe(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    vi.useFakeTimers({ now: Date.now() + 5 * 60_000 + 1000 });
+    try {
+      expect((await getKevIds()).has("CVE-2024-3400")).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

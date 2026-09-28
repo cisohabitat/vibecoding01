@@ -41,11 +41,12 @@ export interface CvssScore {
 
 /**
  * The best available CVSS score from an NVD `metrics` object: v3.1, then
- * v3.0, then v2. v2 metrics carry the severity outside `cvssData`.
+ * v3.0, then v4.0 (often the only score on new CVEs while NVD's analysis is
+ * pending), then v2. v2 metrics carry the severity outside `cvssData`.
  */
 export function pickCvss(metrics: unknown): CvssScore {
   const m = (metrics ?? {}) as Record<string, NvdCvssMetric[] | undefined>;
-  for (const key of ["cvssMetricV31", "cvssMetricV30", "cvssMetricV2"]) {
+  for (const key of ["cvssMetricV31", "cvssMetricV30", "cvssMetricV40", "cvssMetricV2"]) {
     const metric = m[key]?.[0];
     const data = metric?.cvssData;
     if (typeof data?.baseScore !== "number") continue;

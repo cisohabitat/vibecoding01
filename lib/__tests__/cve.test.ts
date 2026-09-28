@@ -128,6 +128,15 @@ describe("pickCvss", () => {
     ).toEqual({ cvss: 5, severity: null, vectorString: null });
   });
 
+  it("falls back to CVSS v4.0 after v3.x, before v2", () => {
+    expect(
+      pickCvss({
+        cvssMetricV2: [{ baseSeverity: "MEDIUM", cvssData: { baseScore: 5 } }],
+        cvssMetricV40: [{ cvssData: { baseScore: 9.3, baseSeverity: "CRITICAL", vectorString: "CVSS:4.0/AV:N" } }],
+      })
+    ).toEqual({ cvss: 9.3, severity: "CRITICAL", vectorString: "CVSS:4.0/AV:N" });
+  });
+
   it("returns nulls for missing metrics", () => {
     expect(pickCvss(undefined)).toEqual({ cvss: null, severity: null, vectorString: null });
   });

@@ -320,6 +320,8 @@ test("a notice counts new stories about your stack since the last visit", async 
   await expect(notice).toBeVisible();
   await page.getByRole("button", { name: "Show it" }).click();
   await expect(page.getByRole("status").filter({ hasText: "result" })).toHaveText("2 results");
+  // Newest first, so the new story leads
+  await expect(page.locator("article").first()).toContainText("Fortinet");
   await expect(page).toHaveURL(/f=stack/);
   await expect(notice).toHaveCount(0);
 });

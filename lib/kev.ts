@@ -9,6 +9,9 @@ export const KEV_URL =
   "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json";
 
 const TTL_MS = 6 * 60 * 60 * 1000;
+// A failed load is kept this long, so an outage isn't retried on every call
+// (each attempt can wait out the 10s timeout)
+const FAILURE_TTL_MS = 5 * 60 * 1000;
 
 let memo: { at: number; ids: Promise<Set<string>> } | null = null;
 
@@ -47,9 +50,9 @@ export function getKevIds(): Promise<Set<string>> {
     const ids = loadKev();
     const entry = { at: now, ids };
     memo = entry;
-    // Don't keep a failed (empty) load for 6 hours; retry on the next run
+    // Don't keep a failed (empty) load for 6 hours: expire it after 5 minutes
     ids.then((set) => {
-      if (set.size === 0 && memo === entry) memo = null;
+      if (set.size === 0) entry.at = Date.now() - TTL_MS + FAILURE_TTL_MS;
     });
   }
   return memo.ids;

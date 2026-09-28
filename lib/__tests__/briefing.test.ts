@@ -35,7 +35,8 @@ describe("buildBriefing", () => {
         // Bookmarks come from storage, where dates are ISO strings
         article({ title: "Second", pubDate: "2026-09-26T08:00:00Z" as unknown as Date }),
       ],
-      new Date("2026-09-28T12:00:00Z")
+      new Date("2026-09-28T12:00:00Z"),
+      "UTC"
     );
     expect(text).toBe(
       [
@@ -56,5 +57,12 @@ describe("buildBriefing", () => {
   it("copes with a single story and missing CVE data", () => {
     const text = buildBriefing([article({ cves: undefined as unknown as [] })], new Date("2026-09-28T00:00:00Z"));
     expect(text).toContain("(1 story)");
+  });
+
+  it("dates the briefing in the reader's time zone", () => {
+    // 07:00 in Singapore is still the previous day in UTC
+    const now = new Date("2026-09-27T23:00:00Z");
+    expect(buildBriefing([], now, "Asia/Singapore")).toMatch(/^\*\*Security briefing, 2026-09-28\*\*/);
+    expect(buildBriefing([], now, "UTC")).toMatch(/^\*\*Security briefing, 2026-09-27\*\*/);
   });
 });

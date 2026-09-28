@@ -15,13 +15,17 @@ function cveLine(c: CveInfo): string {
   return notes.length > 0 ? `${c.id}: ${notes.join(", ")}` : c.id;
 }
 
-/** `now` sets the heading's date (UTC). */
-export function buildBriefing(articles: Article[], now: Date): string {
-  const date = now.toISOString().slice(0, 10);
+/**
+ * `now` sets the heading's date. Dates are YYYY-MM-DD in `timeZone` (default:
+ * the reader's own, so a Singapore morning isn't dated yesterday).
+ */
+export function buildBriefing(articles: Article[], now: Date, timeZone?: string): string {
+  const format = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" });
+  const date = format.format(now);
   const count = `${articles.length} ${articles.length === 1 ? "story" : "stories"}`;
   const items = articles.map((a, i) => {
     const published = toDate(a.pubDate);
-    const when = Number.isNaN(published.getTime()) ? "" : `, ${published.toISOString().slice(0, 10)}`;
+    const when = Number.isNaN(published.getTime()) ? "" : `, ${format.format(published)}`;
     const lines = [`${i + 1}. ${a.title.replace(/\s+/g, " ").trim()} (${a.source}${when})`];
     for (const c of a.cves ?? []) lines.push(`   ${cveLine(c)}`);
     lines.push(`   ${a.link}`);
