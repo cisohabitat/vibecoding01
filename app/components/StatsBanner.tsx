@@ -72,7 +72,7 @@ export default function StatsBanner({
   ];
 
   return (
-    <div className="flex flex-wrap gap-4 mb-6 px-1" role="group" aria-label="Last 24 hours">
+    <div className="flex flex-wrap gap-2 sm:gap-4 mb-6 px-1" role="group" aria-label="Last 24 hours">
       {stats.map(({ label, value, color, filter }) => (
         <StatTile key={label} label={label} value={value} color={color} filter={{ timeHours: 24, ...filter }} />
       ))}
