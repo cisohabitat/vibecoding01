@@ -35,6 +35,8 @@ export interface Article {
   title: string;
   link: string;
   pubDate: Date;
+  /** Featured stories only: the non-zero parts of `score`, e.g. { Source: 3, Keywords: 6 } */
+  scoreBreakdown?: Record<string, number>;
   /**
    * Newest publication among merged duplicates, if later than pubDate: the
    * story is still current while outlets keep reporting it. Set by the

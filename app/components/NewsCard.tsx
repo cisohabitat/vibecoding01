@@ -58,6 +58,14 @@ const categoryStyles: Record<ArticleCategory, string> = {
   Other:         "bg-slate-500/10 text-slate-400 border-slate-500/30",
 };
 
+/** "Relevance score: Source 3 · Keywords 6 · Recency 3" (see the footer's ranking notes) */
+function scoreTitle(article: Article): string {
+  const parts = Object.entries(article.scoreBreakdown ?? {}).map(
+    ([name, n]) => `${name} ${n > 0 && name !== "Source" ? "+" : ""}${Number(n.toFixed(2))}`
+  );
+  return parts.length ? `Relevance score: ${parts.join(" · ")}` : "Relevance score";
+}
+
 // Outlets named under "also"; the rest are counted (and listed in the tooltip)
 const MAX_ALSO_SHOWN = 3;
 
@@ -202,7 +210,7 @@ export default function NewsCard({
             {featured && article.score > 0 && (
               <span
                 className="text-xs font-mono bg-cyber-accent/10 text-cyber-accent px-2 py-0.5 rounded"
-                title="Relevance score"
+                title={scoreTitle(article)}
               >
                 {article.score.toFixed(1)}
               </span>

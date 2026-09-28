@@ -41,6 +41,8 @@ test("counts known-exploited CVEs and ranks their story first", async ({ page })
   // The KEV boost puts the Jenkins story at the top of Top Stories
   const top = page.locator("section", { has: page.getByRole("heading", { name: /Top Stories/ }) }).locator("article").first();
   await expect(top).toContainText("Critical RCE in Jenkins");
+  // ...and its score explains itself
+  await expect(top.getByText("16.0")).toHaveAttribute("title", /^Relevance score: Source 2 · Keywords \+\d+ · Recency \+\d.* · Exploitation \+3/);
 
   // The tile shows its stories: last 24h, known exploited
   await stat.click();

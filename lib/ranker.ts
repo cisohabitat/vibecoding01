@@ -87,22 +87,26 @@ function exploitBoost(cveIds: string[], kevIds: Set<string>, epss: Map<string, E
   return 0;
 }
 
-function scoreArticle(article: Article, kevIds: Set<string>, epss: Map<string, EpssScore>): number {
+/** The parts of an article's score, keyed by what the footer's ranking notes call them. */
+export function scoreParts(
+  article: Article,
+  kevIds: Set<string>,
+  epss: Map<string, EpssScore>
+): Record<string, number> {
   const text = article.title + " " + article.description;
-  const tierWeight = TIER_WEIGHTS[article.sourceTier] || 1;
-  const keywordScore = computeKeywordScore(text);
-  const recencyBoost = computeRecencyBoost(reportedAt(article));
-  const regionBoost = mentionsSingapore(article) ? SG_BOOST : 0;
-  const coverageBoost = Math.min(article.alsoReportedBy?.length ?? 0, MAX_COVERAGE_SOURCES) * COVERAGE_BOOST;
-  return (
-    tierWeight +
-    keywordScore +
-    recencyBoost +
-    regionBoost +
-    coverageBoost +
-    exploitBoost(extractCveIds(text), kevIds, epss) -
-    (isPromotional(article.title) ? PROMO_PENALTY : 0)
-  );
+  return {
+    Source: TIER_WEIGHTS[article.sourceTier] || 1,
+    Keywords: computeKeywordScore(text),
+    Recency: computeRecencyBoost(reportedAt(article)),
+    Singapore: mentionsSingapore(article) ? SG_BOOST : 0,
+    Coverage: Math.min(article.alsoReportedBy?.length ?? 0, MAX_COVERAGE_SOURCES) * COVERAGE_BOOST,
+    Exploitation: exploitBoost(extractCveIds(text), kevIds, epss),
+    Promotional: isPromotional(article.title) ? -PROMO_PENALTY : 0,
+  };
+}
+
+function scoreArticle(article: Article, kevIds: Set<string>, epss: Map<string, EpssScore>): number {
+  return Object.values(scoreParts(article, kevIds, epss)).reduce((sum, n) => sum + n, 0);
 }
 
 const FEATURED_COUNT = 5;
@@ -162,7 +166,11 @@ export function rankArticles(
 
   // Featured: top 5 from last 24h, at most 2 per source and 1 per topic
   const namesOf = distinctiveNamer(articles.map((a) => a.title));
-  const featured = pickFeatured(last24h, FEATURED_COUNT, (a) => namesOf(a.title));
+  // Featured cards explain their score (the non-zero parts)
+  const featured = pickFeatured(last24h, FEATURED_COUNT, (a) => namesOf(a.title)).map((a) => ({
+    ...a,
+    scoreBreakdown: Object.fromEntries(Object.entries(scoreParts(a, kevIds, epss)).filter(([, n]) => n !== 0)),
+  }));
   const featuredLinks = new Set(featured.map((a) => a.link));
 
   // Recent: everything else, sorted by date

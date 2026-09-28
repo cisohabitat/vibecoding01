@@ -201,3 +201,19 @@ describe("Top Stories window", () => {
     expect(rankArticles([old]).featured).toHaveLength(0);
   });
 });
+
+describe("score breakdown", () => {
+  it("explains featured scores with their non-zero parts, which add up", () => {
+    const a = article({ title: "Vendor fixes CVE-2024-2222 in Singapore", sourceTier: 1 });
+    const { featured } = rankArticles([a], new Set(["CVE-2024-2222"]));
+    const parts = featured[0].scoreBreakdown!;
+    expect(Object.keys(parts)).toEqual(["Source", "Keywords", "Recency", "Singapore", "Exploitation"]);
+    expect(parts.Exploitation).toBe(KEV_BOOST);
+    expect(Object.values(parts).reduce((s, n) => s + n, 0)).toBeCloseTo(featured[0].score);
+  });
+
+  it("isn't attached to non-featured stories", () => {
+    const old = article({ title: "Old story", pubDate: new Date(Date.now() - 5 * 24 * 3600e3) });
+    expect(rankArticles([old]).recent[0].scoreBreakdown).toBeUndefined();
+  });
+});
