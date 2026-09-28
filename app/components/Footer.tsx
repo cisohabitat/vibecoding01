@@ -21,6 +21,17 @@ export default function Footer({ lastUpdated }: { lastUpdated: string }) {
           <a href="/api/feed.xml" className="text-cyber-accent hover:underline">
             RSS feed
           </a>
+          {" · "}only{" "}
+          {/* Route handlers serving XML, not pages: a <Link> would try client-side navigation */}
+          {/* eslint-disable @next/next/no-html-link-for-pages */}
+          <a href="/api/feed/kev" className="text-cyber-accent hover:underline">
+            known exploited
+          </a>
+          {" · "}
+          <a href="/api/feed/critical" className="text-cyber-accent hover:underline">
+            CVSS 9+
+          </a>
+          {/* eslint-enable @next/next/no-html-link-for-pages */}
         </p>
         <details className="mx-auto max-w-xl pt-3 text-left">
           <summary className="cursor-pointer text-center text-slate-300 hover:text-cyber-accent">

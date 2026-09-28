@@ -41,16 +41,34 @@ function buildItem(article: Article): string {
   return `    <item>\n${lines.join("\n")}\n    </item>`;
 }
 
+export interface RssChannel {
+  title: string;
+  description: string;
+  /** Path of the feed itself, for the atom:link self reference */
+  path: string;
+}
+
+const DEFAULT_CHANNEL: RssChannel = {
+  title: "Cyber Pulse",
+  description: "Ranked cybersecurity intelligence from trusted sources",
+  path: "/api/feed.xml",
+};
+
 /** Builds an RSS 2.0 document for the given articles. */
-export function buildRss(articles: Article[], lastUpdated: string, baseUrl: string): string {
+export function buildRss(
+  articles: Article[],
+  lastUpdated: string,
+  baseUrl: string,
+  channel: RssChannel = DEFAULT_CHANNEL
+): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Cyber Pulse</title>
+    <title>${escapeXml(channel.title)}</title>
     <link>${escapeXml(baseUrl)}/</link>
-    <description>Ranked cybersecurity intelligence from trusted sources</description>
+    <description>${escapeXml(channel.description)}</description>
     <language>en</language>
-    <atom:link href="${escapeXml(baseUrl)}/api/feed.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="${escapeXml(baseUrl + channel.path)}" rel="self" type="application/rss+xml" />
     <lastBuildDate>${toRfc822(lastUpdated)}</lastBuildDate>
     <generator>Cyber Pulse</generator>
 ${articles.map(buildItem).join("\n")}

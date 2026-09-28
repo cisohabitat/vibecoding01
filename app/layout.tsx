@@ -19,7 +19,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
     types: {
-      "application/rss+xml": [{ url: "/api/feed.xml", title: "Cyber Pulse RSS" }],
+      "application/rss+xml": [
+        { url: "/api/feed.xml", title: "Cyber Pulse RSS" },
+        { url: "/api/feed/kev", title: "Cyber Pulse RSS: known exploited" },
+      ],
     },
   },
   openGraph: {

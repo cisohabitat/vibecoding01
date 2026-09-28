@@ -36,3 +36,24 @@ export function sortArticles(articles: Article[], sort: SortKey): Article[] {
     sort === "top" ? b.score - a.score || pubTime(b) - pubTime(a) : pubTime(b) - pubTime(a)
   );
 }
+
+/** Filtered RSS feeds at /api/feed/<key>: the triage filters worth subscribing to. */
+export const FILTERED_FEEDS = {
+  kev: {
+    title: "Cyber Pulse — Known exploited",
+    description: "Stories naming a CVE in CISA's Known Exploited Vulnerabilities catalog",
+    triage: ["kev"],
+  },
+  critical: {
+    title: "Cyber Pulse — Critical CVEs",
+    description: "Stories naming a CVE rated CVSS 9.0 or higher",
+    triage: ["critical"],
+  },
+  cve: {
+    title: "Cyber Pulse — CVEs",
+    description: "Stories naming a CVE",
+    triage: ["cve"],
+  },
+} satisfies Record<string, { title: string; description: string; triage: TriageKey[] }>;
+
+export type FilteredFeedKey = keyof typeof FILTERED_FEEDS;

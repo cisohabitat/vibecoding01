@@ -36,6 +36,7 @@ app/
   api/
     feed.json/route.ts      — JSON feed API (ISR, 15-min revalidation; CORS *, includes failedFeeds)
     feed.xml/route.ts       — RSS 2.0 feed API (ISR, 15-min revalidation; built by lib/rss.ts)
+    feed/[filter]/route.ts  — Filtered RSS (/api/feed/kev|critical|cve, from FILTERED_FEEDS in lib/filters.ts); ISR per filter, other filters 404
     health/route.ts         — Health check API (dynamic; 60s memo, never stale); returns { status, feedsUp, feedsDown, failedFeeds, kev, lastCheck }
     cve/[id]/route.ts       — NVD proxy for CveModal, only for CVEs in current stories or KEV (1h data + CDN cache; 404 unknown/untracked, 502 NVD down/rate-limited)
   saved/layout.tsx          — Metadata for /saved (noindex)

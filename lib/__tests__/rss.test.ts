@@ -54,6 +54,17 @@ describe("buildRss", () => {
     expect(categories).toEqual(["Vulnerability", "CVE-2024-1234"]);
   });
 
+  it("takes a custom channel for filtered feeds", () => {
+    const filtered = buildRss([], "2026-01-01T01:00:00.000Z", "https://pulse.example", {
+      title: "Known & exploited",
+      description: "KEV only",
+      path: "/api/feed/kev",
+    });
+    expect(filtered).toContain("<title>Known &amp; exploited</title>");
+    expect(filtered).toContain("<description>KEV only</description>");
+    expect(filtered).toContain('<atom:link href="https://pulse.example/api/feed/kev"');
+  });
+
   it("uses absolute self and source URLs", () => {
     expect(xml).toContain('<atom:link href="https://pulse.example/api/feed.xml"');
     expect(xml).toContain('<source url="https://www.cisa.gov/cybersecurity-advisories/all.xml">CISA Alerts</source>');

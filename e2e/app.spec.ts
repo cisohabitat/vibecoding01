@@ -526,6 +526,20 @@ test("RSS feed is served", async ({ request }) => {
   expect(body).toMatch(/<atom:link href="https?:\/\/[^"]+\/api\/feed\.xml"/);
 });
 
+test("filtered RSS feeds carry only matching stories", async ({ request }) => {
+  const kev = await request.get("/api/feed/kev");
+  expect(kev.headers()["content-type"]).toContain("application/rss+xml");
+  const body = await kev.text();
+  expect(body).toContain("<title>Critical RCE in Jenkins CVE-2024-23897 exploited</title>");
+  expect(body).not.toContain("LockBit");
+  expect(body).toMatch(/<atom:link href="https?:\/\/[^"]+\/api\/feed\/kev"/);
+
+  const critical = await (await request.get("/api/feed/critical")).text();
+  expect(critical.match(/<item>/g)).toHaveLength(2);
+
+  expect((await request.get("/api/feed/nope")).status()).toBe(404);
+});
+
 test.describe("on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
