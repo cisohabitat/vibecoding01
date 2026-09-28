@@ -306,6 +306,23 @@ test("My stack: watchlist marks and filters matching stories", async ({ page }) 
   await expect(page.locator("article").filter({ hasText: "STACK" })).toHaveCount(1);
 });
 
+test("a notice counts new stories about your stack since the last visit", async ({ page }) => {
+  // Last visit 6h ago: Fortinet (~5h old) is new, SonicWall (~9h old) isn't
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem("cyber-pulse-previous-visit")) {
+      localStorage.setItem("cyber-pulse-last-visit", String(Date.now() - 6 * 3600e3));
+      localStorage.setItem("cyber-pulse-watchlist", JSON.stringify(["Fortinet", "SonicWall"]));
+    }
+  });
+  await page.goto("/");
+  const notice = page.getByText("1 new story mentions your stack since your last visit.");
+  await expect(notice).toBeVisible();
+  await page.getByRole("button", { name: "Show it" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "result" })).toHaveText("2 results");
+  await expect(page).toHaveURL(/f=stack/);
+  await expect(notice).toHaveCount(0);
+});
+
 test("filtered results can be sorted and are paginated", async ({ page }) => {
   await page.goto("/?q=fixture+feed");
   const results = page.getByRole("status").filter({ hasText: "result" });

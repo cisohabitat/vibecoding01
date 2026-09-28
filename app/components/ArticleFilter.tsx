@@ -18,7 +18,9 @@ import { ViewMode, ViewModeContext } from "./ViewModeContext";
 import { useNow } from "./useNow";
 import { pubTime } from "@/lib/dates";
 import { parseWatchlist, WATCHLIST_KEY, watchlistMatcher } from "@/lib/watchlist";
-import { useLocalStorage } from "./useLocalStorage";
+import { parseStoredList, useLocalStorage } from "./useLocalStorage";
+import { useLastVisit } from "./useLastVisit";
+import { isString, READ_KEY } from "./NewsCard";
 import StackEditor from "./StackEditor";
 
 const TRIAGE_OPTIONS: Array<{ key: TriageKey; label: string; description: string }> = [
@@ -63,6 +65,8 @@ export default function ArticleFilter({
   const [editingStack, setEditingStack] = useState(false);
   const stackRaw = useLocalStorage(WATCHLIST_KEY);
   const stackTerms = useMemo(() => parseWatchlist(stackRaw), [stackRaw]);
+  const lastVisit = useLastVisit();
+  const readRaw = useLocalStorage(READ_KEY);
   const now = useNow();
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -159,6 +163,20 @@ export default function ArticleFilter({
     });
     return sortArticles(matches, sort);
   }, [allArticles, search, categories, timeHours, triage, sort, isFiltered, now, stackTerms]);
+
+  // Unread stories about the reader's stack published since their last
+  // visit (the NEW badge rule): worth a notice above the list
+  const newInStack = useMemo(() => {
+    if (lastVisit === null || stackTerms.length === 0) return 0;
+    const read = new Set(parseStoredList<string>(READ_KEY, readRaw, isString));
+    const inStack = watchlistMatcher(stackTerms);
+    return allArticles.filter((a) => pubTime(a) > lastVisit && !read.has(a.link) && inStack(a)).length;
+  }, [allArticles, lastVisit, readRaw, stackTerms]);
+
+  function showNewInStack() {
+    setTriage(["stack"]);
+    setSort("new");
+  }
 
   function toggleCategory(cat: ArticleCategory) {
     categoriesChangedByUser.current = true;
@@ -289,6 +307,17 @@ export default function ArticleFilter({
         </div>
 
         {editingStack && <StackEditor id="stack-editor" terms={stackTerms} />}
+
+        {newInStack > 0 && !triage.includes("stack") && (
+          <p className="flex flex-wrap items-center gap-x-2 text-sm text-slate-300 rounded-lg border border-cyber-blue/40 bg-cyber-blue/10 px-3 py-2">
+            <span className="w-2 h-2 rounded-full bg-cyber-blue" aria-hidden="true" />
+            {newInStack} new {newInStack === 1 ? "story mentions" : "stories mention"} your stack since
+            your last visit.
+            <button type="button" onClick={showNewInStack} className="text-cyber-blue font-semibold hover:underline">
+              Show {newInStack === 1 ? "it" : "them"}
+            </button>
+          </p>
+        )}
       </div>
 
       {/* Content: filtered view or default server-rendered content */}

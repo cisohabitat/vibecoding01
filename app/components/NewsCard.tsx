@@ -53,11 +53,11 @@ const categoryStyles: Record<ArticleCategory, string> = {
   Other:         "bg-slate-500/10 text-slate-400 border-slate-500/30",
 };
 
-const READ_KEY = "cyber-pulse-read";
+export const READ_KEY = "cyber-pulse-read";
 export const BOOKMARK_KEY = "cyber-pulse-bookmarks";
 const MAX_READ_URLS = 1000;
 
-const isString = (v: unknown): v is string => typeof v === "string";
+export const isString = (v: unknown): v is string => typeof v === "string";
 // Stored bookmarks may be corrupted or from an older format
 export const isStoredArticle = (v: unknown): v is Article =>
   typeof v === "object" && v !== null && typeof (v as Article).link === "string" && typeof (v as Article).title === "string";
