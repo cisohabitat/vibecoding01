@@ -36,7 +36,7 @@ app/
     feed.json/route.ts      — JSON feed API (ISR, 15-min revalidation; CORS *, includes failedFeeds)
     feed.xml/route.ts       — RSS 2.0 feed API (ISR, 15-min revalidation; built by lib/rss.ts)
     health/route.ts         — Health check API (dynamic; 60s memo, never stale); returns { status, feedsUp, feedsDown, lastCheck }
-    cve/[id]/route.ts       — NVD proxy for CveModal (1h data + CDN cache; 404 unknown, 502 NVD down/rate-limited)
+    cve/[id]/route.ts       — NVD proxy for CveModal, only for CVEs in current stories or KEV (1h data + CDN cache; 404 unknown/untracked, 502 NVD down/rate-limited)
   saved/layout.tsx          — Metadata for /saved (noindex)
   saved/page.tsx            — Bookmarked articles from localStorage [client]
   components/

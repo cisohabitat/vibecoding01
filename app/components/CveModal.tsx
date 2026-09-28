@@ -18,7 +18,7 @@ export default function CveModal({
   onClose: () => void;
 }) {
   const [data, setData] = useState<CveDetail | null>(null);
-  const [error, setError] = useState<"not-found" | "unavailable" | null>(null);
+  const [error, setError] = useState<"not-found" | "not-tracked" | "unavailable" | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -31,7 +31,11 @@ export default function CveModal({
     fetch(`/api/cve/${encodeURIComponent(cveId)}`, { signal: controller.signal })
       .then(async (r) => {
         if (r.ok) setData((await r.json()) as CveDetail);
-        else setError(r.status === 404 ? "not-found" : "unavailable");
+        else if (r.status !== 404) setError("unavailable");
+        else {
+          const body = (await r.json().catch(() => ({}))) as { error?: string };
+          setError(body.error === "CVE not tracked" ? "not-tracked" : "not-found");
+        }
       })
       .catch(() => {
         if (!controller.signal.aborted) setError("unavailable");
@@ -89,7 +93,9 @@ export default function CveModal({
           <div className="text-slate-400 text-sm py-8 text-center" role="alert">
             {error === "not-found"
               ? `${cveId} isn't in the NVD yet — it may be reserved or awaiting analysis.`
-              : "The NVD is busy or unavailable right now. Try again in a minute."}
+              : error === "not-tracked"
+                ? `${cveId} isn't in any current story, so details aren't loaded here.`
+                : "The NVD is busy or unavailable right now. Try again in a minute."}
             <div className="mt-3">
               <a
                 href={`https://nvd.nist.gov/vuln/detail/${cveId}`}

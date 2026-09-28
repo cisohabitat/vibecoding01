@@ -399,6 +399,15 @@ test("web app manifest is linked and valid", async ({ page, request }) => {
   expect(manifest).toMatchObject({ name: "Cyber Pulse SG", start_url: "/", display: "standalone" });
 });
 
+test("CVE API only serves CVEs the site shows", async ({ request }) => {
+  const untracked = await request.get("/api/cve/CVE-2020-0001");
+  expect(untracked.status()).toBe(404);
+  expect(await untracked.json()).toEqual({ error: "CVE not tracked" });
+  const tracked = await request.get("/api/cve/CVE-2024-23897");
+  expect(tracked.status()).toBe(200);
+  expect(await tracked.json()).toMatchObject({ id: "CVE-2024-23897", kev: true });
+});
+
 test("RSS feed is served", async ({ request }) => {
   const res = await request.get("/api/feed.xml");
   expect(res.headers()["content-type"]).toContain("application/rss+xml");

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { NVD_API_URL, nvdHeaders } from "@/lib/cve";
 import { getKevIds } from "@/lib/kev";
+import { getKnownCveIds } from "@/lib/pipeline";
 import { safeLink } from "@/lib/url";
 
 export interface CveDetail {
@@ -34,6 +35,17 @@ export async function GET(
 
   // KEV lookup runs alongside the NVD request (memoised; never throws)
   const kevIds = getKevIds();
+
+  // Only proxy CVEs the site shows (current stories or KEV), so crawlers
+  // enumerating CVE IDs can't spend the NVD quota the pipeline relies on.
+  // If the known set is unavailable (cold cache, error), fail open.
+  const known = await getKnownCveIds();
+  if (known.size > 0 && !known.has(cveId) && !(await kevIds).has(cveId)) {
+    return NextResponse.json(
+      { error: "CVE not tracked" },
+      { status: 404, headers: { "Cache-Control": "public, s-maxage=300" } }
+    );
+  }
 
   try {
     const res = await fetch(

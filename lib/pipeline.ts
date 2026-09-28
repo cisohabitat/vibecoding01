@@ -103,3 +103,16 @@ export async function getCachedArticles(): ReturnType<typeof getArticles> {
     list.map((a) => ({ ...a, pubDate: new Date(a.pubDate) }));
   return { ...data, featured: revive(data.featured), recent: revive(data.recent) };
 }
+
+/**
+ * CVE IDs mentioned in current stories (up to 30 days old, so bookmarks of
+ * recent stories are covered). Empty if the articles can't be loaded.
+ */
+export async function getKnownCveIds(): Promise<Set<string>> {
+  try {
+    const { featured, recent } = await getCachedArticles();
+    return new Set([...featured, ...recent].flatMap((a) => a.cves.map((c) => c.id)));
+  } catch {
+    return new Set();
+  }
+}
