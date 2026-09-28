@@ -156,6 +156,10 @@ test("search and category filters sync to the URL", async ({ page }) => {
   await page.goto("/?q=fortios");
   await expect(page.getByRole("button", { name: "Ransomware", exact: true })).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByRole("status").filter({ hasText: "result" })).toHaveText("1 result");
+
+  // ...and visiting it doesn't erase the saved choice: a bare URL restores it
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Ransomware", exact: true })).toHaveAttribute("aria-pressed", "true");
 });
 
 test("marks articles published since the last visit as NEW", async ({ page }) => {

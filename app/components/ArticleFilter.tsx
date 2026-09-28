@@ -130,8 +130,12 @@ export default function ArticleFilter({
     window.history.replaceState(null, "", query ? `?${query}` : window.location.pathname);
   }, [search, categories, timeHours]);
 
-  // Persist categories to localStorage
+  // Persist categories to localStorage, but only once the reader has changed
+  // them: restoring must not rewrite the saved value, and a shared link's
+  // filters (which define the view) must not overwrite the reader's choice.
+  const categoriesChangedByUser = useRef(false);
   useEffect(() => {
+    if (!categoriesChangedByUser.current) return;
     try {
       if (categories.length > 0) localStorage.setItem(CAT_KEY, JSON.stringify(categories));
       else localStorage.removeItem(CAT_KEY);
@@ -177,6 +181,7 @@ export default function ArticleFilter({
   }, [allArticles, search, categories, timeHours, isFiltered, now]);
 
   function toggleCategory(cat: ArticleCategory) {
+    categoriesChangedByUser.current = true;
     setCategories((prev) =>
       prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
     );
@@ -187,6 +192,7 @@ export default function ArticleFilter({
   }
 
   function clearAll() {
+    categoriesChangedByUser.current = true;
     setSearch("");
     setCategories([]);
     setTimeHours(null);
