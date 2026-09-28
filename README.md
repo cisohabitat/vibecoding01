@@ -49,6 +49,7 @@ nonce.
 - Trending names and CVEs from the last 24 hours (sidebar on desktop, chip strip on mobile)
 - Top Stories capped at two per source; a footer explainer describes the ranking
 - Warning banner when two or more feeds fail; if every feed fails, the last good page stays up
+- An About page (`/about`) with the sources, ranking weights, data sources and privacy notes
 - Accessible: keyboard navigable with a skip link, screen-reader labels, reduced-motion support
 - Security headers (nonce CSP, HSTS, COOP, frame, referrer, permissions) and hardened feed parsing
 

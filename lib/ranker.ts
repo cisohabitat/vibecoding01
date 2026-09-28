@@ -13,7 +13,7 @@ const CRITICAL_PATTERNS = compileKeywords(CRITICAL_KEYWORDS);
 const HIGH_PATTERNS = compileKeywords(HIGH_KEYWORDS);
 const MEDIUM_PATTERNS = compileKeywords(MEDIUM_KEYWORDS);
 
-const TIER_WEIGHTS: Record<number, number> = { 1: 3, 2: 2, 3: 1 };
+export const TIER_WEIGHTS: Record<number, number> = { 1: 3, 2: 2, 3: 1 };
 
 export function computeKeywordScore(text: string): number {
   const lower = text.toLowerCase();

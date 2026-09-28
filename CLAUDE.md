@@ -40,6 +40,7 @@ app/
     feed/[filter]/route.ts  — Filtered RSS (/api/feed/kev|critical|cve|sg, from FILTERED_FEEDS in lib/filters.ts: title, description, matches predicate); ISR per filter, other filters 404
     health/route.ts         — Health check API (dynamic; 60s memo, never stale); returns { status, feedsUp, feedsDown, failedFeeds, kev, dataUpdated, lastCheck }
     cve/[id]/route.ts       — NVD proxy for CveModal, only for CVEs in current stories, not all of KEV (1h data + CDN cache; 404 unknown/untracked, 502 NVD down/rate-limited)
+  about/page.tsx            — About: sources by tier, ranking (numbers imported from lib/ranker.ts), duplicates, CVE data, privacy, feeds/API
   saved/layout.tsx          — Metadata for /saved (noindex)
   saved/page.tsx            — Bookmarked articles from localStorage; "Copy as briefing" (lib/briefing.ts), undoable Clear all [client]
   components/

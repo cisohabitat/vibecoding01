@@ -517,6 +517,18 @@ test("the same story from two outlets is shown once, crediting both", async ({ p
   await expect(page.getByRole("status").filter({ hasText: "result" })).toHaveText("1 result");
 });
 
+test("the About page explains sources, ranking and privacy", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "About" }).click();
+  await expect(page).toHaveURL(/\/about$/);
+  await expect(page.getByRole("link", { name: "About" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("heading", { name: "About Cyber Pulse SG" })).toBeVisible();
+  // Sources come from the feed list, numbers from the ranking code
+  await expect(page.getByRole("link", { name: "Fixture Feed" })).toBeVisible();
+  await expect(page.getByText(/\+3 for a CVE in CISA/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Privacy" })).toBeVisible();
+});
+
 test("j and k move between stories", async ({ page }) => {
   await page.goto("/");
   await page.locator("article time").first().waitFor();
@@ -565,6 +577,7 @@ test.describe("accessibility (axe-core)", () => {
       await page.getByRole("button", { name: "Only stories about your stack" }).click();
     }],
     ["saved", async (page) => { await page.goto("/saved"); }],
+    ["about", async (page) => { await page.goto("/about"); }],
   ];
 
   for (const [name, setup] of states) {
@@ -608,7 +621,7 @@ test("sends security headers with a per-request CSP nonce", async ({ request }) 
   expect(headers["x-powered-by"]).toBeUndefined();
 });
 
-for (const path of ["/", "/saved", "/does-not-exist"]) {
+for (const path of ["/", "/saved", "/about", "/does-not-exist"]) {
   test(`no CSP violations and every script nonced on ${path}`, async ({ page }) => {
     const violations: string[] = [];
     page.on("console", (m) => {
