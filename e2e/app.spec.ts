@@ -192,6 +192,45 @@ test("the visit is recorded when the page is hidden, not when it opens", async (
   expect(stored).toBeGreaterThanOrEqual(before - 1000);
 });
 
+test("a long-lived tab starts a new visit after being away", async ({ page }) => {
+  const DAY = 24 * 3600e3;
+  // Baseline from when the tab was opened two days ago; left 2h ago
+  await page.addInitScript((day) => {
+    if (!sessionStorage.getItem("seeded")) {
+      sessionStorage.setItem("seeded", "1");
+      sessionStorage.setItem("cyber-pulse-previous-visit", String(Date.now() - 2 * day));
+      localStorage.setItem("cyber-pulse-last-visit", String(Date.now() - 2 * 3600e3));
+    }
+  }, DAY);
+  await page.goto("/");
+  // Reload after 2h away: only stories from the last 2h are NEW (not 2 days)
+  await expect(card(page, "Attackers adapt").getByText("NEW", { exact: true })).toBeVisible();
+  await expect(card(page, "Ivanti Connect Secure").getByText("NEW", { exact: true })).toHaveCount(0);
+});
+
+test("returning to an open tab after a long absence moves the NEW baseline", async ({ page }) => {
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem("seeded")) {
+      sessionStorage.setItem("seeded", "1");
+      const twoDaysAgo = String(Date.now() - 2 * 24 * 3600e3);
+      sessionStorage.setItem("cyber-pulse-previous-visit", twoDaysAgo);
+      localStorage.setItem("cyber-pulse-last-visit", twoDaysAgo);
+    }
+  });
+  await page.goto("/");
+  const ivanti = card(page, "Ivanti Connect Secure").getByText("NEW", { exact: true });
+  await expect(ivanti).toBeVisible();
+
+  // The tab was hidden 2h ago and is now visible again
+  await page.evaluate(() => {
+    localStorage.setItem("cyber-pulse-last-visit", String(Date.now() - 2 * 3600e3));
+    Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(ivanti).toHaveCount(0);
+  await expect(card(page, "Attackers adapt").getByText("NEW", { exact: true })).toBeVisible();
+});
+
 test("first visit shows no NEW badges", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("article time").first()).toBeVisible();

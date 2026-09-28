@@ -53,7 +53,7 @@ app/
     ViewModeContext.tsx     — Grid/list view mode context provided by ArticleFilter [client]
     useNow.ts               — Shared minute-ticking clock; null during SSR/hydration [client]
     useLocalStorage.ts      — Hydration-safe localStorage hook + writer that notifies subscribers [client]
-    useLastVisit.ts         — Previous visit end time (recorded on hide/close; fixed per browser session) for NEW badges [client]
+    useLastVisit.ts         — Previous visit end time for NEW badges (recorded on hide/close; baseline kept across reloads, new visit after >30 min away) [client]
     FeedFailureBanner.tsx   — Dismissible warning banner shown when ≥2 feeds fail [client]
     TrendingTopics.tsx      — Trending sidebar (lg+) and TrendingStrip chips (below lg); click dispatches a search event [client]
     Footer.tsx              — Last-updated timestamp, source list (from FEED_SOURCES), RSS link, "How stories are ranked" explainer (keep in sync with ranker.ts)
