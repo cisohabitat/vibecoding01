@@ -585,6 +585,8 @@ test("sends security headers with a per-request CSP nonce", async ({ request }) 
 
   const headers = a.headers();
   expect(headers["x-content-type-options"]).toBe("nosniff");
+  expect(headers["strict-transport-security"]).toBe("max-age=63072000");
+  expect(headers["cross-origin-opener-policy"]).toBe("same-origin");
   expect(headers["x-powered-by"]).toBeUndefined();
 });
 

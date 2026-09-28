@@ -32,25 +32,25 @@ nonce.
 
 ## Features
 
-- Search (press <kbd>/</kbd>), category, time-window and triage filters (Has CVE, KEV,
-  CVSS 9+, My stack) with Newest/Top sorting, all shareable via the URL
+- Search (press <kbd>/</kbd>), source, category, time-window and triage filters (Has CVE,
+  KEV, CVSS 9+, My stack) with Newest/Top sorting, all shareable via the URL; a card's
+  source and category labels, and the 24h stat tiles, apply them in one click
 - **My stack**: save the vendors and products you run; stories that mention them
   are marked on their cards and can be filtered to (stored in the browser)
 - Grid/list view, "Load more" pagination
 - Keyboard shortcuts: <kbd>/</kbd> search, <kbd>j</kbd>/<kbd>k</kbd> next/previous story
 - **NEW** badges for stories published since your last visit, a count of them and
   "Mark all seen"; a notice when new stories mention your stack
-- 24h stat tiles (critical and exploited CVEs, breaches, ransomware) that show
-  their stories when clicked
 - Singapore stories marked **SG** and ranked higher
 - Bookmarks (`/saved`) and read tracking, stored in the browser; copy saved stories as a
   text briefing for chat, email or a ticket
-- CVE detail dialog with CVSS score, vector, EPSS forecast, KEV status and references
+- CVE detail dialog with CVSS score, vector, EPSS forecast, KEV status, references and
+  the other current stories naming the CVE
 - Trending names and CVEs from the last 24 hours (sidebar on desktop, chip strip on mobile)
 - Top Stories capped at two per source; a footer explainer describes the ranking
 - Warning banner when two or more feeds fail; if every feed fails, the last good page stays up
 - Accessible: keyboard navigable with a skip link, screen-reader labels, reduced-motion support
-- Security headers (CSP, frame, referrer, permissions) and hardened feed parsing
+- Security headers (nonce CSP, HSTS, COOP, frame, referrer, permissions) and hardened feed parsing
 
 ## Endpoints
 
