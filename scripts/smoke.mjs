@@ -80,7 +80,7 @@ report("/api/feed.json", json.res.ok && articles.length > 0, `${articles.length}
 // Informational: enrichment coverage (fills in over runs)
 rows.push(`| ℹ️ | CVE enrichment | ${ids.size} CVEs: ${scored.size} with CVSS, ${withEpss.size} with EPSS, ${kev.size} KEV |`);
 
-for (const path of ["/api/feed.xml", "/api/feed/kev", "/saved", "/robots.txt", "/sitemap.xml"]) {
+for (const path of ["/api/feed.xml", "/api/feed/kev", "/api/feed/sg", "/saved", "/about", "/robots.txt", "/sitemap.xml"]) {
   const { res } = await get(path);
   report(path, res.ok, `status ${res.status}`);
 }
