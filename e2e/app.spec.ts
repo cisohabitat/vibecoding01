@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Request } from "@playwright/test";
 
 // Console errors that are expected outside Vercel or without NVD access
 const IGNORED_ERRORS = /_vercel|Failed to load resource/;
@@ -368,16 +368,22 @@ test("an open tab refreshes its data once it is older than 15 minutes", async ({
   await page.goto("/");
   await expect(page.locator("article time").first()).toHaveText(/ago|just now/);
 
+  // router.refresh() is an RSC request for the page. Link prefetches (the
+  // header links to "/", re-prefetched when Next's 5-minute prefetch cache
+  // expires) are RSC requests too, so they're excluded.
+  const isRefresh = (r: Request) =>
+    r.headers()["rsc"] === "1" && !r.headers()["next-router-prefetch"] && new URL(r.url()).pathname === "/";
+
   // Fresh data: no refresh request
   let refreshes = 0;
   page.on("request", (r) => {
-    if (r.headers()["rsc"] === "1" && new URL(r.url()).pathname === "/") refreshes++;
+    if (isRefresh(r)) refreshes++;
   });
   await page.clock.runFor(5 * 60_000);
   expect(refreshes).toBe(0);
 
   // 16 minutes later the next clock tick triggers router.refresh()
-  const refresh = page.waitForRequest((r) => r.headers()["rsc"] === "1" && new URL(r.url()).pathname === "/");
+  const refresh = page.waitForRequest(isRefresh);
   await page.clock.runFor(11 * 60_000);
   await refresh;
 });

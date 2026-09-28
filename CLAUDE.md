@@ -36,7 +36,7 @@ app/
   api/
     feed.json/route.ts      — JSON feed API (ISR, 15-min revalidation; CORS *, includes failedFeeds)
     feed.xml/route.ts       — RSS 2.0 feed API (ISR, 15-min revalidation; built by lib/rss.ts)
-    health/route.ts         — Health check API (dynamic; 60s memo, never stale); returns { status, feedsUp, feedsDown, lastCheck }
+    health/route.ts         — Health check API (dynamic; 60s memo, never stale); returns { status, feedsUp, feedsDown, failedFeeds, kev, lastCheck }
     cve/[id]/route.ts       — NVD proxy for CveModal, only for CVEs in current stories or KEV (1h data + CDN cache; 404 unknown/untracked, 502 NVD down/rate-limited)
   saved/layout.tsx          — Metadata for /saved (noindex)
   saved/page.tsx            — Bookmarked articles from localStorage [client]
@@ -111,7 +111,7 @@ e2e/
 - `ArticleFilter` persists the selected categories to `localStorage` (`cyber-pulse-category` key) and filters to the URL (`q`, `cat`, `t`, `f` triage, `sort`); restored on mount with a validity guard against stale values. If the URL has any filter param, it fully defines the view and saved categories are ignored.
 - Never compute time-relative output (`Date.now()`) during render in client components: the server-rendered value can differ from the client's at hydration (e.g. a minute boundary between render and hydrate), causing a mismatch. Use `useNow()`, which is null on the server.
 - Read `localStorage` through `useLocalStorage` and write through `writeLocalStorage` so every subscriber (other cards, `/saved`) updates in the same tab.
-- `/api/health` is dynamic (`force-dynamic`, not ISR: stale-while-revalidate would hand monitors the previous check's result). Checks are memoised for 60s per instance and CDN-cacheable only for the memo's remaining lifetime (so results are ≤ ~60s old), so polling can't hammer the feed sources. It calls `fetchAllFeeds` directly and returns `{ status: "ok"|"degraded"|"down", feedsUp, feedsDown, lastCheck }`.
+- `/api/health` is dynamic (`force-dynamic`, not ISR: stale-while-revalidate would hand monitors the previous check's result). Checks are memoised for 60s per instance and CDN-cacheable only for the memo's remaining lifetime (so results are ≤ ~60s old), so polling can't hammer the feed sources. It calls `fetchAllFeeds` directly and returns `{ status: "ok"|"degraded"|"down", feedsUp, feedsDown, failedFeeds, kev: "ok"|"unavailable", lastCheck }`.
 
 ## Code Conventions
 

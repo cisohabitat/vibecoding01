@@ -41,6 +41,10 @@ export default defineConfig({
         KEV_URL: `http://localhost:${FEED_PORT}/kev`,
         EPSS_URL: `http://localhost:${FEED_PORT}/epss`,
         NO_PROXY: "localhost,127.0.0.1",
+        // Next's data cache survives rebuilds (.next/cache) and is keyed by
+        // deployment; a fresh ID per run gives every run fresh data, as each
+        // Vercel deployment gets (so data age never depends on earlier runs)
+        VERCEL_DEPLOYMENT_ID: `e2e-${Date.now()}`,
       },
       // Always build fresh: reusing a server left running from an older build
       // silently tests stale code

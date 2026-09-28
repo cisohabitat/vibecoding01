@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const fetchAllFeeds = vi.fn();
 vi.mock("@/lib/fetcher", () => ({ fetchAllFeeds: () => fetchAllFeeds() }));
-vi.mock("@/lib/feeds", () => ({ FEED_SOURCES: [{}, {}, {}] }));
+vi.mock("@/lib/feeds", () => ({ FEED_SOURCES: [{ name: "A" }, { name: "B" }, { name: "C" }] }));
+const getKevIds = vi.fn(async () => new Set(["CVE-2024-0001"]));
+vi.mock("@/lib/kev", () => ({ getKevIds: () => getKevIds() }));
 
 beforeEach(() => {
   vi.resetModules();
@@ -14,7 +16,13 @@ describe("GET /api/health", () => {
     fetchAllFeeds.mockResolvedValue({ articles: [], failedFeeds: ["A"] });
     const { GET } = await import("@/app/api/health/route");
     const res = await GET();
-    expect(await res.json()).toMatchObject({ status: "degraded", feedsUp: 2, feedsDown: 1 });
+    expect(await res.json()).toMatchObject({
+      status: "degraded",
+      feedsUp: 2,
+      feedsDown: 1,
+      failedFeeds: ["A"],
+      kev: "ok",
+    });
     expect(res.headers.get("Cache-Control")).toMatch(/s-maxage=(59|60)$/);
   });
 
@@ -40,5 +48,18 @@ describe("GET /api/health", () => {
     fetchAllFeeds.mockResolvedValue({ articles: [], failedFeeds: ["A", "B", "C"] });
     const { GET } = await import("@/app/api/health/route");
     expect(await (await GET()).json()).toMatchObject({ status: "down", feedsUp: 0 });
+  });
+
+  it("reports an unavailable KEV catalog without changing the feed status", async () => {
+    fetchAllFeeds.mockResolvedValue({ articles: [], failedFeeds: [] });
+    getKevIds.mockResolvedValueOnce(new Set());
+    const { GET } = await import("@/app/api/health/route");
+    expect(await (await GET()).json()).toMatchObject({ status: "ok", failedFeeds: [], kev: "unavailable" });
+  });
+
+  it("reports every feed as failed when the check itself throws", async () => {
+    fetchAllFeeds.mockRejectedValue(new Error("boom"));
+    const { GET } = await import("@/app/api/health/route");
+    expect(await (await GET()).json()).toMatchObject({ status: "down", failedFeeds: ["A", "B", "C"] });
   });
 });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { fetchAllFeeds } from "@/lib/fetcher";
 import { FEED_SOURCES } from "@/lib/feeds";
+import { getKevIds } from "@/lib/kev";
 
 // A cold data cache runs the whole pipeline: worst case ~25s (10s feed
 // timeout + retry, then NVD). Don't rely on the platform's default limit.
@@ -18,6 +19,10 @@ interface Health {
   status: "ok" | "degraded" | "down";
   feedsUp: number;
   feedsDown: number;
+  /** Names of the feeds that failed (already public via /api/feed.json) */
+  failedFeeds: string[];
+  /** Whether the CISA KEV catalog loaded; ranking and badges degrade without it */
+  kev: "ok" | "unavailable";
   lastCheck: string;
 }
 
@@ -25,14 +30,23 @@ let cached: { at: number; result: Promise<Health> } | null = null;
 
 async function check(): Promise<Health> {
   const total = FEED_SOURCES.length;
+  // Memoised for 6h and never throws, so this adds no load
+  const kev = getKevIds().then((ids) => (ids.size > 0 ? "ok" : "unavailable") as Health["kev"]);
   try {
     const { failedFeeds } = await fetchAllFeeds();
     const feedsDown = failedFeeds.length;
     const feedsUp = total - feedsDown;
     const status = feedsDown === 0 ? "ok" : feedsUp === 0 ? "down" : "degraded";
-    return { status, feedsUp, feedsDown, lastCheck: new Date().toISOString() };
+    return { status, feedsUp, feedsDown, failedFeeds, kev: await kev, lastCheck: new Date().toISOString() };
   } catch {
-    return { status: "down", feedsUp: 0, feedsDown: total, lastCheck: new Date().toISOString() };
+    return {
+      status: "down",
+      feedsUp: 0,
+      feedsDown: total,
+      failedFeeds: FEED_SOURCES.map((f) => f.name),
+      kev: await kev,
+      lastCheck: new Date().toISOString(),
+    };
   }
 }
 
