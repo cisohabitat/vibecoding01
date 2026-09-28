@@ -70,14 +70,25 @@ export default function ArticleFilter({
   const now = useNow();
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // "/" focuses the search box unless the user is already typing somewhere
+  // Shortcuts, unless the user is typing somewhere: "/" focuses the search
+  // box; "j"/"k" move to the next/previous story (its title link, so Enter
+  // opens it)
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || !["/", "j", "k"].includes(e.key)) return;
       const target = e.target as HTMLElement | null;
       if (target?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "")) return;
       e.preventDefault();
-      searchRef.current?.focus();
+      if (e.key === "/") {
+        searchRef.current?.focus();
+        return;
+      }
+      const links = [...document.querySelectorAll<HTMLAnchorElement>("#article-filter article h3 a")];
+      const current = links.findIndex((a) => a.closest("article")?.contains(document.activeElement));
+      const next = current === -1 ? 0 : current + (e.key === "j" ? 1 : -1);
+      const link = links[Math.max(0, Math.min(links.length - 1, next))];
+      link?.focus();
+      link?.closest("article")?.scrollIntoView({ block: "nearest" });
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);

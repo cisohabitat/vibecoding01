@@ -33,6 +33,11 @@ export default function Footer({ lastUpdated }: { lastUpdated: string }) {
           </a>
           {/* eslint-enable @next/next/no-html-link-for-pages */}
         </p>
+        <p className="text-xs">
+          Keyboard: <kbd className="font-mono text-slate-300">/</kbd> search ·{" "}
+          <kbd className="font-mono text-slate-300">j</kbd>/<kbd className="font-mono text-slate-300">k</kbd> next/previous
+          story · <kbd className="font-mono text-slate-300">Enter</kbd> open
+        </p>
         <details className="mx-auto max-w-xl pt-3 text-left">
           <summary className="cursor-pointer text-center text-slate-300 hover:text-cyber-accent">
             How stories are ranked

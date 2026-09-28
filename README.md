@@ -26,6 +26,7 @@ nonce.
 - **My stack**: save the vendors and products you run; stories that mention them
   are marked on their cards and can be filtered to (stored in the browser)
 - Grid/list view, "Load more" pagination
+- Keyboard shortcuts: <kbd>/</kbd> search, <kbd>j</kbd>/<kbd>k</kbd> next/previous story
 - **NEW** badges for stories published since your last visit
 - Bookmarks (`/saved`) and read tracking, stored in the browser; copy saved stories as a
   text briefing for chat, email or a ticket

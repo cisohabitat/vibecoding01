@@ -436,6 +436,22 @@ test("pressing / focuses search, but not while typing elsewhere", async ({ page 
   await expect(search).toHaveValue("a/b");
 });
 
+test("j and k move between stories", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("article time").first().waitFor();
+  const titles = page.locator("#article-filter article h3 a");
+  await page.keyboard.press("j");
+  await expect(titles.nth(0)).toBeFocused();
+  await page.keyboard.press("j");
+  await expect(titles.nth(1)).toBeFocused();
+  await page.keyboard.press("k");
+  await expect(titles.nth(0)).toBeFocused();
+  // Not while typing
+  await page.getByRole("searchbox", { name: "Search articles" }).focus();
+  await page.keyboard.press("j");
+  await expect(page.getByRole("searchbox", { name: "Search articles" })).toHaveValue("j");
+});
+
 test("Load more moves focus to the first new article", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("article time").first()).toHaveText(/ago|just now/);
