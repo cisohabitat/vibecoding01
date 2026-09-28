@@ -30,11 +30,17 @@ const TITLES = [
   "New Android spyware poses as messaging app",
 ];
 
+// Descriptions default to "Story <i>: <title>."; a few say more
+const DESCRIPTIONS = {
+  21: "Story 21: Police dismantle bulletproof hosting provider used by gangs targeting Singapore banks.",
+};
+
 function rss() {
   const now = Date.now();
   const items = TITLES.map((title, i) => {
     const date = new Date(now - (i * 47 + 10) * 60_000).toUTCString();
-    return `<item><title>${title}</title><link>https://example.com/a${i}</link><pubDate>${date}</pubDate><description>Story ${i}: ${title}.</description></item>`;
+    const description = DESCRIPTIONS[i] ?? `Story ${i}: ${title}.`;
+    return `<item><title>${title}</title><link>https://example.com/a${i}</link><pubDate>${date}</pubDate><description>${description}</description></item>`;
   });
   return `<?xml version="1.0"?><rss version="2.0"><channel><title>Fixture</title>${items.join("")}</channel></rss>`;
 }

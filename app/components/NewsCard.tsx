@@ -8,6 +8,7 @@ import { useNow } from "./useNow";
 import { useLastVisit } from "./useLastVisit";
 import { parseStoredList, useLocalStorage, writeLocalStorage } from "./useLocalStorage";
 import { parseWatchlist, WATCHLIST_KEY, watchlistMatcher } from "@/lib/watchlist";
+import { mentionsSingapore } from "@/lib/region";
 import { toDate } from "@/lib/dates";
 
 function timeAgo(date: Date, now: number): string {
@@ -263,6 +264,14 @@ export default function NewsCard({
               }`}
             >
               {article.category}
+            </span>
+          )}
+          {mentionsSingapore(article) && (
+            <span
+              className="px-1.5 py-0.5 rounded border border-red-400/40 text-red-300 font-semibold"
+              title="Mentions Singapore"
+            >
+              SG
             </span>
           )}
           {inStack && (

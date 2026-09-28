@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeKeywordScore, EPSS_BOOST, KEV_BOOST, pickFeatured, rankArticles } from "../ranker";
+import { computeKeywordScore, EPSS_BOOST, KEV_BOOST, pickFeatured, rankArticles, SG_BOOST } from "../ranker";
 import { Article } from "../types";
 
 function article(overrides: Partial<Article>): Article {
@@ -100,5 +100,15 @@ describe("rankArticles EPSS boost", () => {
       new Map([["CVE-2024-2222", score(0.9)]])
     );
     expect(featured[0].score).toBe(featured[1].score);
+  });
+});
+
+describe("rankArticles Singapore boost", () => {
+  it("boosts stories that mention Singapore", () => {
+    const a = article({ title: "Bank outage", description: "In London" });
+    const b = article({ title: "Bank outage", description: "In Singapore" });
+    const { featured } = rankArticles([a, b]);
+    expect(featured[0].description).toBe("In Singapore");
+    expect(featured[0].score - featured[1].score).toBe(SG_BOOST);
   });
 });

@@ -2,6 +2,7 @@ import { Article, RankedArticles } from "./types";
 import { compileKeywords } from "./keywords";
 import { extractCveIds } from "./cve";
 import { EpssScore, HIGH_EPSS } from "./epss";
+import { mentionsSingapore } from "./region";
 
 const CRITICAL_KEYWORDS = ["zero-day", "0day", "0-day", "cve-", "ransomware", "breach", "apt"];
 const HIGH_KEYWORDS = ["vulnerability", "vulnerabilities", "exploit", "malware", "attack", "critical", "rce", "backdoor"];
@@ -43,6 +44,8 @@ function computeRecencyBoost(pubDate: Date): number {
 export const KEV_BOOST = 3;
 /** Boost for naming a CVE with a high predicted exploitation probability (EPSS). */
 export const EPSS_BOOST = 2;
+/** Boost for stories about Singapore, the site's audience. */
+export const SG_BOOST = 1.5;
 
 /**
  * The strongest exploitation signal among the article's CVEs. KEV and a
@@ -59,7 +62,8 @@ function scoreArticle(article: Article, kevIds: Set<string>, epss: Map<string, E
   const tierWeight = TIER_WEIGHTS[article.sourceTier] || 1;
   const keywordScore = computeKeywordScore(text);
   const recencyBoost = computeRecencyBoost(article.pubDate);
-  return tierWeight + keywordScore + recencyBoost + exploitBoost(extractCveIds(text), kevIds, epss);
+  const regionBoost = mentionsSingapore(article) ? SG_BOOST : 0;
+  return tierWeight + keywordScore + recencyBoost + regionBoost + exploitBoost(extractCveIds(text), kevIds, epss);
 }
 
 const FEATURED_COUNT = 5;

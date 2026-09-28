@@ -436,6 +436,13 @@ test("pressing / focuses search, but not while typing elsewhere", async ({ page 
   await expect(search).toHaveValue("a/b");
 });
 
+test("stories about Singapore are marked SG", async ({ page }) => {
+  await page.goto("/?q=bulletproof");
+  await expect(card(page, "Police dismantle").getByText("SG", { exact: true })).toBeVisible();
+  await page.goto("/?q=lockbit");
+  await expect(card(page, "LockBit ransomware").getByText("SG", { exact: true })).toHaveCount(0);
+});
+
 test("j and k move between stories", async ({ page }) => {
   await page.goto("/");
   await page.locator("article time").first().waitFor();
