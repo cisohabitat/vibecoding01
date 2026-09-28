@@ -8,6 +8,11 @@ import { fetchAllFeeds } from "@/lib/fetcher";
 import { FEED_SOURCES } from "@/lib/feeds";
 import { tagArticles } from "@/lib/tagger";
 import { computeTrending } from "@/lib/trending";
+import { deduplicateArticles } from "@/lib/deduplicator";
+import { rankArticles } from "@/lib/ranker";
+import { getKevIds } from "@/lib/kev";
+import { fetchEpss } from "@/lib/epss";
+import { extractCveIds } from "@/lib/cve";
 
 it("every feed can be fetched and parsed", async () => {
   const { articles, failedFeeds } = await fetchAllFeeds();
@@ -38,7 +43,21 @@ it("every feed can be fetched and parsed", async () => {
     .map((a) => `- ${a.title.replace(/[|\n]/g, " ")} (${a.source})`)
     .join("\n");
   const trending = computeTrending(tagged, 20).map((t) => `${t.term} ${t.count}`).join(" · ");
-  const tagging = `Categories: ${mix}\n\nTrending: ${trending}\n\nSample of untagged titles:\n\n${untagged}`;
+  // What ranking makes of it (with KEV and EPSS; NVD scores left out)
+  const deduped = deduplicateArticles(tagged);
+  const epss = await fetchEpss(deduped.flatMap((a) => extractCveIds(`${a.title} ${a.description}`)));
+  const ranked = rankArticles(deduped, await getKevIds(), epss);
+  const line = (a: (typeof deduped)[number]) =>
+    `- ${a.score.toFixed(1)} ${a.title.replace(/[|\n]/g, " ")} (${a.source}, ${a.category}` +
+    (a.alsoReportedBy.length ? `, +${a.alsoReportedBy.length} outlets` : "") +
+    ")";
+  const next = [...ranked.recent].sort((a, b) => b.score - a.score).slice(0, 10);
+  const ranking =
+    `Top Stories:\n\n${ranked.featured.map(line).join("\n")}\n\n` +
+    `Next highest:\n\n${next.map(line).join("\n")}\n\n` +
+    `${articles.length} items, ${deduped.length} after merging duplicates`;
+  const tagging =
+    `Categories: ${mix}\n\nTrending: ${trending}\n\n${ranking}\n\nSample of untagged titles:\n\n${untagged}`;
 
   console.log(report);
   console.log(tagging);
