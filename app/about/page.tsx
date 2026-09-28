@@ -13,10 +13,14 @@ import {
 } from "@/lib/ranker";
 import { HIGH_EPSS } from "@/lib/epss-format";
 
+const description = "Where Cyber Pulse SG's stories come from, how they're ranked, and what it stores.";
+
 export const metadata: Metadata = {
   title: "About",
-  description: "Where Cyber Pulse SG's stories come from, how they're ranked, and what it stores.",
+  description,
   alternates: { canonical: "/about" },
+  // A page's openGraph replaces the layout's, so it's complete here
+  openGraph: { type: "website", siteName: "Cyber Pulse SG", title: "About Cyber Pulse SG", description, url: "/about" },
 };
 
 const TIER_NAMES: Record<number, string> = {
