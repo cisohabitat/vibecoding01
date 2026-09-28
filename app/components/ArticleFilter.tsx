@@ -2,7 +2,17 @@
 
 import { useState, useMemo, useEffect, useRef, ReactNode } from "react";
 import { Article, ArticleCategory } from "@/lib/types";
-import { matchesTriage, sortArticles, SortKey, TriageKey, TRIAGE_KEYS } from "@/lib/filters";
+import {
+  buildFilterQuery,
+  CATEGORIES,
+  matchesTriage,
+  parseFilterQuery,
+  parseSavedCategories,
+  sortArticles,
+  SortKey,
+  TIME_OPTIONS,
+  TriageKey,
+} from "@/lib/filters";
 import NewsListClient from "./NewsListClient";
 import { ViewMode, ViewModeContext } from "./ViewModeContext";
 import { useNow } from "./useNow";
@@ -10,23 +20,6 @@ import { pubTime } from "@/lib/dates";
 import { parseWatchlist, WATCHLIST_KEY, watchlistMatcher } from "@/lib/watchlist";
 import { useLocalStorage } from "./useLocalStorage";
 import StackEditor from "./StackEditor";
-
-const CATEGORIES: ArticleCategory[] = [
-  "Vulnerability",
-  "Ransomware",
-  "APT",
-  "Data Breach",
-  "Malware",
-  "Phishing",
-  "Policy",
-];
-
-const TIME_OPTIONS = [
-  { label: "1h", hours: 1 },
-  { label: "6h", hours: 6 },
-  { label: "24h", hours: 24 },
-  { label: "7d", hours: 168 },
-];
 
 const TRIAGE_OPTIONS: Array<{ key: TriageKey; label: string; description: string }> = [
   { key: "cve", label: "Has CVE", description: "Only stories naming a CVE" },
@@ -91,49 +84,19 @@ export default function ArticleFilter({
   // one-time setState in an effect is intended here.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const q = params.get("q");
-    const catParam = params.get("cat");
-    const tParam = params.get("t");
-    const fParam = params.get("f");
-    const sortParam = params.get("sort");
-
-    if (q) setSearch(q);
-    if (fParam) {
-      setTriage(fParam.split(",").filter((k): k is TriageKey => TRIAGE_KEYS.includes(k as TriageKey)));
-    }
-    if (sortParam === "top") setSort("top");
-
+    const { state, hasFilters } = parseFilterQuery(window.location.search);
+    setSearch(state.search);
+    setTimeHours(state.timeHours);
+    setTriage(state.triage);
+    setSort(state.sort);
     // A URL with filters (e.g. a shared link) fully defines the view; the
     // saved categories only apply when the URL has none.
-    const urlHasFilters = !!(q || catParam || tParam || fParam);
-
-    if (catParam) {
-      const cats = catParam
-        .split(",")
-        .filter((c) => CATEGORIES.includes(c as ArticleCategory)) as ArticleCategory[];
-      if (cats.length > 0) setCategories(cats);
-    } else if (!urlHasFilters) {
+    if (hasFilters) {
+      setCategories(state.categories);
+    } else {
       try {
-        const saved = localStorage.getItem(CAT_KEY);
-        if (saved) {
-          const parsed: unknown = JSON.parse(saved);
-          if (Array.isArray(parsed)) {
-            const cats = (parsed as string[]).filter((c) =>
-              CATEGORIES.includes(c as ArticleCategory)
-            ) as ArticleCategory[];
-            setCategories(cats);
-          } else if (typeof parsed === "string" && CATEGORIES.includes(parsed as ArticleCategory)) {
-            // Migrate old single-value format
-            setCategories([parsed as ArticleCategory]);
-          }
-        }
+        setCategories(parseSavedCategories(localStorage.getItem(CAT_KEY)));
       } catch {}
-    }
-
-    if (tParam) {
-      const n = Number(tParam);
-      if (TIME_OPTIONS.some((o) => o.hours === n)) setTimeHours(n);
     }
 
     try {
@@ -145,13 +108,7 @@ export default function ArticleFilter({
 
   // Sync URL when filters change
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (search.trim()) params.set("q", search.trim());
-    if (categories.length > 0) params.set("cat", categories.join(","));
-    if (timeHours) params.set("t", String(timeHours));
-    if (triage.length > 0) params.set("f", triage.join(","));
-    if (params.toString() && sort !== "new") params.set("sort", sort);
-    const query = params.toString();
+    const query = buildFilterQuery({ search, categories, timeHours, triage, sort });
     window.history.replaceState(null, "", query ? `?${query}` : window.location.pathname);
   }, [search, categories, timeHours, triage, sort]);
 

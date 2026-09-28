@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { matchesTriage, sortArticles } from "../filters";
+import {
+  buildFilterQuery,
+  matchesTriage,
+  parseFilterQuery,
+  parseSavedCategories,
+  sortArticles,
+} from "../filters";
 import { Article, CveInfo } from "../types";
 
 function article(title: string, cves: CveInfo[] = [], overrides: Partial<Article> = {}): Article {
@@ -63,5 +69,56 @@ describe("matchesTriage stack", () => {
     expect(matchesTriage(a, ["stack"])).toBe(false);
     expect(matchesTriage(a, ["stack"], () => true)).toBe(true);
     expect(matchesTriage(a, ["stack", "cve"], () => true)).toBe(false);
+  });
+});
+
+describe("filter URL state", () => {
+  it("parses valid params and drops unknown values", () => {
+    const { state, hasFilters } = parseFilterQuery(
+      "?q=lockbit&cat=Ransomware,Bogus,APT&t=24&f=kev,nope&sort=top"
+    );
+    expect(hasFilters).toBe(true);
+    expect(state).toEqual({
+      search: "lockbit",
+      categories: ["Ransomware", "APT"],
+      timeHours: 24,
+      triage: ["kev"],
+      sort: "top",
+    });
+  });
+
+  it("treats any filter param, even an invalid one, as defining the view", () => {
+    expect(parseFilterQuery("?cat=Bogus")).toEqual({
+      state: { search: "", categories: [], timeHours: null, triage: [], sort: "new" },
+      hasFilters: true,
+    });
+    expect(parseFilterQuery("?t=5").state.timeHours).toBeNull();
+    // Sort alone isn't a filter
+    expect(parseFilterQuery("?sort=top").hasFilters).toBe(false);
+    expect(parseFilterQuery("").hasFilters).toBe(false);
+  });
+
+  it("round-trips through the query string", () => {
+    const state = {
+      search: "  exchange ",
+      categories: ["Vulnerability" as const],
+      timeHours: 6,
+      triage: ["cve" as const, "stack" as const],
+      sort: "top" as const,
+    };
+    const query = buildFilterQuery(state);
+    expect(query).toBe("q=exchange&cat=Vulnerability&t=6&f=cve%2Cstack&sort=top");
+    expect(parseFilterQuery(query).state).toEqual({ ...state, search: "exchange" });
+  });
+
+  it("omits sort without a filter", () => {
+    expect(buildFilterQuery({ search: "", categories: [], timeHours: null, triage: [], sort: "top" })).toBe("");
+  });
+
+  it("reads saved categories in both stored formats", () => {
+    expect(parseSavedCategories('["Ransomware","Bogus"]')).toEqual(["Ransomware"]);
+    expect(parseSavedCategories('"APT"')).toEqual(["APT"]);
+    expect(parseSavedCategories("not json")).toEqual([]);
+    expect(parseSavedCategories(null)).toEqual([]);
   });
 });

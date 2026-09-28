@@ -1,4 +1,4 @@
-import { Article } from "./types";
+import { Article, ArticleCategory } from "./types";
 import { pubTime } from "./dates";
 
 /** Triage filters: narrow to stories that matter for patching. */
@@ -57,3 +57,79 @@ export const FILTERED_FEEDS = {
 } satisfies Record<string, { title: string; description: string; triage: TriageKey[] }>;
 
 export type FilteredFeedKey = keyof typeof FILTERED_FEEDS;
+
+export const CATEGORIES: ArticleCategory[] = [
+  "Vulnerability",
+  "Ransomware",
+  "APT",
+  "Data Breach",
+  "Malware",
+  "Phishing",
+  "Policy",
+];
+
+export const TIME_OPTIONS = [
+  { label: "1h", hours: 1 },
+  { label: "6h", hours: 6 },
+  { label: "24h", hours: 24 },
+  { label: "7d", hours: 168 },
+];
+
+/** Everything the filter bar controls; mirrored in the URL (q, cat, t, f, sort). */
+export interface FilterState {
+  search: string;
+  categories: ArticleCategory[];
+  timeHours: number | null;
+  triage: TriageKey[];
+  sort: SortKey;
+}
+
+function isCategory(c: unknown): c is ArticleCategory {
+  return CATEGORIES.includes(c as ArticleCategory);
+}
+
+/**
+ * Reads filters from a query string, dropping unknown values. `hasFilters`
+ * is true when any filter param is present (even an invalid one): such a URL,
+ * e.g. a shared link, fully defines the view, so saved categories don't apply.
+ */
+export function parseFilterQuery(query: string): { state: FilterState; hasFilters: boolean } {
+  const params = new URLSearchParams(query);
+  const q = params.get("q");
+  const cat = params.get("cat");
+  const t = params.get("t");
+  const f = params.get("f");
+  const hours = Number(t);
+  return {
+    state: {
+      search: q ?? "",
+      categories: (cat ?? "").split(",").filter(isCategory),
+      timeHours: TIME_OPTIONS.some((o) => o.hours === hours) ? hours : null,
+      triage: (f ?? "").split(",").filter((k): k is TriageKey => TRIAGE_KEYS.includes(k as TriageKey)),
+      sort: params.get("sort") === "top" ? "top" : "new",
+    },
+    hasFilters: !!(q || cat || t || f),
+  };
+}
+
+/** The query string (without "?") for a filter state; sort only accompanies a filter. */
+export function buildFilterQuery(state: FilterState): string {
+  const params = new URLSearchParams();
+  if (state.search.trim()) params.set("q", state.search.trim());
+  if (state.categories.length > 0) params.set("cat", state.categories.join(","));
+  if (state.timeHours) params.set("t", String(state.timeHours));
+  if (state.triage.length > 0) params.set("f", state.triage.join(","));
+  if (params.toString() && state.sort !== "new") params.set("sort", state.sort);
+  return params.toString();
+}
+
+/** Categories saved in localStorage: a JSON array, or the old single-string format. */
+export function parseSavedCategories(raw: string | null): ArticleCategory[] {
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.filter(isCategory);
+    if (isCategory(parsed)) return [parsed];
+  } catch {}
+  return [];
+}

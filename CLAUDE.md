@@ -67,7 +67,7 @@ lib/
   fetcher.ts        — RSS fetching (Promise.allSettled, 10s timeout, one retry on 5xx/timeouts/network errors), item sanitising (undated items dropped), ≤40 newest items/feed, ≤30 days old; returns { articles, failedFeeds }
   pipeline.ts       — Orchestrates fetch → tag → deduplicate → rank → enrich; threads failedFeeds through; 60s in-process memo; getCachedArticles() = same behind Next's data cache (15 min)
   keywords.ts       — Word-boundary keyword matching shared by ranker and tagger
-  filters.ts        — Triage filter predicates and result sorting used by ArticleFilter
+  filters.ts        — Filter options (categories, time windows, triage), URL state parse/build, saved-category parsing, triage predicates and result sorting used by ArticleFilter; FILTERED_FEEDS
   watchlist.ts      — "My stack" terms (localStorage `cyber-pulse-watchlist`, ≤30 terms of 2–40 chars): parse/add/remove, word-boundary matcher (keywords.ts) over title, description and CVE IDs
   ranker.ts         — Relevance scoring (tier weight + keyword match + recency boost)
   tagger.ts         — Keyword-based category tagging (first-match rules; title decides, description only as fallback)
