@@ -499,6 +499,15 @@ test("labels on the saved page are plain text", async ({ page }) => {
   await expect(page.getByRole("button", { name: /show all Ransomware stories/ })).toHaveCount(0);
 });
 
+test("the same story from two outlets is shown once, crediting both", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("article", { hasText: /LockBit/ })).toHaveCount(1);
+  await expect(card(page, "LockBit ransomware hits hospital network")).toContainText("also: Fixture Wire");
+  // The source filter includes stories an outlet also reported
+  await page.goto("/?src=Fixture+Wire");
+  await expect(page.getByRole("status").filter({ hasText: "result" })).toHaveText("1 result");
+});
+
 test("j and k move between stories", async ({ page }) => {
   await page.goto("/");
   await page.locator("article time").first().waitFor();

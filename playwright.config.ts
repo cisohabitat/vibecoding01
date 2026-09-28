@@ -33,6 +33,8 @@ export default defineConfig({
       env: {
         FEED_SOURCES_OVERRIDE: JSON.stringify([
           { name: "Fixture Feed", url: `http://localhost:${FEED_PORT}/rss.xml`, tier: 2 },
+          // Reports one of the same stories: merged into it ("also: Fixture Wire")
+          { name: "Fixture Wire", url: `http://localhost:${FEED_PORT}/wire.xml`, tier: 3 },
           // Two failing sources trigger the failed-feeds banner
           { name: "Broken Feed A", url: `http://localhost:${FEED_PORT}/broken-a`, tier: 3 },
           { name: "Broken Feed B", url: `http://localhost:${FEED_PORT}/broken-b`, tier: 3 },

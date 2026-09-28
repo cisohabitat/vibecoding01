@@ -69,6 +69,14 @@ function nvd(cveId) {
   });
 }
 
+// A second outlet covering one of the same stories in its own words, so
+// deduplication ("also: Fixture Wire") is exercised end to end
+function wire() {
+  const date = new Date(Date.now() - 100 * 60_000).toUTCString();
+  const item = `<item><title>Hospital network hit by LockBit ransomware</title><link>https://example.com/wire0</link><pubDate>${date}</pubDate><description>LockBit claims the attack.</description></item>`;
+  return `<?xml version="1.0"?><rss version="2.0"><channel><title>Wire</title>${item}</channel></rss>`;
+}
+
 createServer((req, res) => {
   const url = new URL(req.url, "http://localhost");
   // Simulated outages, so the failed-feeds banner is exercised
@@ -100,5 +108,5 @@ createServer((req, res) => {
     return;
   }
   res.writeHead(200, { "Content-Type": "application/rss+xml" });
-  res.end(rss());
+  res.end(url.pathname === "/wire.xml" ? wire() : rss());
 }).listen(PORT, () => console.log(`fixture feed on :${PORT}`));
