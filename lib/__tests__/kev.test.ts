@@ -27,6 +27,20 @@ describe("parseKevCatalog", () => {
   });
 });
 
+describe("parseKevCatalog details", () => {
+  it("keeps each entry's dates and ransomware use", () => {
+    const catalog = parseKevCatalog({
+      vulnerabilities: [
+        { cveID: "cve-2024-23897", dateAdded: "2024-08-19", dueDate: "2024-09-09", knownRansomwareCampaignUse: "Known" },
+        { cveID: "CVE-2024-3400", dateAdded: "not a date", knownRansomwareCampaignUse: "Unknown" },
+      ],
+    });
+    expect(catalog.has("CVE-2024-23897")).toBe(true);
+    expect(catalog.details.get("CVE-2024-23897")).toEqual({ dateAdded: "2024-08-19", dueDate: "2024-09-09", ransomware: true });
+    expect(catalog.details.get("CVE-2024-3400")).toEqual({ dateAdded: null, dueDate: null, ransomware: false });
+  });
+});
+
 describe("getKevIds", () => {
   it("loads the catalog once and memoises it", async () => {
     const fetchMock = vi.fn(async () => Response.json({ vulnerabilities: [{ cveID: "CVE-2024-3400" }] }));

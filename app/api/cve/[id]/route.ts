@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { NVD_API_URL, nvdHeaders, pickCvss } from "@/lib/cve";
 import { fetchEpss } from "@/lib/epss";
-import { getKevIds } from "@/lib/kev";
+import { getKevIds, type KevEntry } from "@/lib/kev";
 import { getKnownCveIds } from "@/lib/pipeline";
 import { safeLink } from "@/lib/url";
 
@@ -20,6 +20,8 @@ export interface CveDetail {
   references: string[];
   /** Listed in CISA's Known Exploited Vulnerabilities catalog */
   kev: boolean;
+  /** The catalog's details (date added, CISA deadline, ransomware use) when listed */
+  kevDetails: KevEntry | null;
   /** EPSS probability of exploitation in the next 30 days (0–1), if scored */
   epss: number | null;
   epssPercentile: number | null;
@@ -107,6 +109,7 @@ export async function GET(
       lastModified: vuln.lastModified ?? null,
       references,
       kev: (await kevIds).has(cveId),
+      kevDetails: (await kevIds).details.get(cveId) ?? null,
       epss: (await epss).get(cveId)?.epss ?? null,
       epssPercentile: (await epss).get(cveId)?.percentile ?? null,
     };

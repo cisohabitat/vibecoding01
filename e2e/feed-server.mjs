@@ -88,7 +88,13 @@ createServer((req, res) => {
   // Minimal CISA KEV catalog: the Jenkins CVE is "known exploited"
   if (url.pathname === "/kev") {
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ vulnerabilities: [{ cveID: "CVE-2024-23897" }] }));
+    res.end(
+      JSON.stringify({
+        vulnerabilities: [
+          { cveID: "CVE-2024-23897", dateAdded: "2024-08-19", dueDate: "2024-09-09", knownRansomwareCampaignUse: "Known" },
+        ],
+      })
+    );
     return;
   }
   // Minimal FIRST EPSS API: scores the fixture CVEs (numbers as strings, like the real API)

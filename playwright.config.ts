@@ -27,7 +27,10 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: `node e2e/wait-for.mjs http://localhost:${FEED_PORT}/rss.xml && npm run build && npx next start -p ${APP_PORT}`,
+      // The fetch cache outlives builds and is keyed by URL, so a fixture
+      // response cached by an earlier run (before the fixture changed) would
+      // be served again: start without it
+      command: `node -e "require('fs').rmSync('.next/cache/fetch-cache',{recursive:true,force:true})" && node e2e/wait-for.mjs http://localhost:${FEED_PORT}/rss.xml && npm run build && npx next start -p ${APP_PORT}`,
       url: `http://localhost:${APP_PORT}`,
       timeout: 240_000,
       env: {

@@ -12,6 +12,16 @@ const severityColor: Record<string, string> = {
   LOW:      "text-sky-400 border-sky-500/50 bg-sky-500/10",
 };
 
+/** "2026-09-25" → "25 Sep 2026" (a calendar date, so formatted in UTC) */
+function formatDay(isoDate: string): string {
+  return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 export default function CveModal({
   cveId,
   onClose,
@@ -152,6 +162,15 @@ export default function CveModal({
                   Known Exploited Vulnerabilities catalog
                 </a>
                 : attackers are using it in the wild, so patch it first.
+                {data.kevDetails && (data.kevDetails.dateAdded || data.kevDetails.dueDate) && (
+                  <span className="block mt-1 text-red-200/90">
+                    {data.kevDetails.dateAdded && <>Added {formatDay(data.kevDetails.dateAdded)}. </>}
+                    {data.kevDetails.dueDate && <>US federal deadline to patch: {formatDay(data.kevDetails.dueDate)}.</>}
+                  </span>
+                )}
+                {data.kevDetails?.ransomware && (
+                  <strong className="block mt-1 font-semibold">Known to be used in ransomware campaigns.</strong>
+                )}
               </div>
             )}
 

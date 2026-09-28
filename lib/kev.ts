@@ -13,21 +13,44 @@ const TTL_MS = 6 * 60 * 60 * 1000;
 // (each attempt can wait out the 10s timeout)
 const FAILURE_TTL_MS = 5 * 60 * 1000;
 
-let memo: { at: number; ids: Promise<Set<string>> } | null = null;
-
-/** Extracts upper-cased CVE IDs from a KEV catalog document. */
-export function parseKevCatalog(data: unknown): Set<string> {
-  const vulns = (data as { vulnerabilities?: unknown })?.vulnerabilities;
-  const ids = new Set<string>();
-  if (!Array.isArray(vulns)) return ids;
-  for (const v of vulns) {
-    const id = (v as { cveID?: unknown })?.cveID;
-    if (typeof id === "string" && /^CVE-\d{4}-\d{4,7}$/i.test(id)) ids.add(id.toUpperCase());
-  }
-  return ids;
+/** What CISA's catalog says about a CVE beyond its listing. */
+export interface KevEntry {
+  /** When it was added to the catalog (YYYY-MM-DD) */
+  dateAdded: string | null;
+  /** CISA's remediation deadline for US federal agencies (YYYY-MM-DD) */
+  dueDate: string | null;
+  /** Known to be used in ransomware campaigns */
+  ransomware: boolean;
 }
 
-async function loadKev(): Promise<Set<string>> {
+/** The catalog's CVE IDs (a Set, as most callers only test membership), with each entry's details. */
+export class KevCatalog extends Set<string> {
+  readonly details = new Map<string, KevEntry>();
+}
+
+let memo: { at: number; ids: Promise<KevCatalog> } | null = null;
+
+const isoDate = (v: unknown) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+
+/** Extracts upper-cased CVE IDs (and their details) from a KEV catalog document. */
+export function parseKevCatalog(data: unknown): KevCatalog {
+  const vulns = (data as { vulnerabilities?: unknown })?.vulnerabilities;
+  const catalog = new KevCatalog();
+  if (!Array.isArray(vulns)) return catalog;
+  for (const v of vulns) {
+    const { cveID: id, dateAdded, dueDate, knownRansomwareCampaignUse } = (v ?? {}) as Record<string, unknown>;
+    if (typeof id !== "string" || !/^CVE-\d{4}-\d{4,7}$/i.test(id)) continue;
+    catalog.add(id.toUpperCase());
+    catalog.details.set(id.toUpperCase(), {
+      dateAdded: isoDate(dateAdded),
+      dueDate: isoDate(dueDate),
+      ransomware: typeof knownRansomwareCampaignUse === "string" && knownRansomwareCampaignUse.toLowerCase() === "known",
+    });
+  }
+  return catalog;
+}
+
+async function loadKev(): Promise<KevCatalog> {
   try {
     const res = await fetch(KEV_URL, {
       next: { revalidate: TTL_MS / 1000 },
@@ -39,12 +62,12 @@ async function loadKev(): Promise<Set<string>> {
     return ids;
   } catch (err) {
     console.warn(`KEV catalog unavailable (${KEV_URL}): ${(err as Error)?.message ?? err}`);
-    return new Set();
+    return new KevCatalog();
   }
 }
 
 /** CVE IDs in the KEV catalog; empty if the catalog can't be loaded. */
-export function getKevIds(): Promise<Set<string>> {
+export function getKevIds(): Promise<KevCatalog> {
   const now = Date.now();
   if (!memo || now - memo.at > TTL_MS) {
     const ids = loadKev();
