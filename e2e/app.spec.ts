@@ -387,6 +387,8 @@ test("CVE chip opens the detail dialog without leaving the page", async ({ page,
   // The catalog's details
   await expect(dialog).toContainText(/Added 19 Aug 2024\. US federal deadline to patch: 9 Sept? 2024\./);
   await expect(dialog.getByText("Known to be used in ransomware campaigns.")).toBeVisible();
+  // NVD dates in the same unambiguous format
+  await expect(dialog).toContainText("Published: 24 Jan 2024");
   // Other current stories naming the same CVE
   const others = dialog.getByRole("heading", { name: "In other stories" }).locator("xpath=..");
   await expect(others.getByRole("link", { name: "New Android spyware poses as messaging app" })).toBeVisible();

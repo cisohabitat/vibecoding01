@@ -209,10 +209,10 @@ export default function CveModal({
             {(data.published || data.lastModified) && (
               <div className="flex flex-wrap gap-4 text-xs text-slate-400">
                 {data.published && (
-                  <span>Published: {new Date(data.published).toLocaleDateString()}</span>
+                  <span>Published: {formatDay(data.published.slice(0, 10))}</span>
                 )}
                 {data.lastModified && (
-                  <span>Updated: {new Date(data.lastModified).toLocaleDateString()}</span>
+                  <span>Updated: {formatDay(data.lastModified.slice(0, 10))}</span>
                 )}
               </div>
             )}
