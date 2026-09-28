@@ -136,6 +136,15 @@ describe("deduplicateArticles across different wording", () => {
     expect(merged.lastReported?.toISOString()).toBe("2026-01-02T06:00:00.000Z");
   });
 
+  it("counts short product names like F5 (the live BIG-IP case)", () => {
+    const result = deduplicateArticles([
+      article({ title: "F5 Patches Critical BIG-IP APM Zero-Day Exploited for Unauthenticated RCE", source: "The Hacker News" }),
+      article({ title: "Someone's attacking a critical 0-day RCE in F5 BIG-IP APM", source: "The Register", sourceTier: 3 }),
+      ...filler(40),
+    ]);
+    expect(result.filter((a) => a.title.includes("BIG-IP"))).toHaveLength(1);
+  });
+
   it("merges stories that name the same CVE in their descriptions", () => {
     const result = deduplicateArticles([
       article({ title: "F5 patches BIG-IP zero-day", description: "Tracked as CVE-2026-1111, the flaw...", source: "A" }),

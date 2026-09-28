@@ -33,6 +33,8 @@ describe("extractTerms", () => {
 
   it("returns each term once", () => {
     expect([...extractTerms("Ivanti Ivanti Ivanti")]).toEqual(["ivanti"]);
+    // Short product names count when they mix letters and digits
+    expect([...extractTerms("F5 patches BIG-IP flaw; M365 tenants hit via 2FA bypass")]).toEqual(["f5", "big-ip", "m365", "tenants"]);
     // Vulnerability vocabulary isn't a name
     expect([...extractTerms("SonicWall firewall bug allows remote takeover")]).toEqual(["sonicwall", "firewall"]);
     expect([...extractTerms("Phishing kits bypass Okta authentication")]).toEqual(["kits", "okta"]);

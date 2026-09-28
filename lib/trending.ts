@@ -43,6 +43,9 @@ const GENERIC_TERMS = new Set([
 
 const CVE_TERM = /CVE-\d{4}-\d{4,}/gi;
 
+// Letter+digit words that aren't names
+const SHORT_GENERIC = new Set(["2fa", "mfa", "4g", "5g", "3d", "1st", "2nd", "3rd", "4th", "q1", "q2", "q3", "q4", "h1", "h2"]);
+
 /** Distinct trending terms in a title: CVE IDs plus notable words. */
 export function extractTerms(title: string): Set<string> {
   const terms = new Set<string>();
@@ -55,7 +58,10 @@ export function extractTerms(title: string): Set<string> {
     .split(/\s+/)
     .map((w) => w.replace(/^-+|-+$/g, "")); // keep "zero-day", drop dashes
   for (const w of words) {
-    if (w.length < 4 || /^[\d-]+$/.test(w)) continue;
+    // Short words are mostly noise, but short product names mix letters and
+    // digits ("F5", "M365")
+    const shortName = /^(?=.*[a-z])(?=.*\d)[a-z0-9]{2,3}$/.test(w) && !SHORT_GENERIC.has(w);
+    if ((w.length < 4 && !shortName) || /^[\d-]+$/.test(w)) continue;
     if (STOP_WORDS.has(w) || GENERIC_TERMS.has(w)) continue;
     terms.add(w);
   }
