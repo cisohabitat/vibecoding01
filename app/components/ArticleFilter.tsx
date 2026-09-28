@@ -269,7 +269,7 @@ export default function ArticleFilter({
               {cat}
             </button>
           ))}
-          <span className="border-l border-cyber-600/30 h-4 mx-1" aria-hidden="true" />
+          <span className="hidden sm:inline-block border-l border-cyber-600/30 h-4 mx-1" aria-hidden="true" />
           {TIME_OPTIONS.map(({ label, hours }) => (
             <button
               type="button"
@@ -286,7 +286,7 @@ export default function ArticleFilter({
               {label}
             </button>
           ))}
-          <span className="border-l border-cyber-600/30 h-4 mx-1" aria-hidden="true" />
+          <span className="hidden sm:inline-block border-l border-cyber-600/30 h-4 mx-1" aria-hidden="true" />
           {TRIAGE_OPTIONS.map(({ key, label, description }) => (
             <button
               type="button"
@@ -320,13 +320,15 @@ export default function ArticleFilter({
         {editingStack && <StackEditor id="stack-editor" terms={stackTerms} />}
 
         {newInStack > 0 && !triage.includes("stack") && (
-          <p className="flex flex-wrap items-center gap-x-2 text-sm text-slate-300 rounded-lg border border-cyber-blue/40 bg-cyber-blue/10 px-3 py-2">
-            <span className="w-2 h-2 rounded-full bg-cyber-blue" aria-hidden="true" />
-            {newInStack} new {newInStack === 1 ? "story mentions" : "stories mention"} your stack since
-            your last visit.
-            <button type="button" onClick={showNewInStack} className="text-cyber-blue font-semibold hover:underline">
-              Show {newInStack === 1 ? "it" : "them"}
-            </button>
+          <p className="flex items-start gap-2 text-sm text-slate-300 rounded-lg border border-cyber-blue/40 bg-cyber-blue/10 px-3 py-2">
+            <span className="mt-1.5 w-2 h-2 shrink-0 rounded-full bg-cyber-blue" aria-hidden="true" />
+            <span>
+              {newInStack} new {newInStack === 1 ? "story mentions" : "stories mention"} your stack since
+              your last visit.{" "}
+              <button type="button" onClick={showNewInStack} className="text-cyber-blue font-semibold hover:underline">
+                Show {newInStack === 1 ? "it" : "them"}
+              </button>
+            </span>
           </p>
         )}
       </div>
