@@ -84,17 +84,17 @@ function truncate(text: string, maxLength: number): string {
 }
 
 /**
- * Parses a feed date. Missing or unparseable dates fall back to `now`;
- * future dates (clock skew, scheduled posts) are clamped to `now` so they
- * don't stay "BREAKING" or top the recency ranking.
+ * Parses a feed date, or returns null if none of the values parses. Future
+ * dates (clock skew, scheduled posts) are clamped to `now` so they don't
+ * stay "BREAKING" or top the recency ranking.
  */
-export function parseFeedDate(values: Array<string | undefined>, now: number): Date {
+export function parseFeedDate(values: Array<string | undefined>, now: number): Date | null {
   for (const v of values) {
     if (!v) continue;
     const t = new Date(v).getTime();
     if (!Number.isNaN(t)) return new Date(Math.min(t, now));
   }
-  return new Date(now);
+  return null;
 }
 
 // Keep the page payload bounded: each feed contributes at most its newest
@@ -157,14 +157,22 @@ export async function fetchAllFeeds(): Promise<FetchResult> {
     FEED_SOURCES.map(async (source) => {
       const feed = await withRetry(() => parseFeed(source.url));
       const articles: Article[] = [];
+      let undated = 0;
       for (const item of feed.items || []) {
         // Links are rendered as hrefs: drop items without a safe http(s) URL
         const link = safeLink(item.link);
         if (!link) continue;
+        // Undated items can't be placed in time; stamping them "now" would
+        // make them look new (BREAKING, recency boost) on every refresh
+        const pubDate = parseFeedDate([item.isoDate, item.pubDate], now);
+        if (!pubDate) {
+          undated++;
+          continue;
+        }
         articles.push({
           title: cleanTitle(item.title || "") || "Untitled",
           link,
-          pubDate: parseFeedDate([item.isoDate, item.pubDate], now),
+          pubDate,
           description: truncate(cleanDescription(item), 200),
           source: source.name,
           sourceTier: source.tier,
@@ -174,6 +182,7 @@ export async function fetchAllFeeds(): Promise<FetchResult> {
           cves: [],
         });
       }
+      if (undated > 0) console.warn(`Skipped ${undated} undated item(s) from feed "${source.name}"`);
       return limitItems(articles, now);
     })
   );

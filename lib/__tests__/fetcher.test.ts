@@ -53,17 +53,17 @@ describe("parseFeedDate", () => {
   const now = Date.parse("2026-01-01T12:00:00Z");
 
   it("uses the first parseable date", () => {
-    expect(parseFeedDate([undefined, "garbage", "2026-01-01T10:00:00Z"], now).toISOString()).toBe(
+    expect(parseFeedDate([undefined, "garbage", "2026-01-01T10:00:00Z"], now)!.toISOString()).toBe(
       "2026-01-01T10:00:00.000Z"
     );
   });
 
   it("clamps future dates to now", () => {
-    expect(parseFeedDate(["2030-01-01T00:00:00Z"], now).getTime()).toBe(now);
+    expect(parseFeedDate(["2030-01-01T00:00:00Z"], now)!.getTime()).toBe(now);
   });
 
-  it("falls back to now when nothing parses", () => {
-    expect(parseFeedDate(["not a date", undefined], now).getTime()).toBe(now);
+  it("returns null when nothing parses (undated items are dropped)", () => {
+    expect(parseFeedDate(["not a date", undefined], now)).toBeNull();
   });
 });
 
