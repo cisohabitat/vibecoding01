@@ -51,7 +51,7 @@ app/
     NewsCard.tsx            — Article card (featured + default variants), read/bookmark state [client]
     CveModal.tsx            — CVE detail dialog opened from a card's CVE chip [client]
     ArticleFilter.tsx       — Search, category, time and triage (Has CVE / KEV / CVSS 9+ / My stack) filters, "N new since your last visit · Mark all seen" line and "new stories about your stack" notice (NEW-badge rule); "/" and j/k keyboard shortcuts, Newest/Top sort; syncs to URL + localStorage; filtered results paginate via NewsListClient; provides view mode [client]
-    StatsBanner.tsx         — 24h counts (stories, distinct critical CVEs, breaches, ransomware)
+    StatsBanner.tsx         — 24h counts (stories, distinct critical/KEV CVEs, breaches, ransomware); each StatTile [client] shows its stories via filterEvents.showFiltered()
     UpdatedAgo.tsx          — Live "Updated Nm ago" for the page's data [client]
     AutoRefresh.tsx         — router.refresh() when data is >15 min old and the tab is visible (≤1 per 5 min) [client]
     ViewModeContext.tsx     — Grid/list view mode context provided by ArticleFilter [client]

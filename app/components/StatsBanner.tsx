@@ -1,5 +1,6 @@
 import { Article } from "@/lib/types";
 import { pubTime } from "@/lib/dates";
+import StatTile from "./StatTile";
 
 interface Stats {
   totalToday: number;
@@ -41,41 +42,40 @@ export default function StatsBanner({
   const { totalToday, criticalCves, exploitedCves, breachCount, ransomwareCount } =
     computeStats(featured, recent);
 
+  // Each tile shows its stories: the last 24h plus the matching filter
   const stats = [
-    { label: "Stories · 24h", value: totalToday, color: "text-cyber-accent" },
+    { label: "Stories · 24h", value: totalToday, color: "text-cyber-accent", filter: {} },
     {
       label: "Critical CVEs",
       value: criticalCves,
       color: criticalCves > 0 ? "text-red-400" : "text-slate-400",
+      filter: { triage: ["critical" as const] },
     },
     {
       label: "Exploited CVEs",
       value: exploitedCves,
       color: exploitedCves > 0 ? "text-red-400" : "text-slate-400",
+      filter: { triage: ["kev" as const] },
     },
     {
       label: "Data Breaches",
       value: breachCount,
       color: breachCount > 0 ? "text-rose-400" : "text-slate-400",
+      filter: { categories: ["Data Breach" as const] },
     },
     {
       label: "Ransomware",
       value: ransomwareCount,
       color: ransomwareCount > 0 ? "text-orange-400" : "text-slate-400",
+      filter: { categories: ["Ransomware" as const] },
     },
   ];
 
   return (
-    <dl className="flex flex-wrap gap-4 mb-6 px-1" aria-label="Last 24 hours">
-      {stats.map(({ label, value, color }) => (
-        <div
-          key={label}
-          className="flex flex-row-reverse items-baseline gap-2 bg-cyber-800/40 border border-cyber-600/30 rounded-lg px-4 py-2"
-        >
-          <dt className="text-xs text-slate-400 uppercase tracking-wide">{label}</dt>
-          <dd className={`text-xl font-bold font-mono ${color}`}>{value}</dd>
-        </div>
+    <div className="flex flex-wrap gap-4 mb-6 px-1" role="group" aria-label="Last 24 hours">
+      {stats.map(({ label, value, color, filter }) => (
+        <StatTile key={label} label={label} value={value} color={color} filter={{ timeHours: 24, ...filter }} />
       ))}
-    </dl>
+    </div>
   );
 }

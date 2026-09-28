@@ -5,6 +5,7 @@ import { Article, ArticleCategory } from "@/lib/types";
 import {
   buildFilterQuery,
   CATEGORIES,
+  FilterState,
   matchesTriage,
   parseFilterQuery,
   parseSavedCategories,
@@ -22,6 +23,7 @@ import { parseStoredList, useLocalStorage } from "./useLocalStorage";
 import { markAllSeen, useLastVisit } from "./useLastVisit";
 import { isString, READ_KEY } from "./NewsCard";
 import StackEditor from "./StackEditor";
+import { FILTER_EVENT } from "./filterEvents";
 
 const TRIAGE_OPTIONS: Array<{ key: TriageKey; label: string; description: string }> = [
   { key: "cve", label: "Has CVE", description: "Only stories naming a CVE" },
@@ -154,6 +156,22 @@ export default function ArticleFilter({
     }
     window.addEventListener("cyber-pulse-search", handler);
     return () => window.removeEventListener("cyber-pulse-search", handler);
+  }, []);
+
+  // Listen for stat-tile clicks: they replace the filters, like opening a
+  // link, so (as with shared links) the saved categories aren't overwritten
+  useEffect(() => {
+    function handler(e: Event) {
+      const f = (e as CustomEvent<Partial<FilterState>>).detail;
+      categoriesChangedByUser.current = false;
+      setSearch(f.search ?? "");
+      setCategories(f.categories ?? []);
+      setTimeHours(f.timeHours ?? null);
+      setTriage(f.triage ?? []);
+      setSort(f.sort ?? "new");
+    }
+    window.addEventListener(FILTER_EVENT, handler);
+    return () => window.removeEventListener(FILTER_EVENT, handler);
   }, []);
 
   const allArticles = useMemo(() => [...featured, ...recent], [featured, recent]);

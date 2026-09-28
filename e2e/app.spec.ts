@@ -36,11 +36,20 @@ test("renders ranked articles without hydration errors", async ({ page }) => {
 
 test("counts known-exploited CVEs and ranks their story first", async ({ page }) => {
   await page.goto("/");
-  const stat = page.locator("dl > div", { hasText: "Exploited CVEs" });
-  await expect(stat.locator("dd")).toHaveText("1");
+  const stat = page.getByRole("group", { name: "Last 24 hours" }).getByRole("button", { name: "1 Exploited CVEs" });
+  await expect(stat).toBeVisible();
   // The KEV boost puts the Jenkins story at the top of Top Stories
   const top = page.locator("section", { has: page.getByRole("heading", { name: /Top Stories/ }) }).locator("article").first();
   await expect(top).toContainText("Critical RCE in Jenkins");
+
+  // The tile shows its stories: last 24h, known exploited
+  await stat.click();
+  await expect(page.getByRole("status").filter({ hasText: "result" })).toHaveText("1 result");
+  await expect(page).toHaveURL(/t=24/);
+  await expect(page).toHaveURL(/f=kev/);
+  await page.getByRole("group", { name: "Last 24 hours" }).getByRole("button", { name: /Ransomware/ }).click();
+  await expect(page).toHaveURL(/cat=Ransomware/);
+  await expect(page).not.toHaveURL(/f=kev/);
 });
 
 test("tags categories on whole words only", async ({ page }) => {
