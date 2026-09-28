@@ -70,12 +70,15 @@ describe("computeTrending", () => {
     const topics = computeTrending([
       story("Citrix NetScaler zero-days exploited"),
       story("Attackers hit Citrix NetScaler gateways"),
+      story("Citrix NetScaler patch guidance"),
+      story("Threat brief: NetScaler zero days"), // names only NetScaler
       story("Citrix confirms flaws"),
+      story("Citrix shares fall"),
       story("Prison sentence for soldier"),
       story("Soldier gets prison time"),
     ]);
     const citrix = topics.find((t) => t.term === "citrix");
-    expect(citrix).toEqual({ term: "citrix", count: 3, label: "citrix netscaler" });
+    expect(citrix).toEqual({ term: "citrix", count: 5, label: "citrix netscaler" });
     expect(topics.find((t) => t.term === "netscaler")).toBeUndefined();
     // Always together but not next to each other: kept apart
     expect(topics.map((t) => t.term)).toEqual(expect.arrayContaining(["prison", "soldier"]));

@@ -79,7 +79,7 @@ lib/
   kev.ts            — CISA Known Exploited Vulnerabilities catalog: `KevCatalog` (a Set of IDs with `.details`: date added, federal due date, ransomware use) (6h memo, 5 min after a failure; empty on failure; KEV_URL override for tests)
   epss.ts           — FIRST EPSS scores, bulk-fetched in batches of 50 (empty on failure; EPSS_URL override for tests)
   epss-format.ts    — HIGH_EPSS threshold + percentage/percentile formatting, safe for client components
-  trending.ts       — Trending terms (names, CVE IDs) from last-24h titles; ≥2 stories, generic words excluded; a term always adjacent to a bigger one folds into it (label "citrix netscaler", search "citrix")
+  trending.ts       — Trending terms (names, CVE IDs) from last-24h titles; ≥2 stories, generic words excluded; a term whose stories (≥75%) name a bigger term next to it folds into it (label "citrix netscaler", search "citrix")
   rss.ts            — RSS 2.0 builder for /api/feed.xml (XML-safe escaping, CVEs as <category>)
   site.ts           — Absolute site URL (NEXT_PUBLIC_SITE_URL, else Vercel production domain)
   briefing.ts       — Saved stories as a plain-text/Markdown briefing (CVE notes: CVSS, KEV, high EPSS; plain URLs)

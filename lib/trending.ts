@@ -85,6 +85,9 @@ export interface TrendingTopic {
   label?: string;
 }
 
+// Share of a term's stories that must also name the bigger term to fold into it
+const FOLD_SHARE = 0.75;
+
 export function computeTrending(articles: Article[], topN = 12): TrendingTopic[] {
   const now = Date.now();
   const cutoff = now - 24 * 60 * 60 * 1000;
@@ -103,23 +106,25 @@ export function computeTrending(articles: Article[], topN = 12): TrendingTopic[]
     .filter(([, list]) => list.length >= 2)
     .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
 
-  // Fold a term into a bigger one when every story naming it names the
-  // other too, right next to it in most of them: "netscaler" (4) into
-  // "citrix" (7) as "citrix netscaler". Searching "citrix" still finds them all.
+  // Fold a term into a bigger one when (nearly) every story naming it names
+  // the other too, right next to it in most of them: "netscaler" (4) into
+  // "citrix" (7) as "citrix netscaler". A click searches "citrix", which
+  // finds all but the odd story naming only NetScaler.
   const labels = new Map<string, string>();
   const folded = new Set<string>();
   for (const [small, smallList] of [...trends].reverse()) {
     if (small.startsWith("CVE-")) continue;
     for (const [big, bigList] of trends) {
       if (big === small || folded.has(big) || labels.has(big) || big.startsWith("CVE-")) continue;
-      if (bigList.length < smallList.length || !smallList.every((i) => bigList.includes(i))) continue;
-      const order = smallList.map((i) => {
+      const shared = smallList.filter((i) => bigList.includes(i));
+      if (bigList.length < smallList.length || shared.length < FOLD_SHARE * smallList.length) continue;
+      const order = shared.map((i) => {
         const words = titles[i];
         const at = words.indexOf(big);
         return words[at + 1] === small ? "after" : words[at - 1] === small ? "before" : null;
       });
       const adjacent = order.filter(Boolean).length;
-      if (adjacent * 2 <= smallList.length) continue;
+      if (adjacent * 2 <= shared.length) continue;
       const after = order.filter((o) => o === "after").length >= order.filter((o) => o === "before").length;
       labels.set(big, after ? `${big} ${small}` : `${small} ${big}`);
       folded.add(small);
