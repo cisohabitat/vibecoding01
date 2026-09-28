@@ -50,6 +50,15 @@ export const SG_BOOST = 1.5;
 export const COVERAGE_BOOST = 0.75;
 /** ...counting at most this many, so wide coverage can't outweigh the threat itself. */
 export const MAX_COVERAGE_SOURCES = 3;
+/** Penalty for promotional posts (webinars, events, sponsored content): not news. */
+export const PROMO_PENALTY = 5;
+
+const PROMO_TITLE = /^\s*\[?(webinar|virtual event|live event|sponsored|podcast|ebook|whitepaper)\b|\bwebinar:/i;
+
+/** True for promotional titles ("Webinar: …", "[Virtual Event] …", "Sponsored: …"). */
+export function isPromotional(title: string): boolean {
+  return PROMO_TITLE.test(title);
+}
 
 /**
  * The strongest exploitation signal among the article's CVEs. KEV and a
@@ -74,7 +83,8 @@ function scoreArticle(article: Article, kevIds: Set<string>, epss: Map<string, E
     recencyBoost +
     regionBoost +
     coverageBoost +
-    exploitBoost(extractCveIds(text), kevIds, epss)
+    exploitBoost(extractCveIds(text), kevIds, epss) -
+    (isPromotional(article.title) ? PROMO_PENALTY : 0)
   );
 }
 

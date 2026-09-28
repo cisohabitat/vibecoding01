@@ -60,7 +60,8 @@ export default function Footer({ lastUpdated }: { lastUpdated: string }) {
             </li>
             <li>
               <strong className="text-slate-300">Coverage:</strong> a story reported by several outlets
-              gets a boost for each extra one (up to three).
+              gets a boost for each extra one (up to three). Webinars, events and sponsored posts are
+              ranked down.
             </li>
             <li>
               <strong className="text-slate-300">Singapore:</strong> stories that mention Singapore get

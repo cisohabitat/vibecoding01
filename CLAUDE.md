@@ -70,7 +70,7 @@ lib/
   keywords.ts       — Word-boundary keyword matching shared by ranker and tagger
   filters.ts        — Filter options (categories, time windows, triage), URL state parse/build, saved-category parsing, triage predicates and result sorting used by ArticleFilter; FILTERED_FEEDS
   watchlist.ts      — "My stack" terms (localStorage `cyber-pulse-watchlist`, ≤30 terms of 2–40 chars): parse/add/remove, word-boundary matcher (keywords.ts) over title, description and CVE IDs
-  ranker.ts         — Relevance scoring (tier weight + keyword match + recency boost + Singapore boost + coverage boost per extra outlet (≤3) + exploitation boost: max of KEV/EPSS)
+  ranker.ts         — Relevance scoring (tier weight + keyword match + recency boost + Singapore boost + coverage boost per extra outlet (≤3) + exploitation boost: max of KEV/EPSS − promo penalty for webinar/event/sponsored titles)
   region.ts         — mentionsSingapore(): specific terms (singapore, singpass, singtel…) at word boundaries; ranking boost + SG card marker
   tagger.ts         — Keyword-based category tagging (first-match rules: Ransomware, APT, Data Breach, Phishing, Vulnerability, Malware, AI, Policy; title decides, description only as fallback). Tune against the Feed health run's tagging report (category mix + untagged sample from real feeds)
   deduplicator.ts   — Deduplication by identical link, or title similarity across *different* outlets within 72h (never merges titles naming different CVEs); keeps the lowest-tier, newest copy

@@ -4,8 +4,10 @@ import {
   computeKeywordScore,
   EPSS_BOOST,
   KEV_BOOST,
+  isPromotional,
   MAX_COVERAGE_SOURCES,
   pickFeatured,
+  PROMO_PENALTY,
   rankArticles,
   SG_BOOST,
 } from "../ranker";
@@ -131,5 +133,24 @@ describe("rankArticles coverage boost", () => {
     const score = (a: Article) => featured.find((f) => f.link === a.link)!.score;
     expect(score(two) - score(solo)).toBe(COVERAGE_BOOST);
     expect(score(many) - score(solo)).toBe(COVERAGE_BOOST * MAX_COVERAGE_SOURCES);
+  });
+});
+
+describe("promotional posts", () => {
+  it("recognises webinars, events and sponsored posts", () => {
+    expect(isPromotional("Webinar: How to Govern AI Agents")).toBe(true);
+    expect(isPromotional("[Virtual Event] Cybersecurity Outlook 2027")).toBe(true);
+    expect(isPromotional("Sponsored: Five ways to cut alert fatigue")).toBe(true);
+    expect(isPromotional("Join our live webinar: ransomware trends")).toBe(true);
+    expect(isPromotional("Ransomware gang hits hospital")).toBe(false);
+    expect(isPromotional("Podcasting app leaks user data")).toBe(false);
+  });
+
+  it("ranks them lower", () => {
+    const news = article({ title: "Ransomware hits hospital" });
+    const promo = article({ title: "Webinar: Ransomware hits hospital" });
+    const { featured } = rankArticles([promo, news]);
+    expect(featured[0].link).toBe(news.link);
+    expect(featured[0].score - featured[1].score).toBe(PROMO_PENALTY);
   });
 });
