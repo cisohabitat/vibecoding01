@@ -2,18 +2,29 @@
 
 Real-time cybersecurity news, aggregated from trusted sources and ranked by relevance.
 
-Cyber Pulse fetches RSS feeds from government advisories (CISA, NCSC), security
-journalism (Krebs on Security, BleepingComputer, The Hacker News, Dark Reading, …)
-and research blogs, then:
+Cyber Pulse fetches 18 RSS feeds: government and CERT advisories (CISA, NCSC,
+HKCERT), security journalism (Krebs on Security, BleepingComputer, The Hacker
+News, Dark Reading, …), APAC news (CyberSecAsia) and vendor threat research
+(Unit 42, Cisco Talos, …). Then it:
 
 - **tags** each article with a category (Ransomware, APT, Vulnerability, …)
 - **deduplicates** the same story reported by several outlets, keeping the most
   authoritative copy and listing the others under "also"
-- **ranks** by source tier, threat keywords, recency, how many outlets report it and Singapore relevance; the top 5 from the last
-  24 hours become Top Stories
-- **enriches** CVE IDs with CVSS scores from the NVD and flags those in CISA's
-  Known Exploited Vulnerabilities (KEV) catalog, boosting their stories; FIRST's
-  EPSS exploitation forecast gives a smaller boost to CVEs likely to be exploited
+- **ranks** by source tier, threat keywords, recency, how many outlets report it,
+  Singapore relevance and exploitation signals; the top 5 from the last 24 hours
+  become Top Stories
+- **enriches** CVE IDs with CVSS scores from the NVD, CISA's Known Exploited
+  Vulnerabilities (KEV) catalog and FIRST's EPSS exploitation forecast
+
+```mermaid
+flowchart LR
+  F[18 RSS feeds] --> T[Tag] --> D[Deduplicate] --> R[Rank] --> E[Enrich CVEs] --> C[(Data cache<br/>15 min)]
+  K[CISA KEV] --> R
+  P[FIRST EPSS] --> R
+  N[NVD CVSS<br/>kept 12h per CVE] --> E
+  C --> Page[Page, per request<br/>CSP nonce]
+  C --> API[JSON / RSS feeds<br/>ISR]
+```
 
 Article data is refreshed at most every 15 minutes (cached with Next.js's data
 cache); pages render per request so each gets a fresh Content-Security-Policy
@@ -27,7 +38,11 @@ nonce.
   are marked on their cards and can be filtered to (stored in the browser)
 - Grid/list view, "Load more" pagination
 - Keyboard shortcuts: <kbd>/</kbd> search, <kbd>j</kbd>/<kbd>k</kbd> next/previous story
-- **NEW** badges for stories published since your last visit
+- **NEW** badges for stories published since your last visit, a count of them and
+  "Mark all seen"; a notice when new stories mention your stack
+- 24h stat tiles (critical and exploited CVEs, breaches, ransomware) that show
+  their stories when clicked
+- Singapore stories marked **SG** and ranked higher
 - Bookmarks (`/saved`) and read tracking, stored in the browser; copy saved stories as a
   text briefing for chat, email or a ticket
 - CVE detail dialog with CVSS score, vector, EPSS forecast, KEV status and references
@@ -72,12 +87,20 @@ All optional:
 
 | Variable | Purpose |
 | --- | --- |
-| `NVD_API_KEY` | [NVD API key](https://nvd.nist.gov/developers/request-an-api-key); raises CVE lookups per refresh from 5 to 20 |
+| `NVD_API_KEY` | [NVD API key](https://nvd.nist.gov/developers/request-an-api-key); raises new CVE lookups per refresh from 5 to 20, so CVSS coverage fills in faster (scores are kept 12h per CVE) |
 | `NEXT_PUBLIC_SITE_URL` | Absolute site URL for feed and canonical links. Defaults to the Vercel production domain |
 
 ## Deployment
 
-Deployed on Vercel. CI (GitHub Actions) runs a production-dependency audit,
-lint, typecheck, unit tests, a production build and the Playwright end-to-end
-suite on every push to `main` and on
-pull requests. Dependabot proposes dependency updates weekly.
+Deployed on Vercel. GitHub Actions:
+
+- **CI** on every push to `main` and on pull requests: production-dependency
+  audit, lint, typecheck, unit tests with coverage thresholds, a production build
+  and the Playwright end-to-end suite (with axe accessibility audits)
+- **Feed health** daily: every feed must fetch and parse; a failed run flags a
+  broken source. Run it by hand with a `feeds` JSON input to vet a new source.
+- **Production smoke test** after each Production deploy. Set the repository
+  variable `PRODUCTION_URL` to the public domain (deployment URLs are usually
+  behind Vercel Authentication, in which case the run is skipped).
+
+Dependabot proposes dependency updates weekly.
