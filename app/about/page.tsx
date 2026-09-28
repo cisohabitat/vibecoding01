@@ -27,7 +27,9 @@ const TIER_NAMES: Record<number, string> = {
 
 // Numbers come from the ranking code, so this page can't drift from it
 export default function AboutPage() {
-  const tiers = [1, 2, 3].map((tier) => ({ tier, sources: FEED_SOURCES.filter((s) => s.tier === tier) }));
+  const tiers = [1, 2, 3]
+    .map((tier) => ({ tier, sources: FEED_SOURCES.filter((s) => s.tier === tier) }))
+    .filter(({ sources }) => sources.length > 0);
   const h2 = "text-lg font-semibold text-white mt-10 mb-3";
   // Underlined: links in running text must stand out by more than colour
   const link = "text-cyber-accent underline underline-offset-2 hover:text-white";
