@@ -83,4 +83,30 @@ describe("computeTrending", () => {
     // Always together but not next to each other: kept apart
     expect(topics.map((t) => t.term)).toEqual(expect.arrayContaining(["prison", "soldier"]));
   });
+
+  it("doesn't fold ambiguous or narrow companions", () => {
+    const now = new Date();
+    const story = (title: string) => ({
+      title, link: title, pubDate: now, description: "", source: "T", sourceTier: 2 as const,
+      score: 0, category: "Other" as const, alsoReportedBy: [], cves: [],
+    });
+    const topics = computeTrending([
+      // Two different Typhoons: "typhoon" keeps its own name
+      story("Volt Typhoon hits utilities"),
+      story("Volt Typhoon returns"),
+      story("Salt Typhoon breaches telecoms"),
+      story("Salt Typhoon spied on calls"),
+      story("Salt Typhoon indictments"),
+      // Two Exchange stories among six Microsoft ones
+      story("Microsoft Exchange zero-day"),
+      story("Microsoft Exchange servers hacked"),
+      story("Microsoft Teams phishing"),
+      story("Microsoft Azure outage"),
+      story("Microsoft Edge update"),
+      story("Microsoft Copilot leak"),
+    ]);
+    expect(topics.find((t) => t.term === "typhoon")?.label).toBeUndefined();
+    expect(topics.find((t) => t.term === "microsoft")?.label).toBeUndefined();
+    expect(topics.map((t) => t.term)).toEqual(expect.arrayContaining(["exchange", "salt", "volt"]));
+  });
 });

@@ -52,11 +52,10 @@ export default function AboutPage() {
               {TIER_NAMES[tier]} <span className="text-slate-400 font-normal">(tier {tier}, +{TIER_WEIGHTS[tier]})</span>
             </h3>
             <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+              {/* Plain names: the configured URLs are raw RSS/XML feeds, not the outlets' sites */}
               {sources.map((s) => (
-                <li key={s.name}>
-                  <a href={s.url} className={link} rel="noopener noreferrer" target="_blank">
-                    {s.name}
-                  </a>
+                <li key={s.name} className="text-slate-200">
+                  {s.name}
                 </li>
               ))}
             </ul>

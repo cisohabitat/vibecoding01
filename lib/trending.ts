@@ -85,8 +85,10 @@ export interface TrendingTopic {
   label?: string;
 }
 
-// Share of a term's stories that must also name the bigger term to fold into it
+// Share of a term's stories that must also name the bigger term to fold into it,
+// and share of the bigger term's stories that must name it
 const FOLD_SHARE = 0.75;
+const MIN_BIG_SHARE = 0.4;
 
 export function computeTrending(articles: Article[], topN = 12): TrendingTopic[] {
   const now = Date.now();
@@ -110,26 +112,38 @@ export function computeTrending(articles: Article[], topN = 12): TrendingTopic[]
   // the other too, right next to it in most of them: "netscaler" (4) into
   // "citrix" (7) as "citrix netscaler". A click searches "citrix", which
   // finds all but the odd story naming only NetScaler.
-  const labels = new Map<string, string>();
-  const folded = new Set<string>();
+  const candidates = new Map<string, { big: string; label: string }>();
+  const smallsOf = new Map<string, number>(); // big → how many terms qualify to fold into it
   for (const [small, smallList] of [...trends].reverse()) {
     if (small.startsWith("CVE-")) continue;
     for (const [big, bigList] of trends) {
-      if (big === small || folded.has(big) || labels.has(big) || big.startsWith("CVE-")) continue;
+      if (big === small || big.startsWith("CVE-") || bigList.length < smallList.length) continue;
       const shared = smallList.filter((i) => bigList.includes(i));
-      if (bigList.length < smallList.length || shared.length < FOLD_SHARE * smallList.length) continue;
+      // Nearly all of the small term's stories, and a fair share of the big
+      // term's: two Exchange stories among six Microsoft ones don't make
+      // "Microsoft Exchange 6"
+      if (shared.length < FOLD_SHARE * smallList.length || shared.length < MIN_BIG_SHARE * bigList.length) continue;
       const order = shared.map((i) => {
         const words = titles[i];
         const at = words.indexOf(big);
         return words[at + 1] === small ? "after" : words[at - 1] === small ? "before" : null;
       });
-      const adjacent = order.filter(Boolean).length;
-      if (adjacent * 2 <= shared.length) continue;
+      if (order.filter(Boolean).length * 2 <= shared.length) continue;
       const after = order.filter((o) => o === "after").length >= order.filter((o) => o === "before").length;
-      labels.set(big, after ? `${big} ${small}` : `${small} ${big}`);
-      folded.add(small);
+      candidates.set(small, { big, label: after ? `${big} ${small}` : `${small} ${big}` });
+      smallsOf.set(big, (smallsOf.get(big) ?? 0) + 1);
       break;
     }
+  }
+  // Fold only unambiguous pairs: a big term with two candidates ("volt" and
+  // "salt" into "typhoon") keeps neither, and a term that absorbs another
+  // doesn't fold itself (no chains)
+  const labels = new Map<string, string>();
+  const folded = new Set<string>();
+  for (const [small, { big, label }] of candidates) {
+    if (smallsOf.get(big) !== 1 || smallsOf.has(small) || candidates.has(big)) continue;
+    labels.set(big, label);
+    folded.add(small);
   }
 
   return trends

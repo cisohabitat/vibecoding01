@@ -524,7 +524,7 @@ test("the About page explains sources, ranking and privacy", async ({ page }) =>
   await expect(page.getByRole("link", { name: "About" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("heading", { name: "About Cyber Pulse SG" })).toBeVisible();
   // Sources come from the feed list, numbers from the ranking code
-  await expect(page.getByRole("link", { name: "Fixture Feed" })).toBeVisible();
+  await expect(page.getByRole("main").getByText("Fixture Feed", { exact: true })).toBeVisible();
   await expect(page.getByText(/\+3 for a CVE in CISA/)).toBeVisible();
   await expect(page.getByRole("heading", { name: "Privacy" })).toBeVisible();
 });
