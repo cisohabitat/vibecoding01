@@ -98,6 +98,27 @@ test("bookmarks persist and appear on the saved page", async ({ page, context })
   await expect(page.getByText("No saved articles yet.")).toBeVisible();
 });
 
+test("saved stories copy as a briefing, and Clear all can be undone", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/");
+  await card(page, "Critical RCE in Jenkins").getByRole("button", { name: "Save for later" }).click();
+  await card(page, "LockBit ransomware").getByRole("button", { name: "Save for later" }).click();
+
+  await page.goto("/saved");
+  await page.getByRole("button", { name: "Copy as briefing" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Briefing copied" })).toBeVisible();
+  const text = await page.evaluate(() => navigator.clipboard.readText());
+  expect(text).toMatch(/^\*\*Security briefing, \d{4}-\d{2}-\d{2}\*\* \(2 stories\)/);
+  // Newest bookmark first, with CVE notes from NVD and KEV
+  expect(text).toContain("1. LockBit ransomware hits hospital network (Fixture Feed,");
+  expect(text).toContain("CVE-2024-23897: CVSS 9.8, known exploited (CISA KEV)");
+
+  await page.getByRole("button", { name: "Clear all" }).click();
+  await expect(page.locator("article")).toHaveCount(0);
+  await page.getByRole("button", { name: "Undo" }).click();
+  await expect(page.locator("article")).toHaveCount(2);
+});
+
 test("corrupted bookmark storage doesn't break the page", async ({ page }) => {
   const errors = trackErrors(page);
   await page.addInitScript(() => {

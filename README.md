@@ -27,7 +27,8 @@ nonce.
   are marked on their cards and can be filtered to (stored in the browser)
 - Grid/list view, "Load more" pagination
 - **NEW** badges for stories published since your last visit
-- Bookmarks (`/saved`) and read tracking, stored in the browser
+- Bookmarks (`/saved`) and read tracking, stored in the browser; copy saved stories as a
+  text briefing for chat, email or a ticket
 - CVE detail dialog with CVSS score, vector, EPSS forecast, KEV status and references
 - Trending names and CVEs from the last 24 hours (sidebar on desktop, chip strip on mobile)
 - Top Stories capped at two per source; a footer explainer describes the ranking

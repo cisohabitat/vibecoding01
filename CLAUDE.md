@@ -40,7 +40,7 @@ app/
     health/route.ts         — Health check API (dynamic; 60s memo, never stale); returns { status, feedsUp, feedsDown, failedFeeds, kev, lastCheck }
     cve/[id]/route.ts       — NVD proxy for CveModal, only for CVEs in current stories or KEV (1h data + CDN cache; 404 unknown/untracked, 502 NVD down/rate-limited)
   saved/layout.tsx          — Metadata for /saved (noindex)
-  saved/page.tsx            — Bookmarked articles from localStorage [client]
+  saved/page.tsx            — Bookmarked articles from localStorage; "Copy as briefing" (lib/briefing.ts), undoable Clear all [client]
   components/
     Header.tsx              — Skip link + sticky header with branding
     NavLinks.tsx            — Header nav with aria-current for the active page [client]
@@ -79,6 +79,7 @@ lib/
   trending.ts       — Trending terms (names, CVE IDs) from last-24h titles; ≥2 stories, generic words excluded
   rss.ts            — RSS 2.0 builder for /api/feed.xml (XML-safe escaping, CVEs as <category>)
   site.ts           — Absolute site URL (NEXT_PUBLIC_SITE_URL, else Vercel production domain)
+  briefing.ts       — Saved stories as a plain-text/Markdown briefing (CVE notes: CVSS, KEV, high EPSS; plain URLs)
   dates.ts          — toDate()/pubTime(): pubDate is a Date on the server but an ISO string once serialised (client props, localStorage)
   url.ts            — safeLink(): only absolute http(s) URLs may become hrefs (feed links, NVD references)
   __tests__/        — Vitest unit tests (lib modules + API route handlers)
