@@ -31,7 +31,7 @@ export function TrendingStrip({ topics }: { topics: TrendingTopic[] }) {
               title={`Filter by "${term}"`}
               className="px-3 py-1 text-xs rounded-full border border-cyber-accent/30 text-slate-300 capitalize hover:border-cyber-accent/60 hover:text-cyber-accent transition-colors"
             >
-              {term} <span className="font-mono text-slate-500">{count}</span>
+              {term} <span className="font-mono text-slate-400">{count}</span>
             </button>
           </li>
         ))}
@@ -69,7 +69,7 @@ export default function TrendingTopics({ topics }: { topics: TrendingTopic[] }) 
                 >
                   {term}
                 </button>
-                <span className="text-xs font-mono text-slate-500 ml-2 shrink-0">{count}</span>
+                <span className="text-xs font-mono text-slate-400 ml-2 shrink-0">{count}</span>
               </div>
               <div className="h-0.5 bg-cyber-700 rounded-full overflow-hidden" aria-hidden="true">
                 <div

@@ -9,7 +9,7 @@ export default function FeaturedNews({ articles }: { articles: Article[] }) {
           <span className="w-2 h-2 rounded-full bg-cyber-red animate-pulse" />
           Top Stories
         </h2>
-        <p className="text-slate-500 text-sm">
+        <p className="text-slate-400 text-sm">
           No featured stories in the last 24 hours.
         </p>
       </section>

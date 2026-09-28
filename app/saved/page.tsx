@@ -86,7 +86,7 @@ export default function SavedPage() {
         </div>
 
         {bookmarks === null && (
-          <p className="text-slate-500 text-sm animate-pulse">Loading…</p>
+          <p className="text-slate-400 text-sm animate-pulse">Loading…</p>
         )}
 
         {bookmarks !== null && bookmarks.length === 0 && (

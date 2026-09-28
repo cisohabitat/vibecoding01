@@ -58,6 +58,9 @@ const categoryStyles: Record<ArticleCategory, string> = {
   Other:         "bg-slate-500/10 text-slate-400 border-slate-500/30",
 };
 
+// Outlets named under "also"; the rest are counted (and listed in the tooltip)
+const MAX_ALSO_SHOWN = 3;
+
 export const READ_KEY = "cyber-pulse-read";
 export const BOOKMARK_KEY = "cyber-pulse-bookmarks";
 const MAX_READ_URLS = 1000;
@@ -338,12 +341,14 @@ export default function NewsCard({
           )}
           {/* Optional chaining: bookmarks from storage may predate this field */}
           {article.alsoReportedBy?.length > 0 && (
-            <span className="text-slate-500">
-              also: {article.alsoReportedBy.join(", ")}
+            <span className="text-slate-400" title={`Also reported by ${article.alsoReportedBy.join(", ")}`}>
+              also: {article.alsoReportedBy.slice(0, MAX_ALSO_SHOWN).join(", ")}
+              {article.alsoReportedBy.length > MAX_ALSO_SHOWN &&
+                ` +${article.alsoReportedBy.length - MAX_ALSO_SHOWN} more`}
             </span>
           )}
           {isRead && (
-            <span className="text-slate-500 ml-auto">read</span>
+            <span className="text-slate-400 ml-auto">read</span>
           )}
         </div>
       </article>
