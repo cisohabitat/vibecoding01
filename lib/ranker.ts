@@ -105,10 +105,6 @@ export function scoreParts(
   };
 }
 
-function scoreArticle(article: Article, kevIds: Set<string>, epss: Map<string, EpssScore>): number {
-  return Object.values(scoreParts(article, kevIds, epss)).reduce((sum, n) => sum + n, 0);
-}
-
 const FEATURED_COUNT = 5;
 const MAX_FEATURED_PER_SOURCE = 2;
 
@@ -155,8 +151,13 @@ export function rankArticles(
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-  // Score all articles
-  const scored = articles.map((a) => ({ ...a, score: scoreArticle(a, kevIds, epss) }));
+  // Score all articles (parts computed once, so a breakdown always adds up)
+  const partsByLink = new Map<string, Record<string, number>>();
+  const scored = articles.map((a) => {
+    const parts = scoreParts(a, kevIds, epss);
+    partsByLink.set(a.link, parts);
+    return { ...a, score: Object.values(parts).reduce((sum, n) => sum + n, 0) };
+  });
 
   // Split into last 24h (by latest report, for a kept copy at most 48h old) and older
   const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
@@ -169,7 +170,7 @@ export function rankArticles(
   // Featured cards explain their score (the non-zero parts)
   const featured = pickFeatured(last24h, FEATURED_COUNT, (a) => namesOf(a.title)).map((a) => ({
     ...a,
-    scoreBreakdown: Object.fromEntries(Object.entries(scoreParts(a, kevIds, epss)).filter(([, n]) => n !== 0)),
+    scoreBreakdown: Object.fromEntries(Object.entries(partsByLink.get(a.link) ?? {}).filter(([, n]) => n !== 0)),
   }));
   const featuredLinks = new Set(featured.map((a) => a.link));
 

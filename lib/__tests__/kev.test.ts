@@ -32,7 +32,7 @@ describe("parseKevCatalog details", () => {
     const catalog = parseKevCatalog({
       vulnerabilities: [
         { cveID: "cve-2024-23897", dateAdded: "2024-08-19", dueDate: "2024-09-09", knownRansomwareCampaignUse: "Known" },
-        { cveID: "CVE-2024-3400", dateAdded: "not a date", knownRansomwareCampaignUse: "Unknown" },
+        { cveID: "CVE-2024-3400", dateAdded: "not a date", dueDate: "2024-13-01", knownRansomwareCampaignUse: "Unknown" },
       ],
     });
     expect(catalog.has("CVE-2024-23897")).toBe(true);

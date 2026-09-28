@@ -30,7 +30,8 @@ export class KevCatalog extends Set<string> {
 
 let memo: { at: number; ids: Promise<KevCatalog> } | null = null;
 
-const isoDate = (v: unknown) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+const isoDate = (v: unknown) =>
+  typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)) ? v : null;
 
 /** Extracts upper-cased CVE IDs (and their details) from a KEV catalog document. */
 export function parseKevCatalog(data: unknown): KevCatalog {

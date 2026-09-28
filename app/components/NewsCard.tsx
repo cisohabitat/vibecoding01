@@ -213,6 +213,8 @@ export default function NewsCard({
                 title={scoreTitle(article)}
               >
                 {article.score.toFixed(1)}
+                {/* The breakdown for keyboard, touch and screen-reader users too */}
+                <span className="sr-only">{`. ${scoreTitle(article)}`}</span>
               </span>
             )}
             <button
@@ -349,10 +351,15 @@ export default function NewsCard({
           )}
           {/* Optional chaining: bookmarks from storage may predate this field */}
           {article.alsoReportedBy?.length > 0 && (
-            <span className="text-slate-400" title={`Also reported by ${article.alsoReportedBy.join(", ")}`}>
-              also: {article.alsoReportedBy.slice(0, MAX_ALSO_SHOWN).join(", ")}
-              {article.alsoReportedBy.length > MAX_ALSO_SHOWN &&
-                ` +${article.alsoReportedBy.length - MAX_ALSO_SHOWN} more`}
+            // Above the title link's overlay, so the tooltip shows on hover;
+            // screen readers get the full list
+            <span className="relative z-10 text-slate-400" title={`Also reported by ${article.alsoReportedBy.join(", ")}`}>
+              <span aria-hidden="true">
+                also: {article.alsoReportedBy.slice(0, MAX_ALSO_SHOWN).join(", ")}
+                {article.alsoReportedBy.length > MAX_ALSO_SHOWN &&
+                  ` +${article.alsoReportedBy.length - MAX_ALSO_SHOWN} more`}
+              </span>
+              <span className="sr-only">Also reported by {article.alsoReportedBy.join(", ")}</span>
             </span>
           )}
           {isRead && (
