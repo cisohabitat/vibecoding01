@@ -298,6 +298,7 @@ test("My stack: watchlist marks and filters matching stories", async ({ page }) 
 
   await page.getByRole("button", { name: "Remove Fortinet" }).click();
   await expect(results).toHaveText("1 result");
+  await expect(input).toBeFocused();
   await expect(page.locator("article")).toContainText(["Ivanti Connect Secure"]);
 
   // Saved across visits; cards are marked on the unfiltered page too

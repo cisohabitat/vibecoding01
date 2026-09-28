@@ -61,7 +61,11 @@ export default function StackEditor({ id, terms }: { id: string; terms: string[]
               {term}
               <button
                 type="button"
-                onClick={() => save(removeTerm(terms, term))}
+                onClick={() => {
+                  save(removeTerm(terms, term));
+                  // The focused button disappears with its term; keep focus in the editor
+                  inputRef.current?.focus();
+                }}
                 aria-label={`Remove ${term}`}
                 className="px-1.5 rounded-full hover:bg-cyber-blue/20 hover:text-white"
               >
