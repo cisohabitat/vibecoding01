@@ -50,12 +50,22 @@ export const SG_BOOST = 1.5;
 export const COVERAGE_BOOST = 0.75;
 /** ...counting at most this many, so wide coverage can't outweigh the threat itself. */
 export const MAX_COVERAGE_SOURCES = 3;
-/** Penalty for promotional posts (webinars, events, sponsored content): not news. */
+/** Penalty for promotional and routine posts (webinars, events, daily podcasts): not news. */
 export const PROMO_PENALTY = 5;
 
-const PROMO_TITLE = /^\s*\[?(webinar|virtual event|live event|sponsored|podcast|ebook|whitepaper)\b|\bwebinar:/i;
+const PROMO_TITLE = new RegExp(
+  [
+    "^\\s*\\[?(webinar|virtual event|live event|sponsored|podcast|ebook|whitepaper)\\b",
+    "\\bwebinar:",
+    "\\bvirtual summit\\b",
+    "\\bcall for (presentations|papers|speakers)\\b",
+    "\\bisc stormcast\\b", // SANS's daily podcast
+    "\\bsquid blogging\\b", // Schneier's weekly off-topic post
+  ].join("|"),
+  "i"
+);
 
-/** True for promotional titles ("Webinar: …", "[Virtual Event] …", "Sponsored: …"). */
+/** True for promotional or routine titles ("Webinar: …", "[Virtual Event] …", "ISC Stormcast …"). */
 export function isPromotional(title: string): boolean {
   return PROMO_TITLE.test(title);
 }

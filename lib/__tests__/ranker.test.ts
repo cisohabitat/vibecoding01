@@ -142,6 +142,9 @@ describe("promotional posts", () => {
     expect(isPromotional("[Virtual Event] Cybersecurity Outlook 2027")).toBe(true);
     expect(isPromotional("Sponsored: Five ways to cut alert fatigue")).toBe(true);
     expect(isPromotional("Join our live webinar: ransomware trends")).toBe(true);
+    expect(isPromotional("ISC Stormcast For Monday, September 28th, 2026")).toBe(true);
+    expect(isPromotional("Friday Squid Blogging: Squid Dissection")).toBe(true);
+    expect(isPromotional("Call for Presentations Open for 2026 CISO Forum Virtual Summit")).toBe(true);
     expect(isPromotional("Ransomware gang hits hospital")).toBe(false);
     expect(isPromotional("Podcasting app leaks user data")).toBe(false);
   });

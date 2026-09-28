@@ -38,6 +38,7 @@ const GENERIC_TERMS = new Set([
   "agent", "agents", "finds", "month", "months", "days", "operation",
   "operations", "resources", "hosts", "compromise", "compromises",
   "compromised", "cloud", "study", "guide", "webinar", "event", "virtual",
+  "shadow", "crypto",
 ]);
 
 const CVE_TERM = /CVE-\d{4}-\d{4,}/gi;

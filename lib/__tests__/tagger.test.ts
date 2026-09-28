@@ -44,6 +44,9 @@ describe("assignCategory", () => {
     expect(assignCategory("GitHub Actions re-enabled with Mini Shai-Hulud payload still active")).toBe("Malware");
     expect(assignCategory("FBI Probes Service Selling 153M+ Drivers Licenses")).toBe("Policy");
     expect(assignCategory("Business email compromise losses top $3B")).toBe("Other");
+    expect(assignCategory("Macfinger ClickFix campaign")).toBe("Phishing");
+    expect(assignCategory("TeamFiltration Campaign Compromises Seven Microsoft 365 Accounts")).toBe("Data Breach");
+    expect(assignCategory("Someone went shopping in ASUS's eShop – for customer data")).toBe("Data Breach");
   });
 
   it("tags AI security stories, after the threat categories", () => {

@@ -43,12 +43,15 @@ const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> =
     keywords: [
       "breach", "data breach", "data leak", "leaked", "exposed records", "stolen data", "exfiltrate", "exfiltration",
       // Not "compromise": "business email compromise" is phishing/fraud
-      "data theft", "stole", "compromised",
+      "data theft", "theft", "stole", "compromised", "compromises", "customer data",
     ],
   },
   {
     category: "Phishing",
-    keywords: ["phishing", "spear-phishing", "spear phishing", "credential harvest", "social engineering", "vishing", "smishing"],
+    keywords: [
+      "phishing", "spear-phishing", "spear phishing", "credential harvest", "social engineering", "vishing", "smishing",
+      "clickfix",
+    ],
   },
   {
     category: "Vulnerability",
@@ -65,7 +68,7 @@ const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> =
     keywords: [
       "malware", "trojan", "backdoor", "rootkit", "spyware", "worm", "botnet", "infostealer", "stealer", "rat",
       "wiper", "keylogger", "loader", "cryptominer", "cryptojacking", "malicious package", "typosquat",
-      "malicious", "payload", "supply chain attack", "supply-chain attack", "shai-hulud",
+      "malicious", "payload", "supply chain attack", "supply-chain attack", "shai-hulud", "edr evasion", "edr killer",
     ],
   },
   {
