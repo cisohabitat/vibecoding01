@@ -44,9 +44,10 @@ it("every feed can be fetched and parsed", async () => {
     .slice(0, 40)
     .map((a) => `- ${a.title.replace(/[|\n]/g, " ")} (${a.source})`)
     .join("\n");
-  const trending = computeTrending(tagged, 20).map((t) => `${t.label ?? t.term} ${t.count}`).join(" · ");
   // What ranking makes of it (with KEV and EPSS; NVD scores left out)
   const deduped = deduplicateArticles(tagged);
+  // Trending as the page computes it: over merged stories
+  const trending = computeTrending(deduped, 20).map((t) => `${t.label ?? t.term} ${t.count}`).join(" · ");
   const epss = await fetchEpss(deduped.flatMap((a) => extractCveIds(`${a.title} ${a.description}`)));
   const ranked = rankArticles(deduped, await getKevIds(), epss);
   const line = (a: (typeof deduped)[number]) =>
