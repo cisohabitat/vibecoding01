@@ -53,6 +53,7 @@ npm install
 npm run dev      # http://localhost:3000
 npm test         # unit tests (Vitest)
 npm run test:e2e # end-to-end tests (Playwright) against a local fixture feed
+npm run check:feeds # live check that every feed fetches (network; also runs daily in CI)
 npm run lint
 npm run build
 ```

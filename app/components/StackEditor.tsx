@@ -37,7 +37,7 @@ export default function StackEditor({ id, terms }: { id: string; terms: string[]
           id={`${id}-input`}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={full ? `Stack is full (${MAX_TERMS})` : "Vendors or products you run, e.g. Fortinet, Exchange"}
+          placeholder={full ? `Stack is full (${MAX_TERMS})` : "e.g. Fortinet, Exchange"}
           disabled={full}
           maxLength={200}
           className="flex-1 min-w-0 bg-cyber-900 border border-cyber-600/50 rounded-lg px-3 py-1.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyber-accent/50"

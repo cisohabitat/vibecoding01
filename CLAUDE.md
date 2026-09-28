@@ -17,6 +17,7 @@ Cybersecurity news aggregator that fetches RSS feeds from trusted sources, ranks
 - `npm run lint` — Run ESLint
 - `npm test` — Run unit tests (Vitest, `lib/__tests__/`)
 - `npm run test:e2e` — Build and run end-to-end tests (Playwright, `e2e/`) against a fixture feed
+- `npm run check:feeds` — Live check that every feed fetches and parses (network; `scripts/feed-health.test.ts`, not part of `npm test`)
 
 ## Project Structure
 
@@ -85,6 +86,7 @@ e2e/
   feed-server.mjs   — Fixture RSS server (dates relative to request time), fixture NVD API at /nvd, KEV catalog at /kev, EPSS API at /epss, 503s for /broken-* (two failing sources trigger the banner)
 .github/
   workflows/ci.yml  — CI: prod-dependency audit, lint, typecheck, unit tests, build; separate e2e job
+  workflows/feed-health.yml — Daily live feed check (failed run = broken source); manual runs take a `feeds` JSON input to vet candidate sources
   dependabot.yml    — Weekly grouped npm updates, monthly Actions updates
 ```
 
@@ -114,7 +116,7 @@ e2e/
 ## Code Conventions
 
 - All components are server components unless they need client interactivity (mark with `"use client"`).
-- Feed sources are configured in `lib/feeds.ts` — add/remove feeds there.
+- Feed sources are configured in `lib/feeds.ts` — add/remove feeds there. The sandbox can't reach most feeds: vet a new URL first with a manual Feed health run (`feeds` input), then add it.
 - Keyword weights for ranking are in `lib/ranker.ts`; category rules are in `lib/tagger.ts`.
 - Do not add `onClick` or other event handlers to elements inside server components — move the component to a client component instead.
 - `fetchAllFeeds()` returns `{ articles, failedFeeds }` — always destructure both fields; never discard `failedFeeds` silently.

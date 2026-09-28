@@ -1,0 +1,34 @@
+name: Feed health
+
+# Daily check that every configured feed still fetches and parses. The site
+# degrades silently when one source breaks; a failed scheduled run here
+# notifies the repository's maintainers. Run it by hand with `feeds` to try
+# candidate sources before adding them to lib/feeds.ts.
+on:
+  schedule:
+    - cron: "23 1 * * *"
+  workflow_dispatch:
+    inputs:
+      feeds:
+        description: 'Optional JSON array of { "name", "url", "tier" } to check instead of lib/feeds.ts'
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  feeds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check:feeds
+        env:
+          # Passed through the environment, never interpolated into the script
+          FEED_SOURCES_OVERRIDE: ${{ inputs.feeds }}
