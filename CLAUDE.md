@@ -89,6 +89,7 @@ e2e/
   feed-server.mjs   — Fixture RSS server (dates relative to request time), fixture NVD API at /nvd, KEV catalog at /kev, EPSS API at /epss, 503s for /broken-* (two failing sources trigger the banner)
 .github/
   workflows/ci.yml  — CI: prod-dependency audit, lint, typecheck, unit tests, build; separate e2e job
+  workflows/smoke.yml — Post-deploy smoke test (scripts/smoke.mjs) on each successful Production deployment_status; uses the PRODUCTION_URL repo variable (deployment URLs are usually behind Vercel Authentication: 401/403 is reported as skipped); manual runs take a url
   workflows/feed-health.yml — Daily live feed check (failed run = broken source); manual runs take a `feeds` JSON input to vet candidate sources
   dependabot.yml    — Weekly grouped npm updates, monthly Actions updates
 ```

@@ -1,0 +1,36 @@
+name: Production smoke test
+
+# After each successful Production deploy (Vercel reports it to GitHub as a
+# deployment status), check the live site's pages and APIs. Run by hand with
+# a URL to test any deployment.
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Base URL to test (defaults to the PRODUCTION_URL repository variable)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' &&
+       github.event.deployment_status.environment == 'Production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      # Values are passed through the environment, never interpolated into the script
+      - run: node scripts/smoke.mjs "${URL:-${PRODUCTION_URL:-$DEPLOYMENT_URL}}"
+        env:
+          URL: ${{ inputs.url }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+          DEPLOYMENT_URL: ${{ github.event.deployment_status.environment_url }}
