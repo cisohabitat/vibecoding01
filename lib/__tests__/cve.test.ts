@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { enrichWithCves, extractCveIds, forgetScores, MAX_CVE_LOOKUPS, pickCvss } from "../cve";
 import { Article } from "../types";
+import { parseKevCatalog } from "../kev";
 
 function article(title: string): Article {
   return {
@@ -84,6 +85,24 @@ describe("enrichWithCves KEV flag", () => {
     const [result] = await enrichWithCves([article(ids.join(" "))], new Set([last]));
     expect(result.cves.find((c) => c.id === last)?.kev).toBe(true);
     expect(result.cves.filter((c) => c.kev)).toHaveLength(1);
+  });
+});
+
+describe("enrichWithCves KEV ransomware use", () => {
+  it("flags KEV CVEs the catalog says are used in ransomware", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 503 })));
+    const catalog = parseKevCatalog({
+      vulnerabilities: [
+        { cveID: "CVE-2024-1111", knownRansomwareCampaignUse: "Known" },
+        { cveID: "CVE-2024-2222", knownRansomwareCampaignUse: "Unknown" },
+      ],
+    });
+    const [result] = await enrichWithCves([article("CVE-2024-1111 and CVE-2024-2222")], catalog);
+    expect(result.cves).toMatchObject([
+      { id: "CVE-2024-1111", kev: true, kevRansomware: true },
+      { id: "CVE-2024-2222", kev: true },
+    ]);
+    expect(result.cves[1].kevRansomware).toBeUndefined();
   });
 });
 

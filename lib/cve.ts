@@ -1,5 +1,6 @@
 import { Article, CveInfo, CveSeverity } from "./types";
 import type { EpssScore } from "./epss";
+import type { KevCatalog } from "./kev";
 
 const CVE_REGEX = /CVE-\d{4}-\d{4,}/gi;
 
@@ -159,7 +160,10 @@ export async function enrichWithCves(
     const cves = ids.map((id): CveInfo => {
       const info: CveInfo = { ...(cveMap.get(id) ?? { id, cvss: null, severity: null }) };
       // Not limited by the NVD lookup cap: these are local lookups
-      if (kevIds.has(id)) info.kev = true;
+      if (kevIds.has(id)) {
+        info.kev = true;
+        if ((kevIds as KevCatalog).details?.get(id)?.ransomware) info.kevRansomware = true;
+      }
       const score = epss.get(id);
       if (score) {
         info.epss = score.epss;

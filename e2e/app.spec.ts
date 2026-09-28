@@ -372,7 +372,9 @@ test("CVE chip opens the detail dialog without leaving the page", async ({ page,
   let opened = false;
   context.on("page", () => (opened = true));
   // Enriched from the fixture NVD and KEV catalog
-  const chip = card(page, "Critical RCE in Jenkins").getByRole("button", { name: /CVE-2024-23897 details, CVSS 9\.8 critical, known exploited/ });
+  const chip = card(page, "Critical RCE in Jenkins").getByRole("button", {
+    name: /CVE-2024-23897 details, CVSS 9\.8 critical, known exploited \(CISA KEV\), used in ransomware/,
+  });
   await expect(chip).toContainText("KEV");
   await chip.click();
   const dialog = page.getByRole("dialog", { name: "CVE-2024-23897" });

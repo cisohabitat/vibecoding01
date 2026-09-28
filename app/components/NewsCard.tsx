@@ -255,7 +255,7 @@ export default function NewsCard({
                 aria-label={`${cve.id} details${
                   cve.cvss !== null ? `, CVSS ${cve.cvss.toFixed(1)}` : ""
                 }${cve.severity ? ` ${cve.severity.toLowerCase()}` : ""}${
-                  cve.kev ? ", known exploited (CISA KEV)" : ""
+                  cve.kev ? `, known exploited (CISA KEV)${cve.kevRansomware ? ", used in ransomware" : ""}` : ""
                 }${
                   showEpss(cve) ? `, ${formatProbability(cve.epss ?? 0)} chance of exploitation (EPSS)` : ""
                 }`}
@@ -271,7 +271,7 @@ export default function NewsCard({
                 {cve.kev && (
                   <span
                     className="ml-0.5 px-1 rounded-sm bg-red-500/25 text-red-200 font-sans font-bold text-[10px] tracking-wide"
-                    title="Known exploited (CISA KEV)"
+                    title={`Known exploited (CISA KEV)${cve.kevRansomware ? ", used in ransomware campaigns" : ""}`}
                   >
                     KEV
                   </span>

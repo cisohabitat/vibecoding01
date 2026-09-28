@@ -23,6 +23,8 @@ export interface CveInfo {
   severity: CveSeverity | null;
   /** Listed in CISA's Known Exploited Vulnerabilities catalog */
   kev?: boolean;
+  /** KEV says it's known to be used in ransomware campaigns */
+  kevRansomware?: boolean;
   /** EPSS: probability of exploitation in the next 30 days (0–1) */
   epss?: number;
   /** EPSS percentile among all scored CVEs (0–1) */
