@@ -62,7 +62,7 @@ report(
   health.res.ok && (h.status === "ok" || h.status === "degraded"),
   `${h.status ?? health.res.status}: ${h.feedsUp ?? "?"} up, ${h.feedsDown ?? "?"} down` +
     (h.failedFeeds?.length ? ` (${h.failedFeeds.join(", ")})` : "") +
-    `, KEV ${h.kev ?? "?"}`
+    `, KEV ${h.kev ?? "?"}, data from ${h.dataUpdated ?? "?"}`
 );
 
 const json = await get("/api/feed.json");

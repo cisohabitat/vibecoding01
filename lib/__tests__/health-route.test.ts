@@ -5,10 +5,19 @@ vi.mock("@/lib/fetcher", () => ({ fetchAllFeeds: () => fetchAllFeeds() }));
 vi.mock("@/lib/feeds", () => ({ FEED_SOURCES: [{ name: "A" }, { name: "B" }, { name: "C" }] }));
 const getKevIds = vi.fn(async () => new Set(["CVE-2024-0001"]));
 vi.mock("@/lib/kev", () => ({ getKevIds: () => getKevIds() }));
+const dataUpdated = vi.hoisted(() => ({ at: () => new Date().toISOString() as string | null }));
+vi.mock("@/lib/pipeline", () => ({
+  getCachedArticles: async () => {
+    const at = dataUpdated.at();
+    if (at === null) throw new Error("no data");
+    return { lastUpdated: at };
+  },
+}));
 
 beforeEach(() => {
   vi.resetModules();
   fetchAllFeeds.mockReset();
+  dataUpdated.at = () => new Date().toISOString();
 });
 
 describe("GET /api/health", () => {
@@ -61,5 +70,20 @@ describe("GET /api/health", () => {
     fetchAllFeeds.mockRejectedValue(new Error("boom"));
     const { GET } = await import("@/app/api/health/route");
     expect(await (await GET()).json()).toMatchObject({ status: "down", failedFeeds: ["A", "B", "C"] });
+  });
+
+  it("reports stale page data as degraded even when every feed is up", async () => {
+    fetchAllFeeds.mockResolvedValue({ articles: [], failedFeeds: [] });
+    const twoHoursAgo = new Date(Date.now() - 2 * 3600e3).toISOString();
+    dataUpdated.at = () => twoHoursAgo;
+    const { GET } = await import("@/app/api/health/route");
+    expect(await (await GET()).json()).toMatchObject({ status: "degraded", feedsDown: 0, dataUpdated: twoHoursAgo });
+  });
+
+  it("reports unreadable page data as degraded", async () => {
+    fetchAllFeeds.mockResolvedValue({ articles: [], failedFeeds: [] });
+    dataUpdated.at = () => null;
+    const { GET } = await import("@/app/api/health/route");
+    expect(await (await GET()).json()).toMatchObject({ status: "degraded", dataUpdated: null });
   });
 });
