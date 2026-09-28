@@ -16,6 +16,7 @@ Cybersecurity news aggregator that fetches RSS feeds from trusted sources, ranks
 - `npm run start` — Start production server
 - `npm run lint` — Run ESLint
 - `npm test` — Run unit tests (Vitest, `lib/__tests__/`)
+- `npm run test:coverage` — Unit tests with coverage thresholds (lines/statements/functions 85%, branches 80% over `lib/` and `app/api/`); CI runs this
 - `npm run test:e2e` — Build and run end-to-end tests (Playwright, `e2e/`) against a fixture feed
 - `npm run check:feeds` — Live check that every feed fetches and parses (network; `scripts/feed-health.test.ts`, not part of `npm test`)
 
@@ -88,7 +89,7 @@ e2e/
   app.spec.ts       — Playwright end-to-end tests
   feed-server.mjs   — Fixture RSS server (dates relative to request time), fixture NVD API at /nvd, KEV catalog at /kev, EPSS API at /epss, 503s for /broken-* (two failing sources trigger the banner)
 .github/
-  workflows/ci.yml  — CI: prod-dependency audit, lint, typecheck, unit tests, build; separate e2e job
+  workflows/ci.yml  — CI: prod-dependency audit, lint, typecheck, unit tests with coverage thresholds, build; separate e2e job
   workflows/smoke.yml — Post-deploy smoke test (scripts/smoke.mjs) on each successful Production deployment_status; uses the PRODUCTION_URL repo variable (deployment URLs are usually behind Vercel Authentication: 401/403 is reported as skipped); manual runs take a url
   workflows/feed-health.yml — Daily live feed check (failed run = broken source); manual runs take a `feeds` JSON input to vet candidate sources
   dependabot.yml    — Weekly grouped npm updates, monthly Actions updates

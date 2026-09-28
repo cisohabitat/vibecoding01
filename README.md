@@ -54,7 +54,7 @@ Requires Node.js 20.9 or later.
 ```bash
 npm install
 npm run dev      # http://localhost:3000
-npm test         # unit tests (Vitest)
+npm test         # unit tests (Vitest); npm run test:coverage adds coverage thresholds
 npm run test:e2e # end-to-end tests (Playwright) against a local fixture feed
 npm run check:feeds # live check that every feed fetches (network; also runs daily in CI)
 node scripts/smoke.mjs <url> # smoke-test a deployment (runs after each Production deploy)
