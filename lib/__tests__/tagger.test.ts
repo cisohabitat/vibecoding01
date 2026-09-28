@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assignCategory } from "../tagger";
+import { assignCategory, categorize } from "../tagger";
 
 describe("assignCategory", () => {
   it("does not tag ordinary words as Ransomware or APT", () => {
@@ -45,5 +45,21 @@ describe("assignCategory", () => {
     expect(assignCategory("New RAT spreads via Discord")).toBe("Malware");
     expect(assignCategory("Interest rate changes")).toBe("Other");
     expect(assignCategory("Fed holds interest rates")).toBe("Other");
+  });
+});
+
+describe("categorize", () => {
+  it("lets the title decide over passing mentions in the description", () => {
+    expect(
+      categorize(
+        "Fortinet patches critical FortiOS vulnerability",
+        "The flaw was previously exploited by ransomware gangs."
+      )
+    ).toBe("Vulnerability");
+  });
+
+  it("falls back to the description when the title matches nothing", () => {
+    expect(categorize("Inside the Q3 threat landscape", "LockBit and Akira ransomware dominated.")).toBe("Ransomware");
+    expect(categorize("Weekly roundup", "Nothing notable.")).toBe("Other");
   });
 });

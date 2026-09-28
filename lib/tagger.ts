@@ -73,9 +73,20 @@ export function assignCategory(text: string): ArticleCategory {
   return "Other";
 }
 
+/**
+ * The headline says what a story is about; the description often mentions
+ * context in passing ("...a flaw previously exploited by ransomware gangs").
+ * So the title decides, and the description is used only when the title
+ * matches no rule.
+ */
+export function categorize(title: string, description: string): ArticleCategory {
+  const fromTitle = assignCategory(title);
+  return fromTitle !== "Other" ? fromTitle : assignCategory(description);
+}
+
 export function tagArticles(articles: Article[]): Article[] {
   return articles.map((a) => ({
     ...a,
-    category: assignCategory(a.title + " " + a.description),
+    category: categorize(a.title, a.description),
   }));
 }
