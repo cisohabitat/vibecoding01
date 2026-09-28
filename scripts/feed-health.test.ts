@@ -4,7 +4,7 @@
 // health workflow runs it daily and GitHub reports the failed run.
 import { appendFileSync } from "node:fs";
 import { expect, it } from "vitest";
-import { fetchAllFeeds } from "@/lib/fetcher";
+import { fetchAllFeeds, parseFeed } from "@/lib/fetcher";
 import { FEED_SOURCES } from "@/lib/feeds";
 import { tagArticles } from "@/lib/tagger";
 import { computeTrending } from "@/lib/trending";
@@ -13,6 +13,8 @@ import { rankArticles } from "@/lib/ranker";
 import { getKevIds } from "@/lib/kev";
 import { fetchEpss } from "@/lib/epss";
 import { extractCveIds } from "@/lib/cve";
+
+const RETRY_PAUSE_MS = Number(process.env.FEED_RETRY_PAUSE_MS ?? 30_000);
 
 it("every feed can be fetched and parsed", async () => {
   const { articles, failedFeeds } = await fetchAllFeeds();
@@ -74,6 +76,17 @@ it("every feed can be fetched and parsed", async () => {
     appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## Feed health\n\n${report}\n\n## Tagging\n\n${tagging}\n`);
   }
 
-  // Quiet feeds only warn (some sources post rarely); unreachable ones fail
-  expect(failedFeeds).toEqual([]);
+  // Quiet feeds only warn (some sources post rarely); unreachable ones fail,
+  // unless a retry after a pause works (a one-off blip isn't worth an alert)
+  let stillFailing = failedFeeds;
+  if (failedFeeds.length > 0) {
+    await new Promise((r) => setTimeout(r, RETRY_PAUSE_MS));
+    const retried = await Promise.allSettled(
+      failedFeeds.map((name) => parseFeed(FEED_SOURCES.find((f) => f.name === name)!.url))
+    );
+    stillFailing = failedFeeds.filter((_, i) => retried[i].status === "rejected");
+    const recovered = failedFeeds.filter((name) => !stillFailing.includes(name));
+    if (recovered.length) console.log(`Recovered on retry: ${recovered.join(", ")}`);
+  }
+  expect(stillFailing).toEqual([]);
 });
