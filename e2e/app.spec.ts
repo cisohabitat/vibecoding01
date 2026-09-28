@@ -237,6 +237,42 @@ test("first visit shows no NEW badges", async ({ page }) => {
   await expect(page.getByText("NEW", { exact: true })).toHaveCount(0);
 });
 
+test("triage filters narrow to CVE, KEV and CVSS 9+ stories", async ({ page }) => {
+  await page.goto("/");
+  const results = page.getByRole("status").filter({ hasText: "result" });
+
+  await page.getByRole("button", { name: "Only known-exploited CVEs (CISA KEV)" }).click();
+  await expect(results).toHaveText("1 result");
+  await expect(page.locator("article")).toContainText(["Critical RCE in Jenkins"]);
+  await expect(page).toHaveURL(/f=kev/);
+
+  await page.getByRole("button", { name: "Clear ×" }).click();
+  await page.getByRole("button", { name: "Only CVSS 9.0 or higher" }).click();
+  await expect(results).toHaveText("1 result");
+
+  // A shared triage link restores the filter
+  await page.goto("/?f=cve");
+  await expect(page.getByRole("button", { name: "Only stories naming a CVE" })).toHaveAttribute("aria-pressed", "true");
+  await expect(results).toHaveText("1 result");
+});
+
+test("filtered results can be sorted and are paginated", async ({ page }) => {
+  await page.goto("/?q=fixture+feed");
+  const results = page.getByRole("status").filter({ hasText: "result" });
+  await expect(results).toHaveText("23 results");
+  const section = page.locator("section[aria-labelledby=filtered-heading]");
+  // Paginated like the default list
+  await expect(section.locator("article")).toHaveCount(12);
+  await section.getByRole("button", { name: /Load more/ }).click();
+  await expect(section.locator("article")).toHaveCount(23);
+
+  // Newest first by default; Top puts the KEV-boosted Jenkins story first
+  await expect(section.locator("article").first()).toContainText("Microsoft continues");
+  await page.getByRole("button", { name: "Top", exact: true }).click();
+  await expect(section.locator("article").first()).toContainText("Critical RCE in Jenkins");
+  await expect(page).toHaveURL(/sort=top/);
+});
+
 test("CVE chip opens the detail dialog without leaving the page", async ({ page, context }) => {
   await page.goto("/");
   let opened = false;

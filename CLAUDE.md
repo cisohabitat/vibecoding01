@@ -47,7 +47,7 @@ app/
     NewsListClient.tsx      — Paginated "Load more" grid for recent articles [client]
     NewsCard.tsx            — Article card (featured + default variants), read/bookmark state [client]
     CveModal.tsx            — CVE detail dialog opened from a card's CVE chip [client]
-    ArticleFilter.tsx       — Search, multi-category and time filters; syncs to URL + localStorage; provides view mode [client]
+    ArticleFilter.tsx       — Search, category, time and triage (Has CVE / KEV / CVSS 9+) filters, Newest/Top sort; syncs to URL + localStorage; filtered results paginate via NewsListClient; provides view mode [client]
     StatsBanner.tsx         — 24h counts (stories, distinct critical CVEs, breaches, ransomware)
     UpdatedAgo.tsx          — Live "Updated Nm ago" for the page's data [client]
     AutoRefresh.tsx         — router.refresh() when data is >15 min old and the tab is visible (≤1 per 5 min) [client]
@@ -64,6 +64,7 @@ lib/
   fetcher.ts        — RSS fetching (Promise.allSettled, 10s timeout, one retry on 5xx/timeouts/network errors), item sanitising (undated items dropped), ≤40 newest items/feed, ≤30 days old; returns { articles, failedFeeds }
   pipeline.ts       — Orchestrates fetch → tag → deduplicate → rank → enrich; threads failedFeeds through; 60s in-process memo; getCachedArticles() = same behind Next's data cache (15 min)
   keywords.ts       — Word-boundary keyword matching shared by ranker and tagger
+  filters.ts        — Triage filter predicates and result sorting used by ArticleFilter
   ranker.ts         — Relevance scoring (tier weight + keyword match + recency boost)
   tagger.ts         — Keyword-based category tagging (first-match rules; title decides, description only as fallback)
   deduplicator.ts   — Deduplication by identical link, or title similarity across *different* outlets within 72h (never merges titles naming different CVEs); keeps the lowest-tier, newest copy
@@ -99,7 +100,7 @@ e2e/
 - Custom theme colors are defined in `globals.css` under `@theme` (Tailwind v4 syntax), prefixed `cyber-*`.
 - `NewsCard` is a **client component** (`"use client"`) for its read/bookmark/share/CVE interactions. The card is an `<article>` whose title link is stretched over the whole card with an `::after` overlay; buttons sit above it with `relative z-10`. Never nest buttons or other interactive elements inside the `<a>`.
 - `NewsListClient` wraps the article grid with `useState`-based pagination (12 articles per page, "Load more" button). `NewsList` is a server component shell that delegates to it. It reads grid/list mode from `ViewModeContext`.
-- `ArticleFilter` persists the selected categories to `localStorage` (`cyber-pulse-category` key) and filters to the URL (`q`, `cat`, `t`); restored on mount with a validity guard against stale values. If the URL has any filter param, it fully defines the view and saved categories are ignored.
+- `ArticleFilter` persists the selected categories to `localStorage` (`cyber-pulse-category` key) and filters to the URL (`q`, `cat`, `t`, `f` triage, `sort`); restored on mount with a validity guard against stale values. If the URL has any filter param, it fully defines the view and saved categories are ignored.
 - Never compute time-relative output (`Date.now()`) during render in client components: the server-rendered value can differ from the client's at hydration (e.g. a minute boundary between render and hydrate), causing a mismatch. Use `useNow()`, which is null on the server.
 - Read `localStorage` through `useLocalStorage` and write through `writeLocalStorage` so every subscriber (other cards, `/saved`) updates in the same tab.
 - `/api/health` is dynamic (`force-dynamic`, not ISR: stale-while-revalidate would hand monitors the previous check's result). Checks are memoised for 60s per instance and CDN-cacheable only for the memo's remaining lifetime (so results are ≤ ~60s old), so polling can't hammer the feed sources. It calls `fetchAllFeeds` directly and returns `{ status: "ok"|"degraded"|"down", feedsUp, feedsDown, lastCheck }`.

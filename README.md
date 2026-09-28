@@ -20,7 +20,8 @@ nonce.
 
 ## Features
 
-- Search (press <kbd>/</kbd>), multi-category and time-window filters, shareable via the URL
+- Search (press <kbd>/</kbd>), category, time-window and triage filters (Has CVE, KEV,
+  CVSS 9+) with Newest/Top sorting, all shareable via the URL
 - Grid/list view, "Load more" pagination
 - **NEW** badges for stories published since your last visit
 - Bookmarks (`/saved`) and read tracking, stored in the browser

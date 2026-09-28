@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect, useRef, ReactNode } from "react";
 import { Article, ArticleCategory } from "@/lib/types";
-import NewsCard from "./NewsCard";
+import { matchesTriage, sortArticles, SortKey, TriageKey, TRIAGE_KEYS } from "@/lib/filters";
+import NewsListClient from "./NewsListClient";
 import { ViewMode, ViewModeContext } from "./ViewModeContext";
 import { useNow } from "./useNow";
 
@@ -21,6 +22,12 @@ const TIME_OPTIONS = [
   { label: "6h", hours: 6 },
   { label: "24h", hours: 24 },
   { label: "7d", hours: 168 },
+];
+
+const TRIAGE_OPTIONS: Array<{ key: TriageKey; label: string; description: string }> = [
+  { key: "cve", label: "Has CVE", description: "Only stories naming a CVE" },
+  { key: "kev", label: "KEV", description: "Only known-exploited CVEs (CISA KEV)" },
+  { key: "critical", label: "CVSS 9+", description: "Only CVSS 9.0 or higher" },
 ];
 
 /** Everything a search can match: text, sources, category and CVE IDs. */
@@ -52,6 +59,8 @@ export default function ArticleFilter({
   const [search, setSearch] = useState("");
   const [categories, setCategories] = useState<ArticleCategory[]>([]);
   const [timeHours, setTimeHours] = useState<number | null>(null);
+  const [triage, setTriage] = useState<TriageKey[]>([]);
+  const [sort, setSort] = useState<SortKey>("new");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const now = useNow();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -78,12 +87,18 @@ export default function ArticleFilter({
     const q = params.get("q");
     const catParam = params.get("cat");
     const tParam = params.get("t");
+    const fParam = params.get("f");
+    const sortParam = params.get("sort");
 
     if (q) setSearch(q);
+    if (fParam) {
+      setTriage(fParam.split(",").filter((k): k is TriageKey => TRIAGE_KEYS.includes(k as TriageKey)));
+    }
+    if (sortParam === "top") setSort("top");
 
     // A URL with filters (e.g. a shared link) fully defines the view; the
     // saved categories only apply when the URL has none.
-    const urlHasFilters = !!(q || catParam || tParam);
+    const urlHasFilters = !!(q || catParam || tParam || fParam);
 
     if (catParam) {
       const cats = catParam
@@ -126,9 +141,11 @@ export default function ArticleFilter({
     if (search.trim()) params.set("q", search.trim());
     if (categories.length > 0) params.set("cat", categories.join(","));
     if (timeHours) params.set("t", String(timeHours));
+    if (triage.length > 0) params.set("f", triage.join(","));
+    if (params.toString() && sort !== "new") params.set("sort", sort);
     const query = params.toString();
     window.history.replaceState(null, "", query ? `?${query}` : window.location.pathname);
-  }, [search, categories, timeHours]);
+  }, [search, categories, timeHours, triage, sort]);
 
   // Persist categories to localStorage, but only once the reader has changed
   // them: restoring must not rewrite the saved value, and a shared link's
@@ -161,14 +178,14 @@ export default function ArticleFilter({
 
   const allArticles = useMemo(() => [...featured, ...recent], [featured, recent]);
 
-  const isFiltered = !!(search.trim() || categories.length > 0 || timeHours);
+  const isFiltered = !!(search.trim() || categories.length > 0 || timeHours || triage.length > 0);
 
   const filtered = useMemo(() => {
     if (!isFiltered) return [];
     const cutoff = timeHours && now ? now - timeHours * 60 * 60 * 1000 : 0;
     const q = search.toLowerCase().trim();
 
-    return allArticles.filter((a) => {
+    const matches = allArticles.filter((a) => {
       const pubTime =
         a.pubDate instanceof Date
           ? a.pubDate.getTime()
@@ -176,15 +193,20 @@ export default function ArticleFilter({
       if (cutoff && pubTime < cutoff) return false;
       if (categories.length > 0 && !categories.includes(a.category)) return false;
       if (q && !searchText(a).includes(q)) return false;
-      return true;
+      return matchesTriage(a, triage);
     });
-  }, [allArticles, search, categories, timeHours, isFiltered, now]);
+    return sortArticles(matches, sort);
+  }, [allArticles, search, categories, timeHours, triage, sort, isFiltered, now]);
 
   function toggleCategory(cat: ArticleCategory) {
     categoriesChangedByUser.current = true;
     setCategories((prev) =>
       prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
     );
+  }
+
+  function toggleTriage(key: TriageKey) {
+    setTriage((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
   }
 
   function toggleTime(hours: number) {
@@ -196,14 +218,12 @@ export default function ArticleFilter({
     setSearch("");
     setCategories([]);
     setTimeHours(null);
+    setTriage([]);
   }
 
   function toggleViewMode() {
     setViewMode((v) => (v === "grid" ? "list" : "grid"));
   }
-
-  const gridClass = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4";
-  const listClass = "flex flex-col gap-2";
 
   return (
     <div id="article-filter">
@@ -273,6 +293,24 @@ export default function ArticleFilter({
               {label}
             </button>
           ))}
+          <span className="border-l border-cyber-600/30 h-4 mx-1" aria-hidden="true" />
+          {TRIAGE_OPTIONS.map(({ key, label, description }) => (
+            <button
+              type="button"
+              key={key}
+              onClick={() => toggleTriage(key)}
+              aria-pressed={triage.includes(key)}
+              aria-label={description}
+              title={description}
+              className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                triage.includes(key)
+                  ? "bg-red-500/15 border-red-400/50 text-red-300"
+                  : "border-cyber-600/50 text-slate-400 hover:border-cyber-500 hover:text-slate-200"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -282,19 +320,41 @@ export default function ArticleFilter({
           <h2 id="filtered-heading" className="sr-only">
             Filtered articles
           </h2>
-          <p className="text-xs text-slate-400 mb-4" role="status">
-            {filtered.length} result{filtered.length !== 1 ? "s" : ""}
-          </p>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <p className="text-xs text-slate-400" role="status">
+              {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+            </p>
+            <div className="flex items-center gap-1 text-xs" role="group" aria-label="Sort results">
+              <span className="text-slate-400 mr-1">Sort:</span>
+              {(["new", "top"] as const).map((key) => (
+                <button
+                  type="button"
+                  key={key}
+                  onClick={() => setSort(key)}
+                  aria-pressed={sort === key}
+                  className={`px-2 py-0.5 rounded border transition-colors ${
+                    sort === key
+                      ? "border-cyber-accent/50 text-cyber-accent"
+                      : "border-transparent text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  {key === "new" ? "Newest" : "Top"}
+                </button>
+              ))}
+            </div>
+          </div>
           {filtered.length === 0 ? (
             <p className="text-slate-400 text-center py-16 text-sm">
               No articles match your filters.
             </p>
           ) : (
-            <div className={viewMode === "grid" ? gridClass : listClass}>
-              {filtered.map((a) => (
-                <NewsCard key={a.link} article={a} />
-              ))}
-            </div>
+            <ViewModeContext.Provider value={viewMode}>
+              {/* Paginated like the default list; keyed so filter/sort changes start from page 1 */}
+              <NewsListClient
+                key={JSON.stringify([search.trim(), categories, timeHours, triage, sort])}
+                articles={filtered}
+              />
+            </ViewModeContext.Provider>
           )}
         </section>
       ) : (
