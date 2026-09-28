@@ -30,7 +30,7 @@ let cached: { at: number; result: Promise<Health> } | null = null;
 
 async function check(): Promise<Health> {
   const total = FEED_SOURCES.length;
-  // Memoised for 6h and never throws, so this adds no load
+  // Memoised (6h; 5 min after a failure) and never throws, so this adds little load
   const kev = getKevIds().then((ids) => (ids.size > 0 ? "ok" : "unavailable") as Health["kev"]);
   try {
     const { failedFeeds } = await fetchAllFeeds();
