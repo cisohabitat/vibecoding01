@@ -20,6 +20,26 @@ describe("assignCategory", () => {
   it("tags common vulnerability wording", () => {
     expect(assignCategory("Multiple vulnerabilities fixed")).toBe("Vulnerability");
     expect(assignCategory("Zero-day exploited in the wild")).toBe("Vulnerability");
+    // Everyday headline wording
+    expect(assignCategory("Fortinet patches FortiOS authentication bypass")).toBe("Vulnerability");
+    expect(assignCategory("Ivanti Connect Secure flaw under active attack")).toBe("Vulnerability");
+    expect(assignCategory("Cisco warns of IOS XE privilege escalation")).toBe("Vulnerability");
+    expect(assignCategory("SonicWall firewall bug allows remote takeover")).toBe("Vulnerability");
+    expect(assignCategory("Microsoft Monthly Security Update (September 2026)")).toBe("Vulnerability");
+    // ...at word boundaries
+    expect(assignCategory("A patchwork of state privacy laws")).toBe("Other");
+    expect(assignCategory("Debugging tips for teams")).toBe("Other");
+  });
+
+  it("tags malware families and malicious packages", () => {
+    expect(assignCategory("New wiper hits Ukrainian grid operator")).toBe("Malware");
+    expect(assignCategory("npm package typosquats popular logging library")).toBe("Malware");
+  });
+
+  it("tags law enforcement actions as Policy", () => {
+    expect(assignCategory("Police dismantle bulletproof hosting provider")).toBe("Policy");
+    expect(assignCategory("Europol takedown of DDoS-for-hire services")).toBe("Policy");
+    expect(assignCategory("Admin pleads guilty to selling access")).toBe("Policy");
   });
 
   it("recognises current threat group names", () => {

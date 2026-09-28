@@ -42,11 +42,20 @@ const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> =
   },
   {
     category: "Vulnerability",
-    keywords: ["vulnerability", "vulnerabilities", "cve-", "zero-day", "0day", "0-day", "exploit", "rce", "remote code execution", "patch tuesday", "security flaw"],
+    keywords: [
+      "vulnerability", "vulnerabilities", "vulnerable", "cve-", "zero-day", "0day", "0-day", "exploit", "rce",
+      "remote code execution", "code execution", "patch tuesday", "security flaw", "flaw", "flaws", "bug", "bugs",
+      "patch", "hotfix", "security update", "security updates", "out-of-band", "privilege escalation",
+      "authentication bypass", "auth bypass", "sql injection", "command injection", "path traversal",
+      "cross-site scripting", "xss", "buffer overflow", "memory corruption", "use-after-free",
+    ],
   },
   {
     category: "Malware",
-    keywords: ["malware", "trojan", "backdoor", "rootkit", "spyware", "worm", "botnet", "infostealer", "stealer", "rat"],
+    keywords: [
+      "malware", "trojan", "backdoor", "rootkit", "spyware", "worm", "botnet", "infostealer", "stealer", "rat",
+      "wiper", "keylogger", "loader", "cryptominer", "cryptojacking", "malicious package", "typosquat",
+    ],
   },
   {
     category: "Policy",
@@ -54,6 +63,8 @@ const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> =
       "regulation", "regulator", "policy", "policies", "legislation", "gdpr", "nis2",
       "cyber resilience act", "compliance", "executive order", "senate", "congress",
       "cisa advisory", "nist", "sanction", "indicted", "indictment", "sentenced", "extradited",
+      "arrested", "arrests", "charged", "pleads guilty", "fined", "lawsuit", "police", "law enforcement",
+      "europol", "takedown",
     ],
   },
 ];
