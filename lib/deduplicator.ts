@@ -1,5 +1,6 @@
 import { Article } from "./types";
 import { extractCveIds } from "./cve";
+import { extractTerms } from "./trending";
 
 const STOP_WORDS = new Set([
   "a", "an", "the", "in", "on", "at", "to", "for", "of", "and", "or",
@@ -29,20 +30,41 @@ const SIMILARITY_THRESHOLD = 0.5;
 // that, similar titles are recurring series ("Patch Tuesday", "Weekly Recap").
 const MAX_MERGE_GAP_MS = 72 * 60 * 60 * 1000;
 
+// Outlets word the same story differently ("Citrix confirms two NetScaler
+// zero-days" / "CISA says attackers exploit Citrix NetScaler flaws"), so
+// title similarity alone misses most duplicates. Names they share are the
+// better signal, but only rare ones: "Microsoft" or "Google" appear in many
+// unrelated stories. A name is distinctive if at most this share of the
+// batch (and at least a few articles' worth) mentions it.
+const DISTINCTIVE_SHARE = 0.04;
+const MIN_DISTINCTIVE_DF = 4;
+const MIN_SHARED_NAMES = 2;
+
+interface Entry {
+  article: Article;
+  tokens: Set<string>;
+  /** CVE IDs in the title (different ones mean different stories) */
+  titleCves: string[];
+  /** CVE IDs in the title or description (a shared one means the same story) */
+  allCves: string[];
+  /** Distinctive names in the title */
+  names: Set<string>;
+}
+
 /**
  * Whether two items are the same story reported by different outlets.
  * Same-outlet items are separate posts by definition (series such as
  * "ISC Stormcast For Monday/Friday" share most words), so only different
- * sources merge by similarity, and only when published close together.
+ * sources merge, and only when published close together: by a shared CVE,
+ * shared distinctive names, or similar titles.
  */
-function sameStory(
-  a: { article: Article; tokens: Set<string>; cves: string[] },
-  b: { article: Article; tokens: Set<string>; cves: string[] }
-): boolean {
+function sameStory(a: Entry, b: Entry): boolean {
   if (a.article.link === b.article.link) return true; // links are also React keys
   if (a.article.source === b.article.source) return false;
   if (Math.abs(a.article.pubDate.getTime() - b.article.pubDate.getTime()) > MAX_MERGE_GAP_MS) return false;
-  if (differentCves(a.cves, b.cves)) return false;
+  if (differentCves(a.titleCves, b.titleCves)) return false;
+  if (a.allCves.some((id) => b.allCves.includes(id))) return true;
+  if ([...a.names].filter((n) => b.names.has(n)).length >= MIN_SHARED_NAMES) return true;
   return jaccardSimilarity(a.tokens, b.tokens) >= SIMILARITY_THRESHOLD;
 }
 
@@ -61,10 +83,24 @@ export function deduplicateArticles(articles: Article[]): Article[] {
     return b.pubDate.getTime() - a.pubDate.getTime();
   });
 
-  const kept: Array<{ article: Article; tokens: Set<string>; cves: string[] }> = [];
+  // How many articles mention each name, to tell distinctive names from common ones
+  const terms = articles.map((a) => extractTerms(a.title));
+  const df = new Map<string, number>();
+  for (const set of terms) for (const t of set) df.set(t, (df.get(t) ?? 0) + 1);
+  const maxDf = Math.max(MIN_DISTINCTIVE_DF, Math.round(articles.length * DISTINCTIVE_SHARE));
+  const namesOf = (title: string) =>
+    new Set([...extractTerms(title)].filter((t) => !t.startsWith("CVE-") && (df.get(t) ?? 0) <= maxDf));
+
+  const kept: Entry[] = [];
 
   for (const article of sorted) {
-    const candidate = { article, tokens: tokenize(article.title), cves: extractCveIds(article.title) };
+    const candidate: Entry = {
+      article,
+      tokens: tokenize(article.title),
+      titleCves: extractCveIds(article.title),
+      allCves: extractCveIds(`${article.title} ${article.description}`),
+      names: namesOf(article.title),
+    };
     let merged = false;
 
     for (const entry of kept) {

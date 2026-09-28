@@ -100,3 +100,67 @@ describe("deduplicateArticles", () => {
     expect(b.alsoReportedBy).toEqual([]);
   });
 });
+
+describe("deduplicateArticles across different wording", () => {
+  // Unrelated stories, so name frequencies look like a real batch
+  // (each with unique words, and Microsoft/Google in many of them)
+  const filler = (n: number) =>
+    Array.from({ length: n }, (_, i) =>
+      article({
+        title: `${i % 2 ? "Microsoft" : "Google"} alpha${i} bravo${i} charlie${i} delta${i}`,
+        source: `Filler ${i % 5}`,
+      })
+    );
+
+  it("merges coverage that shares distinctive names (the live NetScaler case)", () => {
+    const result = deduplicateArticles([
+      article({ title: "Citrix Confirms 2 NetScaler Zero-Days After Admins Pulled the Plug", source: "SecurityWeek", sourceTier: 3 }),
+      article({ title: "CISA Says Attackers Are Exploiting Two Critical Citrix NetScaler Flaws Globally", source: "The Hacker News" }),
+      article({ title: "Critical Zero-Day Vulnerabilities Exploited in Citrix NetScaler ADC, Gateway", source: "CISA Alerts", sourceTier: 1 }),
+      ...filler(40),
+    ]);
+    const netscaler = result.filter((a) => a.title.includes("NetScaler"));
+    expect(netscaler).toHaveLength(1);
+    expect(netscaler[0].source).toBe("CISA Alerts");
+    expect(netscaler[0].alsoReportedBy.sort()).toEqual(["SecurityWeek", "The Hacker News"]);
+  });
+
+  it("merges stories that name the same CVE in their descriptions", () => {
+    const result = deduplicateArticles([
+      article({ title: "F5 patches BIG-IP zero-day", description: "Tracked as CVE-2026-1111, the flaw...", source: "A" }),
+      article({ title: "Attackers hit load balancers", description: "Exploitation of CVE-2026-1111 began...", source: "B" }),
+    ]);
+    expect(result).toHaveLength(1);
+  });
+
+  it("doesn't merge on common names alone", () => {
+    const result = deduplicateArticles([
+      article({ title: "Microsoft Google partnership on passkeys", source: "A" }),
+      article({ title: "Microsoft Google outage hits mail", source: "B" }),
+      ...filler(40),
+    ]);
+    expect(result).toHaveLength(42);
+  });
+
+  it("doesn't merge on a single shared name", () => {
+    const result = deduplicateArticles([
+      article({ title: "Citrix appoints new CEO", source: "A" }),
+      article({ title: "Citrix NetScaler zero-day exploited", source: "B" }),
+      ...filler(40),
+    ]);
+    expect(result).toHaveLength(42);
+  });
+
+  it("still keeps same-source posts and far-apart posts separate", () => {
+    const sameSource = deduplicateArticles([
+      article({ title: "Citrix NetScaler zero-day exploited", source: "A" }),
+      article({ title: "Citrix NetScaler patch guidance", source: "A" }),
+    ]);
+    expect(sameSource).toHaveLength(2);
+    const farApart = deduplicateArticles([
+      article({ title: "Citrix NetScaler zero-day exploited", source: "A" }),
+      article({ title: "Citrix NetScaler patch guidance", source: "B", pubDate: new Date("2026-01-05T00:00:00Z") }),
+    ]);
+    expect(farApart).toHaveLength(2);
+  });
+});

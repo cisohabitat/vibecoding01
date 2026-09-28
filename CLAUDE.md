@@ -73,7 +73,7 @@ lib/
   ranker.ts         — Relevance scoring (tier weight + keyword match + recency boost + Singapore boost + coverage boost per extra outlet (≤3) + exploitation boost: max of KEV/EPSS − promo penalty for webinar/event/sponsored titles)
   region.ts         — mentionsSingapore(): specific terms (singapore, singpass, singtel…) at word boundaries; ranking boost + SG card marker
   tagger.ts         — Keyword-based category tagging (first-match rules: Ransomware, APT, Data Breach, Phishing, Vulnerability, Malware, AI, Policy; title decides, description only as fallback). Tune against the Feed health run's tagging report (category mix + untagged sample from real feeds)
-  deduplicator.ts   — Deduplication by identical link, or title similarity across *different* outlets within 72h (never merges titles naming different CVEs); keeps the lowest-tier, newest copy
+  deduplicator.ts   — Merges the same story from different sources within 72h: a shared CVE (title or description), ≥2 shared distinctive names (title terms mentioned by ≤4% of the batch, e.g. Citrix + NetScaler, not Microsoft) or similar titles; never titles naming different CVEs; keeps the lowest-tier, newest copy
   cve.ts            — CVE ID extraction + CVSS enrichment via NVD API (pickCvss: v3.1 > v3.0 > v2, shared with the CVE route; capped lookups, optional NVD_API_KEY; NVD_API_URL override for tests); flags KEV CVEs
   kev.ts            — CISA Known Exploited Vulnerabilities catalog IDs (6h memo, empty set on failure; KEV_URL override for tests)
   epss.ts           — FIRST EPSS scores, bulk-fetched in batches of 50 (empty on failure; EPSS_URL override for tests)
@@ -91,7 +91,7 @@ e2e/
 .github/
   workflows/ci.yml  — CI: prod-dependency audit, lint, typecheck, unit tests with coverage thresholds, build; separate e2e job
   workflows/smoke.yml — Post-deploy smoke test (scripts/smoke.mjs) on each successful Production deployment_status; uses the PRODUCTION_URL repo variable (deployment URLs are usually behind Vercel Authentication: 401/403 is reported as skipped); manual runs take a url
-  workflows/feed-health.yml — Daily live feed check (failed run = broken source); manual runs take a `feeds` JSON input to vet candidate sources
+  workflows/feed-health.yml — Daily live feed check (failed run = broken source); its report (job log + summary) also shows the live category mix, trending terms, Top Stories/next-highest scores and untagged titles — use it to tune tagger/ranker/trending. Manual runs take a `feeds` JSON input to vet candidate sources
   dependabot.yml    — Weekly grouped npm updates, monthly Actions updates
 ```
 
