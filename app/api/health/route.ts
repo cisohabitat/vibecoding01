@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { fetchAllFeeds } from "@/lib/fetcher";
 import { FEED_SOURCES } from "@/lib/feeds";
 import { getKevIds } from "@/lib/kev";
-import { getCachedArticles } from "@/lib/pipeline";
+import { getArticles, getCachedArticles } from "@/lib/pipeline";
 
 // A cold data cache runs the whole pipeline: worst case ~25s (10s feed
 // timeout + retry, then NVD). Don't rely on the platform's default limit.
@@ -36,10 +36,19 @@ interface Health {
 // Four missed 15-minute refreshes
 const STALE_DATA_MS = 60 * 60 * 1000;
 
-// The data cache only refreshes when read, so after a quiet hour the first
-// check sees old data (and starts the refresh). Data is stale only if the
-// previous check saw the same old data too.
-let previousData: string | null | undefined;
+// The data cache only refreshes when read, so after a quiet hour old data is
+// normal (reading it starts the refresh). Old data only counts as stale if
+// the pipeline can't produce new data right now: the check waits for that
+// run (shared with the refresh through getArticles' 60s memo). Unreadable
+// data is stale outright.
+async function pipelineWorks(): Promise<boolean> {
+  try {
+    await getArticles();
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 let cached: { at: number; result: Promise<Health> } | null = null;
 
@@ -57,9 +66,8 @@ async function check(): Promise<Health> {
     const feedsDown = failedFeeds.length;
     const feedsUp = total - feedsDown;
     const updated = await dataUpdated;
-    const old = updated === null || Date.now() - Date.parse(updated) > STALE_DATA_MS;
-    const stale = old && previousData === updated;
-    previousData = updated;
+    const old = updated !== null && Date.now() - Date.parse(updated) > STALE_DATA_MS;
+    const stale = updated === null || (old && !(await pipelineWorks()));
     const status = feedsUp === 0 ? "down" : feedsDown > 0 || stale ? "degraded" : "ok";
     return {
       status,

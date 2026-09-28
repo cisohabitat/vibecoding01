@@ -6,11 +6,17 @@ vi.mock("@/lib/feeds", () => ({ FEED_SOURCES: [{ name: "A" }, { name: "B" }, { n
 const getKevIds = vi.fn(async () => new Set(["CVE-2024-0001"]));
 vi.mock("@/lib/kev", () => ({ getKevIds: () => getKevIds() }));
 const dataUpdated = vi.hoisted(() => ({ at: () => new Date().toISOString() as string | null }));
+const pipeline = vi.hoisted(() => ({ works: true, runs: 0 }));
 vi.mock("@/lib/pipeline", () => ({
   getCachedArticles: async () => {
     const at = dataUpdated.at();
     if (at === null) throw new Error("no data");
     return { lastUpdated: at };
+  },
+  getArticles: async () => {
+    pipeline.runs++;
+    if (!pipeline.works) throw new Error("pipeline bug");
+    return {};
   },
 }));
 
@@ -18,6 +24,8 @@ beforeEach(() => {
   vi.resetModules();
   fetchAllFeeds.mockReset();
   dataUpdated.at = () => new Date().toISOString();
+  pipeline.works = true;
+  pipeline.runs = 0;
 });
 
 describe("GET /api/health", () => {
@@ -72,47 +80,34 @@ describe("GET /api/health", () => {
     expect(await (await GET()).json()).toMatchObject({ status: "down", failedFeeds: ["A", "B", "C"] });
   });
 
-  // Two checks, 61s apart (the memo's lifetime)
-  async function twoChecks() {
-    const { GET } = await import("@/app/api/health/route");
-    const first = await (await GET()).json();
-    vi.useFakeTimers({ now: Date.now() + 61_000 });
-    try {
-      return [first, await (await GET()).json()];
-    } finally {
-      vi.useRealTimers();
-    }
-  }
-
-  it("reports page data that stays stale as degraded, even when every feed is up", async () => {
+  it("reports old page data as degraded when the pipeline can't produce new data", async () => {
     fetchAllFeeds.mockResolvedValue({ articles: [], failedFeeds: [] });
     const twoHoursAgo = new Date(Date.now() - 2 * 3600e3).toISOString();
     dataUpdated.at = () => twoHoursAgo;
-    const [first, second] = await twoChecks();
-    // The first check after a quiet spell starts the refresh: not yet degraded
-    expect(first).toMatchObject({ status: "ok", dataUpdated: twoHoursAgo });
-    expect(second).toMatchObject({ status: "degraded", feedsDown: 0, dataUpdated: twoHoursAgo });
+    pipeline.works = false;
+    const { GET } = await import("@/app/api/health/route");
+    expect(await (await GET()).json()).toMatchObject({ status: "degraded", feedsDown: 0, dataUpdated: twoHoursAgo });
   });
 
-  it("stays ok when the refresh the first check started succeeds", async () => {
+  it("stays ok with old data after a quiet spell when the pipeline works", async () => {
     fetchAllFeeds.mockResolvedValue({ articles: [], failedFeeds: [] });
-    let refreshed = false;
-    dataUpdated.at = () => (refreshed ? new Date().toISOString() : new Date(Date.now() - 2 * 3600e3).toISOString());
+    dataUpdated.at = () => new Date(Date.now() - 2 * 3600e3).toISOString();
     const { GET } = await import("@/app/api/health/route");
     expect(await (await GET()).json()).toMatchObject({ status: "ok" });
-    refreshed = true;
-    vi.useFakeTimers({ now: Date.now() + 61_000 });
-    try {
-      expect(await (await GET()).json()).toMatchObject({ status: "ok" });
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(pipeline.runs).toBe(1);
   });
 
-  it("reports page data that stays unreadable as degraded", async () => {
+  it("doesn't run the pipeline when the data is fresh", async () => {
+    fetchAllFeeds.mockResolvedValue({ articles: [], failedFeeds: [] });
+    const { GET } = await import("@/app/api/health/route");
+    expect(await (await GET()).json()).toMatchObject({ status: "ok" });
+    expect(pipeline.runs).toBe(0);
+  });
+
+  it("reports unreadable page data as degraded", async () => {
     fetchAllFeeds.mockResolvedValue({ articles: [], failedFeeds: [] });
     dataUpdated.at = () => null;
-    const [, second] = await twoChecks();
-    expect(second).toMatchObject({ status: "degraded", dataUpdated: null });
+    const { GET } = await import("@/app/api/health/route");
+    expect(await (await GET()).json()).toMatchObject({ status: "degraded", dataUpdated: null });
   });
 });

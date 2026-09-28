@@ -215,4 +215,43 @@ describe("deduplicateArticles across different wording", () => {
     expect(merged.alsoReportedBy).toEqual(["B"]);
     expect(merged.lastReported).toBeUndefined();
   });
+
+  it("never chains stories that break a hard rule through a third one", () => {
+    // Titles naming different CVEs, bridged by one naming none
+    const cves = deduplicateArticles([
+      article({ title: "Acme Widget Server CVE-2026-1111 exploited in attacks", source: "A" }),
+      article({ title: "Acme Widget Server exploited in attacks", source: "B" }),
+      article({ title: "Acme Widget Server CVE-2026-2222 exploited in attacks", source: "C" }),
+    ]);
+    expect(cves.filter((a) => a.title.includes("CVE-2026-2222"))).toHaveLength(1);
+    expect(cves.filter((a) => a.title.includes("CVE-2026-1111"))).toHaveLength(1);
+
+    // Two posts from one outlet, bridged by another outlet
+    const sameOutlet = deduplicateArticles([
+      article({ title: "Acme Widget Server exploited in attacks", source: "A" }),
+      article({ title: "Acme Widget Server exploited in attacks again", source: "B" }),
+      article({ title: "Acme Widget Server exploited in more attacks", source: "A" }),
+    ]);
+    expect(sameOutlet.filter((a) => a.source === "A")).toHaveLength(2);
+
+    // 0h, 60h and 120h apart: the ends are more than 72h apart
+    const at = (h: number) => new Date(Date.parse("2026-01-01T00:00:00Z") + h * 3600e3);
+    const spread = deduplicateArticles([
+      article({ title: "Acme Widget Server exploited in attacks", source: "A", pubDate: at(0) }),
+      article({ title: "Acme Widget Server exploited in attacks", source: "B", pubDate: at(60) }),
+      article({ title: "Acme Widget Server exploited in attacks", source: "C", pubDate: at(120) }),
+    ]);
+    expect(spread).toHaveLength(2);
+  });
+
+  it("keeps a CVE-only kept copy's date, even when other members match each other by wording", () => {
+    const [kept] = deduplicateArticles([
+      article({ title: "Vendor advisory", description: "CVE-2026-7777", source: "CISA", sourceTier: 1, pubDate: new Date("2026-01-01T00:00:00Z") }),
+      article({ title: "Acme Widget flaw exploited", description: "CVE-2026-7777", source: "B", pubDate: new Date("2026-01-02T06:00:00Z") }),
+      article({ title: "Acme Widget flaw exploited widely", description: "CVE-2026-7777", source: "C", pubDate: new Date("2026-01-02T07:00:00Z") }),
+    ]);
+    expect(kept.source).toBe("CISA");
+    expect(kept.alsoReportedBy.sort()).toEqual(["B", "C"]);
+    expect(kept.lastReported).toBeUndefined();
+  });
 });

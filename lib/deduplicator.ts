@@ -69,6 +69,21 @@ function sameStory(a: Entry, b: Entry): "link" | "cves" | "title" | null {
   return jaccardSimilarity(a.tokens, b.tokens) >= SIMILARITY_THRESHOLD ? "title" : null;
 }
 
+/** Whether every pair across two clusters respects the hard rules. */
+function compatible(a: number[], b: number[], entries: Entry[]): boolean {
+  for (const i of a) {
+    for (const j of b) {
+      const x = entries[i];
+      const y = entries[j];
+      if (x.article.link === y.article.link) continue;
+      if (x.article.source === y.article.source) return false;
+      if (Math.abs(x.article.pubDate.getTime() - y.article.pubDate.getTime()) > MAX_MERGE_GAP_MS) return false;
+      if (differentCves(x.titleCves, y.titleCves)) return false;
+    }
+  }
+  return true;
+}
+
 function sameCves(a: string[], b: string[]): boolean {
   return (
     a.length > 0 && a.length <= MAX_CVES_FOR_MATCH && a.length === b.length && a.every((id) => b.includes(id))
@@ -101,17 +116,31 @@ export function deduplicateArticles(articles: Article[]): Article[] {
 
   // Cluster every pair (union-find), so an item joins a story if it matches
   // any of its coverage, whatever the order. Roots are the lowest index: the
-  // most authoritative, newest copy, which is the one kept.
+  // most authoritative, newest copy, which is the one kept. Clustering is
+  // transitive, so two clusters join only if no pair across them breaks a
+  // hard rule (same outlet, far apart, different CVEs).
   const parent = entries.map((_, i) => i);
+  const members = entries.map((_, i) => [i]);
   const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
-  const byTitle = new Set<number>(); // joined by wording/names, not only by CVEs
+  // Joined by wording/names (not only by CVEs): these keep the story current
+  const titleParent = entries.map((_, i) => i);
+  const findTitle = (i: number): number => (titleParent[i] === i ? i : (titleParent[i] = findTitle(titleParent[i])));
+
   for (let i = 0; i < entries.length; i++) {
     for (let j = i + 1; j < entries.length; j++) {
       const match = sameStory(entries[i], entries[j]);
       if (!match) continue;
       const [ri, rj] = [find(i), find(j)];
-      if (ri !== rj) parent[Math.max(ri, rj)] = Math.min(ri, rj);
-      if (match !== "cves") byTitle.add(i).add(j);
+      if (ri !== rj) {
+        if (!compatible(members[ri], members[rj], entries)) continue;
+        const [keep, join] = ri < rj ? [ri, rj] : [rj, ri];
+        parent[join] = keep;
+        members[keep].push(...members[join]);
+      }
+      if (match !== "cves") {
+        const [ti, tj] = [findTitle(i), findTitle(j)];
+        titleParent[Math.max(ti, tj)] = Math.min(ti, tj);
+      }
     }
   }
 
@@ -129,9 +158,11 @@ export function deduplicateArticles(articles: Article[]): Article[] {
         if (i === root) continue;
         const { source, pubDate } = entries[i].article;
         if (source !== kept.source && !kept.alsoReportedBy.includes(source)) kept.alsoReportedBy.push(source);
-        // Newer coverage keeps the story current, but only when it's plainly
-        // the same story (a shared CVE can be a new development)
-        if (byTitle.has(i) && pubDate > (kept.lastReported ?? kept.pubDate)) kept.lastReported = pubDate;
+        // Newer coverage keeps the story current, but only coverage linked to
+        // the kept copy by wording (a shared CVE can be a new development)
+        if (findTitle(i) === findTitle(root) && pubDate > (kept.lastReported ?? kept.pubDate)) {
+          kept.lastReported = pubDate;
+        }
       }
       return kept;
     });
