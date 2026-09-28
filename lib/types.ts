@@ -11,6 +11,7 @@ export type ArticleCategory =
   | "Data Breach"
   | "Malware"
   | "Phishing"
+  | "AI"
   | "Policy"
   | "Other";
 

@@ -50,6 +50,7 @@ const categoryStyles: Record<ArticleCategory, string> = {
   "Data Breach": "bg-rose-500/10 text-rose-400 border-rose-500/30",
   Malware:       "bg-orange-500/10 text-orange-400 border-orange-500/30",
   Phishing:      "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
+  AI:            "bg-teal-500/10 text-teal-300 border-teal-500/30",
   Policy:        "bg-indigo-500/10 text-indigo-400 border-indigo-500/30",
   Other:         "bg-slate-500/10 text-slate-400 border-slate-500/30",
 };

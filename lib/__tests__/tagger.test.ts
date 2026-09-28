@@ -36,6 +36,25 @@ describe("assignCategory", () => {
     expect(assignCategory("npm package typosquats popular logging library")).toBe("Malware");
   });
 
+  it("tags real headlines that used to fall through to Other", () => {
+    expect(assignCategory("Bitget Says Suspected North Korean Hackers Stole $351.6M")).toBe("APT");
+    expect(assignCategory("Ghost Service Accounts Enable M365 Data Theft in Chile")).toBe("Data Breach");
+    expect(assignCategory("Attackers Used Compromised Service Principals to Delete Azure Resources")).toBe("Data Breach");
+    expect(assignCategory("Placeholder Domain Referenced Across 1,700 Repositories Now Serves Malicious Content")).toBe("Malware");
+    expect(assignCategory("GitHub Actions re-enabled with Mini Shai-Hulud payload still active")).toBe("Malware");
+    expect(assignCategory("FBI Probes Service Selling 153M+ Drivers Licenses")).toBe("Policy");
+    expect(assignCategory("Business email compromise losses top $3B")).toBe("Other");
+  });
+
+  it("tags AI security stories, after the threat categories", () => {
+    expect(assignCategory("Zero Trust for AI Agents Starts With Fixing Zero Visibility")).toBe("AI");
+    expect(assignCategory("OpenAI's agents uploaded user images to third-party sites")).toBe("AI");
+    expect(assignCategory("How to control Shadow AI")).toBe("AI");
+    expect(assignCategory("Prompt injection flaw in Copilot leaks mail")).toBe("Vulnerability");
+    expect(assignCategory("Prompt injection vulnerability in Gemini")).toBe("Vulnerability");
+    expect(assignCategory("Said the raider in Maine")).toBe("Other");
+  });
+
   it("tags law enforcement actions as Policy", () => {
     expect(assignCategory("Police dismantle bulletproof hosting provider")).toBe("Policy");
     expect(assignCategory("Europol takedown of DDoS-for-hire services")).toBe("Policy");

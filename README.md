@@ -7,7 +7,7 @@ HKCERT), security journalism (Krebs on Security, BleepingComputer, The Hacker
 News, Dark Reading, …), APAC news (CyberSecAsia) and vendor threat research
 (Unit 42, Cisco Talos, …). Then it:
 
-- **tags** each article with a category (Ransomware, APT, Vulnerability, …)
+- **tags** each article with a category (Ransomware, APT, Vulnerability, AI, …)
 - **deduplicates** the same story reported by several outlets, keeping the most
   authoritative copy and listing the others under "also"
 - **ranks** by source tier, threat keywords, recency, how many outlets report it,

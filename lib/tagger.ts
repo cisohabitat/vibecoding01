@@ -30,11 +30,21 @@ const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> =
       "charming kitten",
       "cyber espionage",
       "cyberespionage",
+      "north korean",
+      "north korea",
+      "dprk",
+      "china-nexus",
+      "state-backed",
+      "state backed",
     ],
   },
   {
     category: "Data Breach",
-    keywords: ["breach", "data breach", "data leak", "leaked", "exposed records", "stolen data", "exfiltrate", "exfiltration"],
+    keywords: [
+      "breach", "data breach", "data leak", "leaked", "exposed records", "stolen data", "exfiltrate", "exfiltration",
+      // Not "compromise": "business email compromise" is phishing/fraud
+      "data theft", "stole", "compromised",
+    ],
   },
   {
     category: "Phishing",
@@ -46,7 +56,7 @@ const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> =
       "vulnerability", "vulnerabilities", "vulnerable", "cve-", "zero-day", "0day", "0-day", "exploit", "rce",
       "remote code execution", "code execution", "patch tuesday", "security flaw", "flaw", "flaws", "bug", "bugs",
       "patch", "hotfix", "security update", "security updates", "out-of-band", "privilege escalation",
-      "authentication bypass", "auth bypass", "sql injection", "command injection", "path traversal",
+      "authentication bypass", "auth bypass", "bypass", "sql injection", "command injection", "path traversal",
       "cross-site scripting", "xss", "buffer overflow", "memory corruption", "use-after-free",
     ],
   },
@@ -55,6 +65,15 @@ const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> =
     keywords: [
       "malware", "trojan", "backdoor", "rootkit", "spyware", "worm", "botnet", "infostealer", "stealer", "rat",
       "wiper", "keylogger", "loader", "cryptominer", "cryptojacking", "malicious package", "typosquat",
+      "malicious", "payload", "supply chain attack", "supply-chain attack", "shai-hulud",
+    ],
+  },
+  {
+    // After the threat categories: "Prompt injection flaw in Copilot" is a Vulnerability
+    category: "AI",
+    keywords: [
+      "ai", "artificial intelligence", "genai", "llm", "llms", "chatgpt", "openai", "anthropic", "claude",
+      "gemini", "copilot", "agentic", "ai agent", "prompt injection", "deepfake", "machine learning",
     ],
   },
   {
@@ -64,7 +83,7 @@ const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> =
       "cyber resilience act", "compliance", "executive order", "senate", "congress",
       "cisa advisory", "nist", "sanction", "indicted", "indictment", "sentenced", "extradited",
       "arrested", "arrests", "charged", "pleads guilty", "fined", "lawsuit", "police", "law enforcement",
-      "europol", "takedown",
+      "europol", "takedown", "fbi",
     ],
   },
 ];

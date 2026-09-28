@@ -65,6 +65,7 @@ export const CATEGORIES: ArticleCategory[] = [
   "Data Breach",
   "Malware",
   "Phishing",
+  "AI",
   "Policy",
 ];
 

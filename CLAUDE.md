@@ -72,7 +72,7 @@ lib/
   watchlist.ts      — "My stack" terms (localStorage `cyber-pulse-watchlist`, ≤30 terms of 2–40 chars): parse/add/remove, word-boundary matcher (keywords.ts) over title, description and CVE IDs
   ranker.ts         — Relevance scoring (tier weight + keyword match + recency boost + Singapore boost + coverage boost per extra outlet (≤3) + exploitation boost: max of KEV/EPSS)
   region.ts         — mentionsSingapore(): specific terms (singapore, singpass, singtel…) at word boundaries; ranking boost + SG card marker
-  tagger.ts         — Keyword-based category tagging (first-match rules; title decides, description only as fallback)
+  tagger.ts         — Keyword-based category tagging (first-match rules: Ransomware, APT, Data Breach, Phishing, Vulnerability, Malware, AI, Policy; title decides, description only as fallback). Tune against the Feed health run's tagging report (category mix + untagged sample from real feeds)
   deduplicator.ts   — Deduplication by identical link, or title similarity across *different* outlets within 72h (never merges titles naming different CVEs); keeps the lowest-tier, newest copy
   cve.ts            — CVE ID extraction + CVSS enrichment via NVD API (pickCvss: v3.1 > v3.0 > v2, shared with the CVE route; capped lookups, optional NVD_API_KEY; NVD_API_URL override for tests); flags KEV CVEs
   kev.ts            — CISA Known Exploited Vulnerabilities catalog IDs (6h memo, empty set on failure; KEV_URL override for tests)
