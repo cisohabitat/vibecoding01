@@ -3,6 +3,7 @@ import { compileKeywords } from "./keywords";
 import { extractCveIds } from "./cve";
 import { EpssScore, HIGH_EPSS } from "./epss";
 import { mentionsSingapore } from "./region";
+import { distinctiveNamer, sharesName } from "./names";
 
 const CRITICAL_KEYWORDS = ["zero-day", "0day", "0-day", "cve-", "ransomware", "breach", "apt"];
 const HIGH_KEYWORDS = ["vulnerability", "vulnerabilities", "exploit", "malware", "attack", "critical", "rce", "backdoor"];
@@ -108,24 +109,37 @@ const FEATURED_COUNT = 5;
 const MAX_FEATURED_PER_SOURCE = 2;
 
 /**
- * Picks the top `count` articles (already sorted by score), allowing at most
- * MAX_FEATURED_PER_SOURCE from one source so a prolific outlet can't fill
- * Top Stories. Falls back to score order if there aren't enough sources.
+ * Picks the top `count` articles (already sorted by score) for varied Top
+ * Stories: at most MAX_FEATURED_PER_SOURCE from one source, so a prolific
+ * outlet can't fill them, and at most one per distinctive name (`namesOf`),
+ * so follow-ups to one incident ("CISA orders feds to patch Citrix flaws")
+ * don't crowd out other news. Each rule is relaxed, in turn, if there
+ * aren't enough stories.
  */
-export function pickFeatured(sorted: Article[], count = FEATURED_COUNT): Article[] {
+export function pickFeatured(
+  sorted: Article[],
+  count = FEATURED_COUNT,
+  namesOf: (a: Article) => Set<string> = () => new Set()
+): Article[] {
   const picked: Article[] = [];
   const perSource = new Map<string, number>();
-  for (const a of sorted) {
-    if (picked.length >= count) break;
-    const n = perSource.get(a.source) ?? 0;
-    if (n >= MAX_FEATURED_PER_SOURCE) continue;
-    perSource.set(a.source, n + 1);
-    picked.push(a);
-  }
-  for (const a of sorted) {
-    if (picked.length >= count) break;
-    if (!picked.includes(a)) picked.push(a);
-  }
+  const pickedNames: Set<string>[] = [];
+  const pass = (limitSources: boolean, limitTopics: boolean) => {
+    for (const a of sorted) {
+      if (picked.length >= count) return;
+      if (picked.includes(a)) continue;
+      const n = perSource.get(a.source) ?? 0;
+      if (limitSources && n >= MAX_FEATURED_PER_SOURCE) continue;
+      const names = namesOf(a);
+      if (limitTopics && pickedNames.some((p) => sharesName(p, names))) continue;
+      perSource.set(a.source, n + 1);
+      pickedNames.push(names);
+      picked.push(a);
+    }
+  };
+  pass(true, true);
+  pass(true, false);
+  pass(false, false);
   return picked.sort((a, b) => b.score - a.score);
 }
 
@@ -145,8 +159,9 @@ export function rankArticles(
     .filter((a) => reportedAt(a) >= oneDayAgo)
     .sort((a, b) => b.score - a.score);
 
-  // Featured: top 5 from last 24h, at most 2 per source
-  const featured = pickFeatured(last24h);
+  // Featured: top 5 from last 24h, at most 2 per source and 1 per topic
+  const namesOf = distinctiveNamer(articles.map((a) => a.title));
+  const featured = pickFeatured(last24h, FEATURED_COUNT, (a) => namesOf(a.title));
   const featuredLinks = new Set(featured.map((a) => a.link));
 
   // Recent: everything else, sorted by date

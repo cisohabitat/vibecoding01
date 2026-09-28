@@ -73,7 +73,7 @@ export default function Footer({ lastUpdated }: { lastUpdated: string }) {
             </li>
             <li>
               Top Stories are the five highest-scoring stories from the last 24 hours, at most two
-              per source. The same story from several outlets is merged and listed under
+              per source and one per company or product. The same story from several outlets is merged and listed under
               &ldquo;also&rdquo;.
             </li>
           </ul>

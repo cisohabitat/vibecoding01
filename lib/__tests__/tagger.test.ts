@@ -38,6 +38,8 @@ describe("assignCategory", () => {
 
   it("tags real headlines that used to fall through to Other", () => {
     expect(assignCategory("Bitget Says Suspected North Korean Hackers Stole $351.6M")).toBe("APT");
+    expect(assignCategory("Chinese Hackers Exploit Chrome-Windows Zero-Day Chain")).toBe("APT");
+    expect(assignCategory("Russia-linked group targets NGOs")).toBe("APT");
     expect(assignCategory("Ghost Service Accounts Enable M365 Data Theft in Chile")).toBe("Data Breach");
     expect(assignCategory("Attackers Used Compromised Service Principals to Delete Azure Resources")).toBe("Data Breach");
     expect(assignCategory("Placeholder Domain Referenced Across 1,700 Repositories Now Serves Malicious Content")).toBe("Malware");

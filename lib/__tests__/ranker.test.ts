@@ -70,6 +70,23 @@ describe("pickFeatured", () => {
     const sorted = [scored("A", 10), scored("A", 9), scored("A", 8), scored("A", 7), scored("B", 6)];
     expect(pickFeatured(sorted).map((a) => a.title)).toEqual(["A10", "A9", "A8", "A7", "B6"]);
   });
+
+  it("takes one story per topic, so follow-ups don't crowd out other news", () => {
+    const story = (title: string, source: string, score: number) => article({ title, source, score });
+    const sorted = [
+      story("Citrix NetScaler zero-days exploited", "A", 20),
+      story("CISA orders feds to patch Citrix flaws", "B", 11),
+      story("Oracle PeopleSoft attacks", "C", 10),
+      story("Death, taxes and Citrix vulns", "D", 7),
+      story("Kiteworks shuts down systems", "E", 6),
+      story("F5 BIG-IP zero-day", "F", 5),
+      story("Chrome zero-day chain", "G", 4),
+    ];
+    const names = (a: Article) => new Set(a.title.toLowerCase().split(" ").filter((w) => ["citrix", "oracle", "kiteworks", "f5", "chrome"].includes(w)));
+    expect(pickFeatured(sorted, 5, names).map((a) => a.score)).toEqual([20, 10, 6, 5, 4]);
+    // Without enough other topics, follow-ups fill the remaining places
+    expect(pickFeatured(sorted.slice(0, 4), 5, names).map((a) => a.score)).toEqual([20, 11, 10, 7]);
+  });
 });
 
 describe("KEV boost", () => {

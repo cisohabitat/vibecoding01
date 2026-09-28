@@ -1,6 +1,6 @@
 import { Article } from "./types";
 import { extractCveIds } from "./cve";
-import { extractTerms } from "./trending";
+import { distinctiveNamer, sharesName } from "./names";
 
 const STOP_WORDS = new Set([
   "a", "an", "the", "in", "on", "at", "to", "for", "of", "and", "or",
@@ -32,12 +32,8 @@ const MAX_MERGE_GAP_MS = 72 * 60 * 60 * 1000;
 
 // Outlets word the same story differently ("Citrix confirms two NetScaler
 // zero-days" / "CISA says attackers exploit Citrix NetScaler flaws"), so
-// title similarity alone misses most duplicates. Names they share are the
-// better signal, but only rare ones: "Microsoft" or "Google" appear in many
-// unrelated stories. A name is distinctive if at most this share of the
-// batch (and at least a few articles' worth) mentions it.
-const DISTINCTIVE_SHARE = 0.04;
-const MIN_DISTINCTIVE_DF = 4;
+// title similarity alone misses most duplicates. Distinctive names they
+// share (lib/names.ts) are the better signal.
 const MIN_SHARED_NAMES = 2;
 
 interface Entry {
@@ -64,7 +60,7 @@ function sameStory(a: Entry, b: Entry): boolean {
   if (Math.abs(a.article.pubDate.getTime() - b.article.pubDate.getTime()) > MAX_MERGE_GAP_MS) return false;
   if (differentCves(a.titleCves, b.titleCves)) return false;
   if (a.allCves.some((id) => b.allCves.includes(id))) return true;
-  if ([...a.names].filter((n) => b.names.has(n)).length >= MIN_SHARED_NAMES) return true;
+  if (sharesName(a.names, b.names, MIN_SHARED_NAMES)) return true;
   return jaccardSimilarity(a.tokens, b.tokens) >= SIMILARITY_THRESHOLD;
 }
 
@@ -83,13 +79,7 @@ export function deduplicateArticles(articles: Article[]): Article[] {
     return b.pubDate.getTime() - a.pubDate.getTime();
   });
 
-  // How many articles mention each name, to tell distinctive names from common ones
-  const terms = articles.map((a) => extractTerms(a.title));
-  const df = new Map<string, number>();
-  for (const set of terms) for (const t of set) df.set(t, (df.get(t) ?? 0) + 1);
-  const maxDf = Math.max(MIN_DISTINCTIVE_DF, Math.round(articles.length * DISTINCTIVE_SHARE));
-  const namesOf = (title: string) =>
-    new Set([...extractTerms(title)].filter((t) => !t.startsWith("CVE-") && (df.get(t) ?? 0) <= maxDf));
+  const namesOf = distinctiveNamer(articles.map((a) => a.title));
 
   const kept: Entry[] = [];
 
