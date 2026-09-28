@@ -129,6 +129,21 @@ export default function CveModal({
               </div>
             )}
 
+            {data.kev && (
+              <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+                <strong className="font-semibold">Known exploited.</strong> Listed in CISA&rsquo;s{" "}
+                <a
+                  href={`https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=${encodeURIComponent(cveId)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-white"
+                >
+                  Known Exploited Vulnerabilities catalog
+                </a>
+                : attackers are using it in the wild, so patch it first.
+              </div>
+            )}
+
             {/* Description */}
             {data.description && (
               <p className="text-sm text-slate-300 leading-relaxed">{data.description}</p>

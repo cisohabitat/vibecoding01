@@ -70,6 +70,12 @@ createServer((req, res) => {
     res.end("unavailable");
     return;
   }
+  // Minimal CISA KEV catalog: the Jenkins CVE is "known exploited"
+  if (url.pathname === "/kev") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ vulnerabilities: [{ cveID: "CVE-2024-23897" }] }));
+    return;
+  }
   if (url.pathname === "/nvd") {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(nvd(url.searchParams.get("cveId")));

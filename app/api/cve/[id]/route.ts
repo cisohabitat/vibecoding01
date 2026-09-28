@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { NVD_API_URL, nvdHeaders } from "@/lib/cve";
+import { getKevIds } from "@/lib/kev";
 import { safeLink } from "@/lib/url";
 
 export interface CveDetail {
@@ -11,6 +12,8 @@ export interface CveDetail {
   published: string | null;
   lastModified: string | null;
   references: string[];
+  /** Listed in CISA's Known Exploited Vulnerabilities catalog */
+  kev: boolean;
 }
 
 // Let the CDN cache answers so repeated modal opens don't hit NVD
@@ -28,6 +31,9 @@ export async function GET(
   if (!/^CVE-\d{4}-\d{4,7}$/.test(cveId)) {
     return NextResponse.json({ error: "Invalid CVE ID" }, { status: 400 });
   }
+
+  // KEV lookup runs alongside the NVD request (memoised; never throws)
+  const kevIds = getKevIds();
 
   try {
     const res = await fetch(
@@ -85,6 +91,7 @@ export async function GET(
       published: vuln.published ?? null,
       lastModified: vuln.lastModified ?? null,
       references,
+      kev: (await kevIds).has(cveId),
     };
 
     return NextResponse.json(detail, { headers: { "Cache-Control": CACHE_OK } });

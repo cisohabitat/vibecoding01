@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeKeywordScore, pickFeatured, rankArticles } from "../ranker";
+import { computeKeywordScore, KEV_BOOST, pickFeatured, rankArticles } from "../ranker";
 import { Article } from "../types";
 
 function article(overrides: Partial<Article>): Article {
@@ -58,5 +58,20 @@ describe("pickFeatured", () => {
   it("falls back to score order when sources run out", () => {
     const sorted = [scored("A", 10), scored("A", 9), scored("A", 8), scored("A", 7), scored("B", 6)];
     expect(pickFeatured(sorted).map((a) => a.title)).toEqual(["A10", "A9", "A8", "A7", "B6"]);
+  });
+});
+
+describe("KEV boost", () => {
+  it("ranks a story naming a known-exploited CVE above an otherwise equal one", () => {
+    const a = article({ title: "Vendor fixes CVE-2024-1111" });
+    const b = article({ title: "Vendor fixes CVE-2024-2222" });
+    const { featured } = rankArticles([a, b], new Set(["CVE-2024-2222"]));
+    expect(featured[0].title).toBe(b.title);
+    expect(featured[0].score - featured[1].score).toBe(KEV_BOOST);
+  });
+
+  it("changes nothing without KEV data", () => {
+    const a = article({ title: "Vendor fixes CVE-2024-1111" });
+    expect(rankArticles([a]).featured[0].score).toBe(rankArticles([a], new Set()).featured[0].score);
   });
 });

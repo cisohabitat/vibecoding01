@@ -74,3 +74,14 @@ describe("enrichWithCves", () => {
     expect(result.cves).toEqual([{ id: "CVE-2024-0001", cvss: null, severity: null }]);
   });
 });
+
+describe("enrichWithCves KEV flag", () => {
+  it("marks KEV-listed CVEs, including ones beyond the NVD lookup cap", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 503 })));
+    const ids = Array.from({ length: MAX_CVE_LOOKUPS + 3 }, (_, i) => `CVE-2024-${3000 + i}`);
+    const last = ids[ids.length - 1];
+    const [result] = await enrichWithCves([article(ids.join(" "))], new Set([last]));
+    expect(result.cves.find((c) => c.id === last)?.kev).toBe(true);
+    expect(result.cves.filter((c) => c.kev)).toHaveLength(1);
+  });
+});

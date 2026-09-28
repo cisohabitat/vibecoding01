@@ -3,6 +3,7 @@ import { Article } from "@/lib/types";
 interface Stats {
   totalToday: number;
   criticalCves: number;
+  exploitedCves: number;
   breachCount: number;
   ransomwareCount: number;
 }
@@ -24,10 +25,15 @@ function computeStats(featured: Article[], recent: Article[]): Stats {
     today.flatMap((a) => a.cves.filter((c) => c.severity === "CRITICAL").map((c) => c.id))
   ).size;
 
+  // Distinct CVEs in CISA's Known Exploited Vulnerabilities catalog
+  const exploitedCves = new Set(
+    today.flatMap((a) => a.cves.filter((c) => c.kev).map((c) => c.id))
+  ).size;
+
   const breachCount = today.filter((a) => a.category === "Data Breach").length;
   const ransomwareCount = today.filter((a) => a.category === "Ransomware").length;
 
-  return { totalToday: today.length, criticalCves, breachCount, ransomwareCount };
+  return { totalToday: today.length, criticalCves, exploitedCves, breachCount, ransomwareCount };
 }
 
 export default function StatsBanner({
@@ -37,7 +43,7 @@ export default function StatsBanner({
   featured: Article[];
   recent: Article[];
 }) {
-  const { totalToday, criticalCves, breachCount, ransomwareCount } =
+  const { totalToday, criticalCves, exploitedCves, breachCount, ransomwareCount } =
     computeStats(featured, recent);
 
   const stats = [
@@ -46,6 +52,11 @@ export default function StatsBanner({
       label: "Critical CVEs",
       value: criticalCves,
       color: criticalCves > 0 ? "text-red-400" : "text-slate-400",
+    },
+    {
+      label: "Exploited CVEs",
+      value: exploitedCves,
+      color: exploitedCves > 0 ? "text-red-400" : "text-slate-400",
     },
     {
       label: "Data Breaches",

@@ -48,11 +48,14 @@ afterEach(() => {
 describe("getArticles", () => {
   it("tags, dedupes, ranks, enriches featured first and threads failedFeeds", async () => {
     const fetchMock = vi.fn(async (url: string) =>
-      Response.json({
-        vulnerabilities: [
-          { cve: { id: new URL(url).searchParams.get("cveId"), metrics: { cvssMetricV31: [{ cvssData: { baseScore: 7.5, baseSeverity: "HIGH" } }] } } },
-        ],
-      })
+      url.includes("known_exploited")
+        ? // KEV catalog lists the zero-day's CVE
+          Response.json({ vulnerabilities: [{ cveID: "CVE-2026-0001" }] })
+        : Response.json({
+            vulnerabilities: [
+              { cve: { id: new URL(url).searchParams.get("cveId"), metrics: { cvssMetricV31: [{ cvssData: { baseScore: 7.5, baseSeverity: "HIGH" } }] } } },
+            ],
+          })
     );
     vi.stubGlobal("fetch", fetchMock);
     const { getArticles } = await import("../pipeline");
@@ -69,8 +72,11 @@ describe("getArticles", () => {
     expect(recent).toHaveLength(8);
     // The featured CVE was looked up even though older CVE articles came first
     const zeroDay = featured.find((a) => a.source === "A");
-    expect(zeroDay?.cves).toEqual([{ id: "CVE-2026-0001", cvss: 7.5, severity: "HIGH" }]);
-    expect(fetchMock.mock.calls[0][0]).toContain("CVE-2026-0001");
+    expect(zeroDay?.cves).toEqual([{ id: "CVE-2026-0001", cvss: 7.5, severity: "HIGH", kev: true }]);
+    const nvdCalls = fetchMock.mock.calls.map(([url]) => url).filter((url) => url.includes("cveId="));
+    expect(nvdCalls[0]).toContain("CVE-2026-0001");
+    // KEV-listed story gets the boost and leads Top Stories
+    expect(featured[0]).toBe(zeroDay);
   });
 });
 

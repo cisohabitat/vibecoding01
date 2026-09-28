@@ -36,6 +36,11 @@ export default function Footer({ lastUpdated }: { lastUpdated: string }) {
               breaches and CVEs weigh more than general terms like patches or updates.
             </li>
             <li>
+              <strong className="text-slate-300">Known exploitation:</strong> stories naming a CVE in
+              CISA&rsquo;s Known Exploited Vulnerabilities (KEV) catalog get a boost, and those CVEs
+              are marked <span className="font-mono text-red-300">KEV</span>.
+            </li>
+            <li>
               <strong className="text-slate-300">Recency:</strong> a boost for the last few hours,
               fading out over a day.
             </li>

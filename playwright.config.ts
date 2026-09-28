@@ -38,6 +38,7 @@ export default defineConfig({
           { name: "Broken Feed B", url: `http://localhost:${FEED_PORT}/broken-b`, tier: 3 },
         ]),
         NVD_API_URL: `http://localhost:${FEED_PORT}/nvd`,
+        KEV_URL: `http://localhost:${FEED_PORT}/kev`,
         NO_PROXY: "localhost,127.0.0.1",
       },
       // Always build fresh: reusing a server left running from an older build

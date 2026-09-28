@@ -11,7 +11,8 @@ and research blogs, then:
   authoritative copy and listing the others under "also"
 - **ranks** by source tier, threat keywords and recency; the top 5 from the last
   24 hours become Top Stories
-- **enriches** CVE IDs with CVSS scores from the NVD
+- **enriches** CVE IDs with CVSS scores from the NVD and flags those in CISA's
+  Known Exploited Vulnerabilities (KEV) catalog, boosting their stories
 
 Article data is refreshed at most every 15 minutes (cached with Next.js's data
 cache); pages render per request so each gets a fresh Content-Security-Policy

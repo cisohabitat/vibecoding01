@@ -205,7 +205,9 @@ export default function NewsCard({
                 onClick={() => setOpenCve(cve.id)}
                 aria-label={`${cve.id} details${
                   cve.cvss !== null ? `, CVSS ${cve.cvss.toFixed(1)}` : ""
-                }${cve.severity ? ` ${cve.severity.toLowerCase()}` : ""}`}
+                }${cve.severity ? ` ${cve.severity.toLowerCase()}` : ""}${
+                  cve.kev ? ", known exploited (CISA KEV)" : ""
+                }`}
                 aria-haspopup="dialog"
                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-mono transition-colors cursor-pointer ${
                   cveSeverityStyles[cve.severity ?? "null"]
@@ -214,6 +216,14 @@ export default function NewsCard({
                 {cve.id}
                 {cve.cvss !== null && (
                   <span className="font-bold">{cve.cvss.toFixed(1)}</span>
+                )}
+                {cve.kev && (
+                  <span
+                    className="ml-0.5 px-1 rounded-sm bg-red-500/25 text-red-200 font-sans font-bold text-[10px] tracking-wide"
+                    title="Known exploited (CISA KEV)"
+                  >
+                    KEV
+                  </span>
                 )}
               </button>
             ))}

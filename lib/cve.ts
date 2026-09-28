@@ -54,7 +54,10 @@ async function fetchCveScore(cveId: string): Promise<CveInfo> {
  * (most important first): NVD lookups go to the earliest CVE IDs, up to
  * MAX_CVE_LOOKUPS; later IDs are listed without a score.
  */
-export async function enrichWithCves(articles: Article[]): Promise<Article[]> {
+export async function enrichWithCves(
+  articles: Article[],
+  kevIds: Set<string> = new Set()
+): Promise<Article[]> {
   // Extract CVE IDs for all articles up-front (cheap regex, no network)
   const articleCves = articles.map((a) => ({
     article: a,
@@ -79,9 +82,11 @@ export async function enrichWithCves(articles: Article[]): Promise<Article[]> {
 
   return articleCves.map(({ article, ids }) => {
     if (ids.length === 0) return article;
-    const cves = ids.map(
-      (id) => cveMap.get(id) ?? { id, cvss: null, severity: null }
-    );
+    const cves = ids.map((id): CveInfo => {
+      const info = cveMap.get(id) ?? { id, cvss: null, severity: null };
+      // KEV applies to every CVE (a set lookup), not just the NVD-capped ones
+      return kevIds.has(id) ? { ...info, kev: true } : info;
+    });
     return { ...article, cves };
   });
 }

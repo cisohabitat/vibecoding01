@@ -20,6 +20,8 @@ export interface CveInfo {
   id: string;
   cvss: number | null;
   severity: CveSeverity | null;
+  /** Listed in CISA's Known Exploited Vulnerabilities catalog */
+  kev?: boolean;
 }
 
 export interface Article {

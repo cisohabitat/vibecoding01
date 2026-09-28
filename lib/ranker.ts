@@ -1,5 +1,6 @@
 import { Article, RankedArticles } from "./types";
 import { compileKeywords } from "./keywords";
+import { extractCveIds } from "./cve";
 
 const CRITICAL_KEYWORDS = ["zero-day", "0day", "0-day", "cve-", "ransomware", "breach", "apt"];
 const HIGH_KEYWORDS = ["vulnerability", "vulnerabilities", "exploit", "malware", "attack", "critical", "rce", "backdoor"];
@@ -37,11 +38,16 @@ function computeRecencyBoost(pubDate: Date): number {
   return 0;
 }
 
-function scoreArticle(article: Article): number {
+/** Boost for naming a CVE with confirmed in-the-wild exploitation (CISA KEV). */
+export const KEV_BOOST = 3;
+
+function scoreArticle(article: Article, kevIds: Set<string>): number {
+  const text = article.title + " " + article.description;
   const tierWeight = TIER_WEIGHTS[article.sourceTier] || 1;
-  const keywordScore = computeKeywordScore(article.title + " " + article.description);
+  const keywordScore = computeKeywordScore(text);
   const recencyBoost = computeRecencyBoost(article.pubDate);
-  return tierWeight + keywordScore + recencyBoost;
+  const kevBoost = kevIds.size > 0 && extractCveIds(text).some((id) => kevIds.has(id)) ? KEV_BOOST : 0;
+  return tierWeight + keywordScore + recencyBoost + kevBoost;
 }
 
 const FEATURED_COUNT = 5;
@@ -69,12 +75,12 @@ export function pickFeatured(sorted: Article[], count = FEATURED_COUNT): Article
   return picked.sort((a, b) => b.score - a.score);
 }
 
-export function rankArticles(articles: Article[]): RankedArticles {
+export function rankArticles(articles: Article[], kevIds: Set<string> = new Set()): RankedArticles {
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
   // Score all articles
-  const scored = articles.map((a) => ({ ...a, score: scoreArticle(a) }));
+  const scored = articles.map((a) => ({ ...a, score: scoreArticle(a, kevIds) }));
 
   // Split into last 24h and older
   const last24h = scored

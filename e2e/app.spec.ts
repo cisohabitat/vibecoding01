@@ -34,6 +34,15 @@ test("renders ranked articles without hydration errors", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test("counts known-exploited CVEs and ranks their story first", async ({ page }) => {
+  await page.goto("/");
+  const stat = page.locator("dl > div", { hasText: "Exploited CVEs" });
+  await expect(stat.locator("dd")).toHaveText("1");
+  // The KEV boost puts the Jenkins story at the top of Top Stories
+  const top = page.locator("section", { has: page.getByRole("heading", { name: /Top Stories/ }) }).locator("article").first();
+  await expect(top).toContainText("Critical RCE in Jenkins");
+});
+
 test("tags categories on whole words only", async ({ page }) => {
   await page.goto("/");
   await expect(card(page, "Microsoft continues")).not.toContainText("Ransomware");
@@ -189,12 +198,19 @@ test("CVE chip opens the detail dialog without leaving the page", async ({ page,
   await page.goto("/");
   let opened = false;
   context.on("page", () => (opened = true));
-  // Enriched at build time from the fixture NVD
-  await page.getByRole("button", { name: /CVE-2024-23897 details, CVSS 9\.8 critical/ }).click();
+  // Enriched from the fixture NVD and KEV catalog
+  const chip = page.getByRole("button", { name: /CVE-2024-23897 details, CVSS 9\.8 critical, known exploited/ });
+  await expect(chip).toContainText("KEV");
+  await chip.click();
   const dialog = page.getByRole("dialog", { name: "CVE-2024-23897" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText("Fixture description for CVE-2024-23897.")).toBeVisible();
   await expect(dialog.getByText("CRITICAL")).toBeVisible();
+  await expect(dialog.getByText("Known exploited.")).toBeVisible();
+  await expect(dialog.getByRole("link", { name: "Known Exploited Vulnerabilities catalog" })).toHaveAttribute(
+    "href",
+    /cisa\.gov\/known-exploited-vulnerabilities-catalog\?search_api_fulltext=CVE-2024-23897/
+  );
   expect(opened).toBe(false);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);

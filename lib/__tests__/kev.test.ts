@@ -1,0 +1,54 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { parseKevCatalog } from "../kev";
+
+beforeEach(() => vi.resetModules());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
+
+describe("parseKevCatalog", () => {
+  it("extracts valid CVE IDs, upper-cased", () => {
+    const ids = parseKevCatalog({
+      vulnerabilities: [
+        { cveID: "CVE-2024-3400" },
+        { cveID: "cve-2021-44228" },
+        { cveID: "not-a-cve" },
+        { cveID: 42 },
+        null,
+      ],
+    });
+    expect([...ids]).toEqual(["CVE-2024-3400", "CVE-2021-44228"]);
+  });
+
+  it("returns an empty set for malformed documents", () => {
+    expect(parseKevCatalog(null).size).toBe(0);
+    expect(parseKevCatalog({ vulnerabilities: "nope" }).size).toBe(0);
+  });
+});
+
+describe("getKevIds", () => {
+  it("loads the catalog once and memoises it", async () => {
+    const fetchMock = vi.fn(async () => Response.json({ vulnerabilities: [{ cveID: "CVE-2024-3400" }] }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { getKevIds } = await import("../kev");
+    expect((await getKevIds()).has("CVE-2024-3400")).toBe(true);
+    await getKevIds();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns an empty set on failure and retries next time", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("", { status: 503 }))
+      .mockResolvedValueOnce(Response.json({ vulnerabilities: [{ cveID: "CVE-2024-3400" }] }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { getKevIds } = await import("../kev");
+
+    expect((await getKevIds()).size).toBe(0);
+    await new Promise((r) => setTimeout(r, 0)); // let the failed memo clear
+    expect((await getKevIds()).has("CVE-2024-3400")).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
