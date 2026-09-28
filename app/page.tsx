@@ -9,6 +9,7 @@ import TrendingTopics, { TrendingStrip } from "./components/TrendingTopics";
 import FeedFailureBanner from "./components/FeedFailureBanner";
 import StatsBanner from "./components/StatsBanner";
 import UpdatedAgo from "./components/UpdatedAgo";
+import AutoRefresh from "./components/AutoRefresh";
 
 // A cold data cache runs the whole pipeline: worst case ~25s (10s feed
 // timeout + retry, then NVD). Don't rely on the platform's default limit.
@@ -28,6 +29,7 @@ export default async function Home() {
             <FeedFailureBanner failedFeeds={failedFeeds} />
             <StatsBanner featured={featured} recent={recent} />
             <UpdatedAgo lastUpdated={lastUpdated} />
+            <AutoRefresh lastUpdated={lastUpdated} />
             <div className="lg:hidden">
               <TrendingStrip topics={trending} />
             </div>

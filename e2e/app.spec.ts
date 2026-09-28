@@ -285,6 +285,25 @@ test("keyboard users can skip to content; nav marks the current page", async ({ 
   await expect(page.locator("a button, a a")).toHaveCount(0);
 });
 
+test("an open tab refreshes its data once it is older than 15 minutes", async ({ page }) => {
+  await page.clock.install();
+  await page.goto("/");
+  await expect(page.locator("article time").first()).toHaveText(/ago|just now/);
+
+  // Fresh data: no refresh request
+  let refreshes = 0;
+  page.on("request", (r) => {
+    if (r.headers()["rsc"] === "1" && new URL(r.url()).pathname === "/") refreshes++;
+  });
+  await page.clock.runFor(5 * 60_000);
+  expect(refreshes).toBe(0);
+
+  // 16 minutes later the next clock tick triggers router.refresh()
+  const refresh = page.waitForRequest((r) => r.headers()["rsc"] === "1" && new URL(r.url()).pathname === "/");
+  await page.clock.runFor(11 * 60_000);
+  await refresh;
+});
+
 test("pressing / focuses search, but not while typing elsewhere", async ({ page }) => {
   await page.goto("/");
   await page.locator("article time").first().waitFor();
