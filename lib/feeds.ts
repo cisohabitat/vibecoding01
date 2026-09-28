@@ -1,5 +1,9 @@
 import { FeedSource } from "./types";
 
+// Vet a new URL with a manual run of the Feed health workflow (feeds input)
+// before adding it: most feeds can't be reached from the dev sandbox.
+// Tried and not usable (2026-09): CSA Singapore (no RSS), ASD/ACSC
+// (times out from cloud runners), MSRC and Mandiant (malformed XML).
 const DEFAULT_FEED_SOURCES: FeedSource[] = [
   // Tier 1 — Government/authoritative
   {
@@ -42,6 +46,23 @@ const DEFAULT_FEED_SOURCES: FeedSource[] = [
     tier: 2,
   },
 
+  // Tier 2 — Regional CERT (APAC) and vendor threat research
+  {
+    name: "HKCERT",
+    url: "https://www.hkcert.org/getrss/security-bulletin",
+    tier: 2,
+  },
+  {
+    name: "Unit 42",
+    url: "https://unit42.paloaltonetworks.com/feed/",
+    tier: 2,
+  },
+  {
+    name: "Cisco Talos",
+    url: "https://blog.talosintelligence.com/rss/",
+    tier: 2,
+  },
+
   // Tier 3 — Additional quality sources
   {
     name: "SecurityWeek",
@@ -66,6 +87,21 @@ const DEFAULT_FEED_SOURCES: FeedSource[] = [
   {
     name: "Recorded Future",
     url: "https://www.recordedfuture.com/feed",
+    tier: 3,
+  },
+  {
+    name: "Microsoft Security Blog",
+    url: "https://www.microsoft.com/en-us/security/blog/feed/",
+    tier: 3,
+  },
+  {
+    name: "Securelist",
+    url: "https://securelist.com/feed/",
+    tier: 3,
+  },
+  {
+    name: "CyberSecAsia",
+    url: "https://www.cybersecasia.net/feed",
     tier: 3,
   },
 ];
