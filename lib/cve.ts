@@ -85,8 +85,9 @@ function remember(id: string, score: Score, at: number) {
 /** Seeds the store with already-known scores (unscored entries are ignored: they may never have been looked up). */
 export function rememberScores(cves: CveInfo[], at: number): void {
   for (const c of cves) {
-    const known = remembered.get(c.id);
-    if (c.cvss !== null && (!known || known.at < at)) remember(c.id, { cvss: c.cvss, severity: c.severity }, at);
+    // Only unknown CVEs: re-seeding must not refresh an entry's age, or a
+    // score would never be rechecked while its story stays on the page
+    if (c.cvss !== null && !remembered.has(c.id)) remember(c.id, { cvss: c.cvss, severity: c.severity }, at);
   }
 }
 

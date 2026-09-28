@@ -79,6 +79,8 @@ export const TIME_OPTIONS = [
 /** Everything the filter bar controls; mirrored in the URL (q, cat, t, f, sort). */
 export interface FilterState {
   search: string;
+  /** Only stories from (or also reported by) this outlet */
+  source: string | null;
   categories: ArticleCategory[];
   timeHours: number | null;
   triage: TriageKey[];
@@ -100,16 +102,18 @@ export function parseFilterQuery(query: string): { state: FilterState; hasFilter
   const cat = params.get("cat");
   const t = params.get("t");
   const f = params.get("f");
+  const src = params.get("src");
   const hours = Number(t);
   return {
     state: {
       search: q ?? "",
+      source: src || null,
       categories: (cat ?? "").split(",").filter(isCategory),
       timeHours: TIME_OPTIONS.some((o) => o.hours === hours) ? hours : null,
       triage: (f ?? "").split(",").filter((k): k is TriageKey => TRIAGE_KEYS.includes(k as TriageKey)),
       sort: params.get("sort") === "top" ? "top" : "new",
     },
-    hasFilters: !!(q || cat || t || f),
+    hasFilters: !!(q || cat || t || f || src),
   };
 }
 
@@ -117,6 +121,7 @@ export function parseFilterQuery(query: string): { state: FilterState; hasFilter
 export function buildFilterQuery(state: FilterState): string {
   const params = new URLSearchParams();
   if (state.search.trim()) params.set("q", state.search.trim());
+  if (state.source) params.set("src", state.source);
   if (state.categories.length > 0) params.set("cat", state.categories.join(","));
   if (state.timeHours) params.set("t", String(state.timeHours));
   if (state.triage.length > 0) params.set("f", state.triage.join(","));
@@ -133,4 +138,9 @@ export function parseSavedCategories(raw: string | null): ArticleCategory[] {
     if (isCategory(parsed)) return [parsed];
   } catch {}
   return [];
+}
+
+/** True if the story is from `source`, or that outlet also reported it. */
+export function fromSource(a: Article, source: string | null): boolean {
+  return !source || a.source === source || (a.alsoReportedBy ?? []).includes(source);
 }

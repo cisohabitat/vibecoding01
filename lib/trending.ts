@@ -47,20 +47,26 @@ const CVE_TERM = /CVE-\d{4}-\d{4,}/gi;
 const SHORT_GENERIC = new Set(["2fa", "mfa", "4g", "5g", "3d", "1st", "2nd", "3rd", "4th", "q1", "q2", "q3", "q4", "h1", "h2"]);
 
 /** Distinct trending terms in a title: CVE IDs plus notable words. */
-export function extractTerms(title: string): Set<string> {
-  const terms = new Set<string>();
-  for (const m of title.match(CVE_TERM) || []) terms.add(m.toUpperCase());
-
-  const words = title
+/** A title's words (lower case, punctuation dropped, CVE IDs removed), in order. */
+export function titleWords(title: string): string[] {
+  return title
     .replace(CVE_TERM, " ")
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, " ")
     .split(/\s+/)
-    .map((w) => w.replace(/^-+|-+$/g, "")); // keep "zero-day", drop dashes
-  for (const w of words) {
+    .map((w) => w.replace(/^-+|-+$/g, "")) // keep "zero-day", drop dashes
+    .filter(Boolean);
+}
+
+export function extractTerms(title: string): Set<string> {
+  const terms = new Set<string>();
+  for (const m of title.match(CVE_TERM) || []) terms.add(m.toUpperCase());
+
+  for (const w of titleWords(title)) {
     // Short words are mostly noise, but short product names mix letters and
-    // digits ("F5", "M365")
-    const shortName = /^(?=.*[a-z])(?=.*\d)[a-z0-9]{2,3}$/.test(w) && !SHORT_GENERIC.has(w);
+    // digits ("F5", "M365"); amounts, ordinals and durations ("10m", "7th", "24h") aren't names
+    const shortName =
+      /^(?=.*[a-z])(?=.*\d)[a-z0-9]{2,3}$/.test(w) && !SHORT_GENERIC.has(w) && !/^\d+(k|m|b|bn|h|st|nd|rd|th)$/.test(w);
     if ((w.length < 4 && !shortName) || /^[\d-]+$/.test(w)) continue;
     if (STOP_WORDS.has(w) || GENERIC_TERMS.has(w)) continue;
     terms.add(w);

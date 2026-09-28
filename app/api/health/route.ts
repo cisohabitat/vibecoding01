@@ -36,6 +36,11 @@ interface Health {
 // Four missed 15-minute refreshes
 const STALE_DATA_MS = 60 * 60 * 1000;
 
+// The data cache only refreshes when read, so after a quiet hour the first
+// check sees old data (and starts the refresh). Data is stale only if the
+// previous check saw the same old data too.
+let previousData: string | null | undefined;
+
 let cached: { at: number; result: Promise<Health> } | null = null;
 
 async function check(): Promise<Health> {
@@ -52,7 +57,9 @@ async function check(): Promise<Health> {
     const feedsDown = failedFeeds.length;
     const feedsUp = total - feedsDown;
     const updated = await dataUpdated;
-    const stale = updated === null || Date.now() - Date.parse(updated) > STALE_DATA_MS;
+    const old = updated === null || Date.now() - Date.parse(updated) > STALE_DATA_MS;
+    const stale = old && previousData === updated;
+    previousData = updated;
     const status = feedsUp === 0 ? "down" : feedsDown > 0 || stale ? "degraded" : "ok";
     return {
       status,

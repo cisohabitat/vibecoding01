@@ -33,6 +33,8 @@ describe("extractTerms", () => {
 
   it("returns each term once", () => {
     expect([...extractTerms("Ivanti Ivanti Ivanti")]).toEqual(["ivanti"]);
+    // Amounts, ordinals and durations aren't names
+    expect([...extractTerms("$10M heist: 7th attack in 24h")]).toEqual(["heist"]);
     // Short product names count when they mix letters and digits
     expect([...extractTerms("F5 patches BIG-IP flaw; M365 tenants hit via 2FA bypass")]).toEqual(["f5", "big-ip", "m365", "tenants"]);
     // Vulnerability vocabulary isn't a name

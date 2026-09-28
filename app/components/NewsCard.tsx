@@ -288,7 +288,7 @@ export default function NewsCard({
 
         <div className="flex items-center flex-wrap gap-2 text-xs">
           <Label
-            filter={filterable ? { search: article.source } : undefined}
+            filter={filterable ? { source: article.source } : undefined}
             label={`${article.source}: show its stories`}
             className={`px-2 py-0.5 rounded border font-medium ${
               tierColors[article.sourceTier] || tierColors[3]

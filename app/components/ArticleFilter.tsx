@@ -6,6 +6,7 @@ import {
   buildFilterQuery,
   CATEGORIES,
   FilterState,
+  fromSource,
   matchesTriage,
   parseFilterQuery,
   parseSavedCategories,
@@ -62,6 +63,7 @@ export default function ArticleFilter({
   const [search, setSearch] = useState("");
   const [categories, setCategories] = useState<ArticleCategory[]>([]);
   const [timeHours, setTimeHours] = useState<number | null>(null);
+  const [source, setSource] = useState<string | null>(null);
   const [triage, setTriage] = useState<TriageKey[]>([]);
   const [sort, setSort] = useState<SortKey>("new");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -106,6 +108,7 @@ export default function ArticleFilter({
     const { state, hasFilters } = parseFilterQuery(window.location.search);
     setSearch(state.search);
     setTimeHours(state.timeHours);
+    setSource(state.source);
     setTriage(state.triage);
     setSort(state.sort);
     // A URL with filters (e.g. a shared link) fully defines the view; the
@@ -127,9 +130,9 @@ export default function ArticleFilter({
 
   // Sync URL when filters change
   useEffect(() => {
-    const query = buildFilterQuery({ search, categories, timeHours, triage, sort });
+    const query = buildFilterQuery({ search, source, categories, timeHours, triage, sort });
     window.history.replaceState(null, "", query ? `?${query}` : window.location.pathname);
-  }, [search, categories, timeHours, triage, sort]);
+  }, [search, source, categories, timeHours, triage, sort]);
 
   // Persist categories to localStorage, but only once the reader has changed
   // them: restoring must not rewrite the saved value, and a shared link's
@@ -170,6 +173,7 @@ export default function ArticleFilter({
       setSearch(f.search ?? "");
       setCategories(f.categories ?? []);
       setTimeHours(f.timeHours ?? null);
+      setSource(f.source ?? null);
       setTriage(f.triage ?? []);
       setSort(f.sort ?? "new");
     }
@@ -188,7 +192,7 @@ export default function ArticleFilter({
 
   const allArticles = useMemo(() => [...featured, ...recent], [featured, recent]);
 
-  const isFiltered = !!(search.trim() || categories.length > 0 || timeHours || triage.length > 0);
+  const isFiltered = !!(search.trim() || source || categories.length > 0 || timeHours || triage.length > 0);
 
   const filtered = useMemo(() => {
     if (!isFiltered) return [];
@@ -198,12 +202,13 @@ export default function ArticleFilter({
 
     const matches = allArticles.filter((a) => {
       if (cutoff && pubTime(a) < cutoff) return false;
+      if (!fromSource(a, source)) return false;
       if (categories.length > 0 && !categories.includes(a.category)) return false;
       if (q && !searchText(a).includes(q)) return false;
       return matchesTriage(a, triage, inStack);
     });
     return sortArticles(matches, sort);
-  }, [allArticles, search, categories, timeHours, triage, sort, isFiltered, now, stackTerms]);
+  }, [allArticles, search, source, categories, timeHours, triage, sort, isFiltered, now, stackTerms]);
 
   // Unread stories published since the last visit (the NEW badge rule)
   const newArticles = useMemo(() => {
@@ -227,6 +232,7 @@ export default function ArticleFilter({
     categoriesChangedByUser.current = false;
     focusResults.current = true;
     setSearch("");
+    setSource(null);
     setCategories([]);
     setTimeHours(null);
     setTriage(["stack"]);
@@ -253,6 +259,7 @@ export default function ArticleFilter({
   function clearAll() {
     categoriesChangedByUser.current = true;
     setSearch("");
+    setSource(null);
     setCategories([]);
     setTimeHours(null);
     setTriage([]);
@@ -298,7 +305,21 @@ export default function ArticleFilter({
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filters">
+          {source && (
+          <p className="flex items-center gap-2 text-xs text-slate-300">
+            Stories from <strong className="text-slate-100">{source}</strong>
+            <button
+              type="button"
+              onClick={() => setSource(null)}
+              aria-label={`Remove source filter: ${source}`}
+              className="px-1.5 rounded-full border border-cyber-600/50 text-slate-400 hover:text-slate-200"
+            >
+              ×
+            </button>
+          </p>
+        )}
+
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filters">
             {CATEGORIES.map((cat) => (
               <button
                 type="button"
@@ -428,7 +449,7 @@ export default function ArticleFilter({
               <ViewModeContext.Provider value={viewMode}>
                 {/* Paginated like the default list; keyed so filter/sort changes start from page 1 */}
                 <NewsListClient
-                  key={JSON.stringify([search.trim(), categories, timeHours, triage, sort, stackTerms])}
+                  key={JSON.stringify([search.trim(), source, categories, timeHours, triage, sort, stackTerms])}
                   articles={filtered}
                 />
               </ViewModeContext.Provider>

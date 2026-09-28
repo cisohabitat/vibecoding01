@@ -163,6 +163,8 @@ describe("promotional posts", () => {
     expect(isPromotional("Friday Squid Blogging: Squid Dissection")).toBe(true);
     expect(isPromotional("Call for Presentations Open for 2026 CISO Forum Virtual Summit")).toBe(true);
     expect(isPromotional("⚡ Weekly Recap: $387M Crypto Hack, Citrix Exploits and More")).toBe(true);
+    expect(isPromotional("This Week in Ransomware: LockBit returns")).toBe(true);
+    expect(isPromotional("Attackers exploited this week in Ivanti EPMM attacks")).toBe(false);
     expect(isPromotional("Ransomware gang hits hospital")).toBe(false);
     expect(isPromotional("Podcasting app leaks user data")).toBe(false);
   });
@@ -186,5 +188,16 @@ describe("merged coverage", () => {
     });
     const { featured } = rankArticles([advisory]);
     expect(featured.map((a) => a.title)).toEqual(["Vendor advisory"]);
+  });
+});
+
+describe("Top Stories window", () => {
+  it("doesn't feature a kept copy older than 48h, however recent its coverage", () => {
+    const old = article({
+      title: "Old advisory",
+      pubDate: new Date(Date.now() - 70 * 3600e3),
+      lastReported: new Date(Date.now() - 1 * 3600e3),
+    });
+    expect(rankArticles([old]).featured).toHaveLength(0);
   });
 });

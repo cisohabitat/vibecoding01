@@ -482,8 +482,13 @@ test("a card's source and category labels show matching stories", async ({ page 
   await expect(page.locator("#filtered-heading")).toBeFocused();
 
   await card(page, "LockBit ransomware").getByRole("button", { name: /^Fixture Feed: show its stories/ }).click();
-  await expect(page.getByRole("searchbox", { name: "Search articles" })).toHaveValue("Fixture Feed");
+  // A source filter, not a text search
+  await expect(page).toHaveURL(/src=Fixture\+Feed/);
+  await expect(page.getByRole("searchbox", { name: "Search articles" })).toHaveValue("");
+  await expect(page.getByText("Stories from Fixture Feed")).toBeVisible();
   await expect(results).toHaveText("23 results");
+  await page.getByRole("button", { name: "Remove source filter: Fixture Feed" }).click();
+  await expect(page).not.toHaveURL(/src=/);
 });
 
 test("labels on the saved page are plain text", async ({ page }) => {

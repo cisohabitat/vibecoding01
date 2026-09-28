@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildFilterQuery,
+  fromSource,
   matchesTriage,
   parseFilterQuery,
   parseSavedCategories,
@@ -80,6 +81,7 @@ describe("filter URL state", () => {
     expect(hasFilters).toBe(true);
     expect(state).toEqual({
       search: "lockbit",
+      source: null,
       categories: ["Ransomware", "APT"],
       timeHours: 24,
       triage: ["kev"],
@@ -89,7 +91,7 @@ describe("filter URL state", () => {
 
   it("treats any filter param, even an invalid one, as defining the view", () => {
     expect(parseFilterQuery("?cat=Bogus")).toEqual({
-      state: { search: "", categories: [], timeHours: null, triage: [], sort: "new" },
+      state: { search: "", source: null, categories: [], timeHours: null, triage: [], sort: "new" },
       hasFilters: true,
     });
     expect(parseFilterQuery("?t=5").state.timeHours).toBeNull();
@@ -101,18 +103,19 @@ describe("filter URL state", () => {
   it("round-trips through the query string", () => {
     const state = {
       search: "  exchange ",
+      source: "Cisco Talos",
       categories: ["Vulnerability" as const],
       timeHours: 6,
       triage: ["cve" as const, "stack" as const],
       sort: "top" as const,
     };
     const query = buildFilterQuery(state);
-    expect(query).toBe("q=exchange&cat=Vulnerability&t=6&f=cve%2Cstack&sort=top");
+    expect(query).toBe("q=exchange&src=Cisco+Talos&cat=Vulnerability&t=6&f=cve%2Cstack&sort=top");
     expect(parseFilterQuery(query).state).toEqual({ ...state, search: "exchange" });
   });
 
   it("omits sort without a filter", () => {
-    expect(buildFilterQuery({ search: "", categories: [], timeHours: null, triage: [], sort: "top" })).toBe("");
+    expect(buildFilterQuery({ search: "", source: null, categories: [], timeHours: null, triage: [], sort: "top" })).toBe("");
   });
 
   it("reads saved categories in both stored formats", () => {
@@ -120,5 +123,20 @@ describe("filter URL state", () => {
     expect(parseSavedCategories('"APT"')).toEqual(["APT"]);
     expect(parseSavedCategories("not json")).toEqual([]);
     expect(parseSavedCategories(null)).toEqual([]);
+  });
+});
+
+describe("fromSource", () => {
+  it("matches the story's own source or an outlet that also reported it", () => {
+    const a = article("Citrix zero-days", [], { source: "CISA Alerts", alsoReportedBy: ["Cisco Talos"] });
+    expect(fromSource(a, null)).toBe(true);
+    expect(fromSource(a, "CISA Alerts")).toBe(true);
+    expect(fromSource(a, "Cisco Talos")).toBe(true);
+    // Not a text match: a story quoting Talos isn't from Talos
+    expect(fromSource(article("Talos researchers warn", [], { source: "The Register" }), "Cisco Talos")).toBe(false);
+  });
+
+  it("is part of the URL state", () => {
+    expect(parseFilterQuery("?src=Cisco+Talos")).toMatchObject({ state: { source: "Cisco Talos" }, hasFilters: true });
   });
 });

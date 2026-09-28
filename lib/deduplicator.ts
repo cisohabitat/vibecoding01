@@ -1,6 +1,6 @@
 import { Article } from "./types";
 import { extractCveIds } from "./cve";
-import { distinctiveNamer, sharesName } from "./names";
+import { distinctiveNamer, sharedNameCount } from "./names";
 
 const STOP_WORDS = new Set([
   "a", "an", "the", "in", "on", "at", "to", "for", "of", "and", "or",
@@ -47,21 +47,32 @@ interface Entry {
   names: Set<string>;
 }
 
+// Posts listing many CVEs (KEV additions, Patch Tuesday, weekly recaps) would
+// swallow every single-CVE story they mention, so CVEs identify a story only
+// when both items name the same few
+const MAX_CVES_FOR_MATCH = 3;
+
 /**
- * Whether two items are the same story reported by different outlets.
- * Same-outlet items are separate posts by definition (series such as
- * "ISC Stormcast For Monday/Friday" share most words), so only different
- * sources merge, and only when published close together: by a shared CVE,
- * shared distinctive names, or similar titles.
+ * Whether two items are the same story reported by different outlets, and
+ * how that was decided. Same-outlet items are separate posts by definition
+ * (series such as "ISC Stormcast For Monday/Friday" share most words), so
+ * only different sources merge, and only when published close together: by
+ * the same CVEs, shared distinctive names, or similar titles.
  */
-function sameStory(a: Entry, b: Entry): boolean {
-  if (a.article.link === b.article.link) return true; // links are also React keys
-  if (a.article.source === b.article.source) return false;
-  if (Math.abs(a.article.pubDate.getTime() - b.article.pubDate.getTime()) > MAX_MERGE_GAP_MS) return false;
-  if (differentCves(a.titleCves, b.titleCves)) return false;
-  if (a.allCves.some((id) => b.allCves.includes(id))) return true;
-  if (sharesName(a.names, b.names, MIN_SHARED_NAMES)) return true;
-  return jaccardSimilarity(a.tokens, b.tokens) >= SIMILARITY_THRESHOLD;
+function sameStory(a: Entry, b: Entry): "link" | "cves" | "title" | null {
+  if (a.article.link === b.article.link) return "link"; // links are also React keys
+  if (a.article.source === b.article.source) return null;
+  if (Math.abs(a.article.pubDate.getTime() - b.article.pubDate.getTime()) > MAX_MERGE_GAP_MS) return null;
+  if (differentCves(a.titleCves, b.titleCves)) return null;
+  if (sameCves(a.allCves, b.allCves)) return "cves";
+  if (sharedNameCount(a.article.title, a.names, b.article.title, b.names) >= MIN_SHARED_NAMES) return "title";
+  return jaccardSimilarity(a.tokens, b.tokens) >= SIMILARITY_THRESHOLD ? "title" : null;
+}
+
+function sameCves(a: string[], b: string[]): boolean {
+  return (
+    a.length > 0 && a.length <= MAX_CVES_FOR_MATCH && a.length === b.length && a.every((id) => b.includes(id))
+  );
 }
 
 /**
@@ -80,39 +91,48 @@ export function deduplicateArticles(articles: Article[]): Article[] {
   });
 
   const namesOf = distinctiveNamer(articles.map((a) => a.title));
+  const entries: Entry[] = sorted.map((article) => ({
+    article,
+    tokens: tokenize(article.title),
+    titleCves: extractCveIds(article.title),
+    allCves: extractCveIds(`${article.title} ${article.description}`),
+    names: namesOf(article.title),
+  }));
 
-  const kept: Entry[] = [];
-
-  for (const article of sorted) {
-    const candidate: Entry = {
-      article,
-      tokens: tokenize(article.title),
-      titleCves: extractCveIds(article.title),
-      allCves: extractCveIds(`${article.title} ${article.description}`),
-      names: namesOf(article.title),
-    };
-    let merged = false;
-
-    for (const entry of kept) {
-      if (sameStory(entry, candidate)) {
-        if (
-          article.source !== entry.article.source &&
-          !entry.article.alsoReportedBy.includes(article.source)
-        ) {
-          entry.article.alsoReportedBy.push(article.source);
-        }
-        if (article.pubDate > (entry.article.lastReported ?? entry.article.pubDate)) {
-          entry.article.lastReported = article.pubDate;
-        }
-        merged = true;
-        break;
-      }
-    }
-
-    if (!merged) {
-      kept.push({ ...candidate, article: { ...article, alsoReportedBy: [...article.alsoReportedBy] } });
+  // Cluster every pair (union-find), so an item joins a story if it matches
+  // any of its coverage, whatever the order. Roots are the lowest index: the
+  // most authoritative, newest copy, which is the one kept.
+  const parent = entries.map((_, i) => i);
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  const byTitle = new Set<number>(); // joined by wording/names, not only by CVEs
+  for (let i = 0; i < entries.length; i++) {
+    for (let j = i + 1; j < entries.length; j++) {
+      const match = sameStory(entries[i], entries[j]);
+      if (!match) continue;
+      const [ri, rj] = [find(i), find(j)];
+      if (ri !== rj) parent[Math.max(ri, rj)] = Math.min(ri, rj);
+      if (match !== "cves") byTitle.add(i).add(j);
     }
   }
 
-  return kept.map((e) => e.article);
+  const groups = new Map<number, number[]>();
+  entries.forEach((_, i) => {
+    const root = find(i);
+    groups.set(root, [...(groups.get(root) ?? []), i]);
+  });
+
+  return [...groups.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([root, members]) => {
+      const kept: Article = { ...entries[root].article, alsoReportedBy: [...entries[root].article.alsoReportedBy] };
+      for (const i of members) {
+        if (i === root) continue;
+        const { source, pubDate } = entries[i].article;
+        if (source !== kept.source && !kept.alsoReportedBy.includes(source)) kept.alsoReportedBy.push(source);
+        // Newer coverage keeps the story current, but only when it's plainly
+        // the same story (a shared CVE can be a new development)
+        if (byTitle.has(i) && pubDate > (kept.lastReported ?? kept.pubDate)) kept.lastReported = pubDate;
+      }
+      return kept;
+    });
 }

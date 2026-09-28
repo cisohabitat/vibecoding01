@@ -72,18 +72,47 @@ describe("GET /api/health", () => {
     expect(await (await GET()).json()).toMatchObject({ status: "down", failedFeeds: ["A", "B", "C"] });
   });
 
-  it("reports stale page data as degraded even when every feed is up", async () => {
+  // Two checks, 61s apart (the memo's lifetime)
+  async function twoChecks() {
+    const { GET } = await import("@/app/api/health/route");
+    const first = await (await GET()).json();
+    vi.useFakeTimers({ now: Date.now() + 61_000 });
+    try {
+      return [first, await (await GET()).json()];
+    } finally {
+      vi.useRealTimers();
+    }
+  }
+
+  it("reports page data that stays stale as degraded, even when every feed is up", async () => {
     fetchAllFeeds.mockResolvedValue({ articles: [], failedFeeds: [] });
     const twoHoursAgo = new Date(Date.now() - 2 * 3600e3).toISOString();
     dataUpdated.at = () => twoHoursAgo;
-    const { GET } = await import("@/app/api/health/route");
-    expect(await (await GET()).json()).toMatchObject({ status: "degraded", feedsDown: 0, dataUpdated: twoHoursAgo });
+    const [first, second] = await twoChecks();
+    // The first check after a quiet spell starts the refresh: not yet degraded
+    expect(first).toMatchObject({ status: "ok", dataUpdated: twoHoursAgo });
+    expect(second).toMatchObject({ status: "degraded", feedsDown: 0, dataUpdated: twoHoursAgo });
   });
 
-  it("reports unreadable page data as degraded", async () => {
+  it("stays ok when the refresh the first check started succeeds", async () => {
+    fetchAllFeeds.mockResolvedValue({ articles: [], failedFeeds: [] });
+    let refreshed = false;
+    dataUpdated.at = () => (refreshed ? new Date().toISOString() : new Date(Date.now() - 2 * 3600e3).toISOString());
+    const { GET } = await import("@/app/api/health/route");
+    expect(await (await GET()).json()).toMatchObject({ status: "ok" });
+    refreshed = true;
+    vi.useFakeTimers({ now: Date.now() + 61_000 });
+    try {
+      expect(await (await GET()).json()).toMatchObject({ status: "ok" });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("reports page data that stays unreadable as degraded", async () => {
     fetchAllFeeds.mockResolvedValue({ articles: [], failedFeeds: [] });
     dataUpdated.at = () => null;
-    const { GET } = await import("@/app/api/health/route");
-    expect(await (await GET()).json()).toMatchObject({ status: "degraded", dataUpdated: null });
+    const [, second] = await twoChecks();
+    expect(second).toMatchObject({ status: "degraded", dataUpdated: null });
   });
 });

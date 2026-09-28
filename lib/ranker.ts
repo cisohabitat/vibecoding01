@@ -67,7 +67,7 @@ const PROMO_TITLE = new RegExp(
     "\\bcall for (presentations|papers|speakers)\\b",
     "\\bisc stormcast\\b", // SANS's daily podcast
     "\\bsquid blogging\\b", // Schneier's weekly off-topic post
-    "\\bweekly recap\\b|\\bweek in review\\b|\\bthis week in\\b", // digests of other stories
+    "\\bweekly recap\\b|\\bweek in review\\b|^\\s*this week in\\b", // digests of other stories
   ].join("|"),
   "i"
 );
@@ -154,9 +154,10 @@ export function rankArticles(
   // Score all articles
   const scored = articles.map((a) => ({ ...a, score: scoreArticle(a, kevIds, epss) }));
 
-  // Split into last 24h (by latest report) and older
+  // Split into last 24h (by latest report, for a kept copy at most 48h old) and older
+  const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
   const last24h = scored
-    .filter((a) => reportedAt(a) >= oneDayAgo)
+    .filter((a) => reportedAt(a) >= oneDayAgo && a.pubDate >= twoDaysAgo)
     .sort((a, b) => b.score - a.score);
 
   // Featured: top 5 from last 24h, at most 2 per source and 1 per topic

@@ -127,8 +127,8 @@ describe("deduplicateArticles across different wording", () => {
 
   it("records when a merged story was last reported", () => {
     const [merged] = deduplicateArticles([
-      article({ title: "Citrix NetScaler zero-days", source: "CISA", sourceTier: 1, pubDate: new Date("2026-01-01T00:00:00Z") }),
-      article({ title: "Citrix NetScaler flaws exploited", source: "B", pubDate: new Date("2026-01-02T06:00:00Z") }),
+      article({ title: "Citrix confirms NetScaler zero-days", source: "CISA", sourceTier: 1, pubDate: new Date("2026-01-01T00:00:00Z") }),
+      article({ title: "Attackers exploit NetScaler flaws, Citrix warns", source: "B", pubDate: new Date("2026-01-02T06:00:00Z") }),
       article({ title: "Citrix NetScaler attacks spread", source: "C", pubDate: new Date("2026-01-01T12:00:00Z") }),
     ]);
     expect(merged.source).toBe("CISA");
@@ -182,5 +182,37 @@ describe("deduplicateArticles across different wording", () => {
       article({ title: "Citrix NetScaler patch guidance", source: "B", pubDate: new Date("2026-01-05T00:00:00Z") }),
     ]);
     expect(farApart).toHaveLength(2);
+  });
+
+  it("doesn't let a post listing many CVEs swallow single-CVE stories", () => {
+    const result = deduplicateArticles([
+      article({
+        title: "CISA Adds Three Known Exploited Vulnerabilities to Catalog",
+        description: "CVE-2026-1111 Fortinet, CVE-2026-2222 Chrome, CVE-2026-3333 Exchange",
+        source: "CISA Alerts",
+        sourceTier: 1,
+      }),
+      article({ title: "Hackers exploit Fortinet FortiOS bug", description: "CVE-2026-1111 ...", source: "BleepingComputer" }),
+      article({ title: "Google fixes eighth Chrome zero-day", description: "CVE-2026-2222 ...", source: "SecurityWeek" }),
+    ]);
+    expect(result).toHaveLength(3);
+  });
+
+  it("counts a two-word name once (different Chrome stories stay apart)", () => {
+    const result = deduplicateArticles([
+      article({ title: "Google Chrome zero-day exploited in attacks", source: "A" }),
+      article({ title: "Google Chrome adds passkey sync for Android users", source: "B" }),
+      ...filler(40),
+    ]);
+    expect(result).toHaveLength(42);
+  });
+
+  it("doesn't keep a story current through a CVE-only match", () => {
+    const [merged] = deduplicateArticles([
+      article({ title: "Vendor advisory", description: "CVE-2026-5555", source: "CISA", sourceTier: 1, pubDate: new Date("2026-01-01T00:00:00Z") }),
+      article({ title: "New attacks reported", description: "CVE-2026-5555", source: "B", pubDate: new Date("2026-01-02T12:00:00Z") }),
+    ]);
+    expect(merged.alsoReportedBy).toEqual(["B"]);
+    expect(merged.lastReported).toBeUndefined();
   });
 });
