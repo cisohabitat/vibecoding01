@@ -33,6 +33,12 @@ export interface Article {
   title: string;
   link: string;
   pubDate: Date;
+  /**
+   * Newest publication among merged duplicates, if later than pubDate: the
+   * story is still current while outlets keep reporting it. Set by the
+   * deduplicator; server-side only (ranking).
+   */
+  lastReported?: Date;
   description: string;
   source: string;
   sourceTier: 1 | 2 | 3;

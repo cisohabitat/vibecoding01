@@ -112,7 +112,11 @@ export async function getCachedArticles(): ReturnType<typeof getArticles> {
   );
   // The data cache stores JSON, so Dates come back as strings
   const revive = (list: typeof data.featured) =>
-    list.map((a) => ({ ...a, pubDate: new Date(a.pubDate) }));
+    list.map((a) => ({
+      ...a,
+      pubDate: new Date(a.pubDate),
+      ...(a.lastReported ? { lastReported: new Date(a.lastReported) } : {}),
+    }));
   return { ...data, featured: revive(data.featured), recent: revive(data.recent) };
 }
 

@@ -145,6 +145,7 @@ describe("promotional posts", () => {
     expect(isPromotional("ISC Stormcast For Monday, September 28th, 2026")).toBe(true);
     expect(isPromotional("Friday Squid Blogging: Squid Dissection")).toBe(true);
     expect(isPromotional("Call for Presentations Open for 2026 CISO Forum Virtual Summit")).toBe(true);
+    expect(isPromotional("⚡ Weekly Recap: $387M Crypto Hack, Citrix Exploits and More")).toBe(true);
     expect(isPromotional("Ransomware gang hits hospital")).toBe(false);
     expect(isPromotional("Podcasting app leaks user data")).toBe(false);
   });
@@ -155,5 +156,18 @@ describe("promotional posts", () => {
     const { featured } = rankArticles([promo, news]);
     expect(featured[0].link).toBe(news.link);
     expect(featured[0].score - featured[1].score).toBe(PROMO_PENALTY);
+  });
+});
+
+describe("merged coverage", () => {
+  it("keeps a story current while outlets keep reporting it", () => {
+    const advisory = article({
+      title: "Vendor advisory",
+      pubDate: new Date(Date.now() - 30 * 3600e3), // outside the 24h window...
+      lastReported: new Date(Date.now() - 2 * 3600e3), // ...but reported again 2h ago
+      alsoReportedBy: ["A", "B"],
+    });
+    const { featured } = rankArticles([advisory]);
+    expect(featured.map((a) => a.title)).toEqual(["Vendor advisory"]);
   });
 });

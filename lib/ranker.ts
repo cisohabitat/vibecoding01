@@ -31,6 +31,11 @@ export function computeKeywordScore(text: string): number {
   return score;
 }
 
+/** When the story was last reported (merged coverage keeps it current). */
+function reportedAt(article: Article): Date {
+  return article.lastReported ?? article.pubDate;
+}
+
 function computeRecencyBoost(pubDate: Date): number {
   const hoursAgo = (Date.now() - pubDate.getTime()) / (1000 * 60 * 60);
   if (hoursAgo < 2) return 3;
@@ -50,7 +55,7 @@ export const SG_BOOST = 1.5;
 export const COVERAGE_BOOST = 0.75;
 /** ...counting at most this many, so wide coverage can't outweigh the threat itself. */
 export const MAX_COVERAGE_SOURCES = 3;
-/** Penalty for promotional and routine posts (webinars, events, daily podcasts): not news. */
+/** Penalty for promotional and routine posts (webinars, events, podcasts, weekly digests): not news. */
 export const PROMO_PENALTY = 5;
 
 const PROMO_TITLE = new RegExp(
@@ -61,6 +66,7 @@ const PROMO_TITLE = new RegExp(
     "\\bcall for (presentations|papers|speakers)\\b",
     "\\bisc stormcast\\b", // SANS's daily podcast
     "\\bsquid blogging\\b", // Schneier's weekly off-topic post
+    "\\bweekly recap\\b|\\bweek in review\\b|\\bthis week in\\b", // digests of other stories
   ].join("|"),
   "i"
 );
@@ -84,7 +90,7 @@ function scoreArticle(article: Article, kevIds: Set<string>, epss: Map<string, E
   const text = article.title + " " + article.description;
   const tierWeight = TIER_WEIGHTS[article.sourceTier] || 1;
   const keywordScore = computeKeywordScore(text);
-  const recencyBoost = computeRecencyBoost(article.pubDate);
+  const recencyBoost = computeRecencyBoost(reportedAt(article));
   const regionBoost = mentionsSingapore(article) ? SG_BOOST : 0;
   const coverageBoost = Math.min(article.alsoReportedBy?.length ?? 0, MAX_COVERAGE_SOURCES) * COVERAGE_BOOST;
   return (
@@ -134,9 +140,9 @@ export function rankArticles(
   // Score all articles
   const scored = articles.map((a) => ({ ...a, score: scoreArticle(a, kevIds, epss) }));
 
-  // Split into last 24h and older
+  // Split into last 24h (by latest report) and older
   const last24h = scored
-    .filter((a) => a.pubDate >= oneDayAgo)
+    .filter((a) => reportedAt(a) >= oneDayAgo)
     .sort((a, b) => b.score - a.score);
 
   // Featured: top 5 from last 24h, at most 2 per source

@@ -111,6 +111,9 @@ export function deduplicateArticles(articles: Article[]): Article[] {
         ) {
           entry.article.alsoReportedBy.push(article.source);
         }
+        if (article.pubDate > (entry.article.lastReported ?? entry.article.pubDate)) {
+          entry.article.lastReported = article.pubDate;
+        }
         merged = true;
         break;
       }

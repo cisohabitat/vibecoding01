@@ -125,6 +125,17 @@ describe("deduplicateArticles across different wording", () => {
     expect(netscaler[0].alsoReportedBy.sort()).toEqual(["SecurityWeek", "The Hacker News"]);
   });
 
+  it("records when a merged story was last reported", () => {
+    const [merged] = deduplicateArticles([
+      article({ title: "Citrix NetScaler zero-days", source: "CISA", sourceTier: 1, pubDate: new Date("2026-01-01T00:00:00Z") }),
+      article({ title: "Citrix NetScaler flaws exploited", source: "B", pubDate: new Date("2026-01-02T06:00:00Z") }),
+      article({ title: "Citrix NetScaler attacks spread", source: "C", pubDate: new Date("2026-01-01T12:00:00Z") }),
+    ]);
+    expect(merged.source).toBe("CISA");
+    expect(merged.pubDate.toISOString()).toBe("2026-01-01T00:00:00.000Z");
+    expect(merged.lastReported?.toISOString()).toBe("2026-01-02T06:00:00.000Z");
+  });
+
   it("merges stories that name the same CVE in their descriptions", () => {
     const result = deduplicateArticles([
       article({ title: "F5 patches BIG-IP zero-day", description: "Tracked as CVE-2026-1111, the flaw...", source: "A" }),
