@@ -78,28 +78,57 @@ export function extractTerms(title: string): Set<string> {
 }
 
 export interface TrendingTopic {
+  /** What a click searches for */
   term: string;
   count: number;
+  /** Display name when a companion term was folded in ("citrix netscaler") */
+  label?: string;
 }
 
 export function computeTrending(articles: Article[], topN = 12): TrendingTopic[] {
   const now = Date.now();
   const cutoff = now - 24 * 60 * 60 * 1000;
-  const counts = new Map<string, number>();
+  const stories = new Map<string, number[]>(); // term → indexes of titles naming it
+  const titles: string[][] = [];
 
   for (const article of articles) {
     if (pubTime(article) < cutoff) continue;
-
+    const i = titles.push(titleWords(article.title)) - 1;
     // Count each term once per article
-    for (const term of extractTerms(article.title)) {
-      counts.set(term, (counts.get(term) || 0) + 1);
-    }
+    for (const term of extractTerms(article.title)) stories.set(term, [...(stories.get(term) ?? []), i]);
   }
 
   // A term needs at least two stories to be a trend
-  return [...counts.entries()]
-    .filter(([, count]) => count >= 2)
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  const trends = [...stories.entries()]
+    .filter(([, list]) => list.length >= 2)
+    .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+
+  // Fold a term into a bigger one when every story naming it names the
+  // other too, right next to it in most of them: "netscaler" (4) into
+  // "citrix" (7) as "citrix netscaler". Searching "citrix" still finds them all.
+  const labels = new Map<string, string>();
+  const folded = new Set<string>();
+  for (const [small, smallList] of [...trends].reverse()) {
+    if (small.startsWith("CVE-")) continue;
+    for (const [big, bigList] of trends) {
+      if (big === small || folded.has(big) || labels.has(big) || big.startsWith("CVE-")) continue;
+      if (bigList.length < smallList.length || !smallList.every((i) => bigList.includes(i))) continue;
+      const order = smallList.map((i) => {
+        const words = titles[i];
+        const at = words.indexOf(big);
+        return words[at + 1] === small ? "after" : words[at - 1] === small ? "before" : null;
+      });
+      const adjacent = order.filter(Boolean).length;
+      if (adjacent * 2 <= smallList.length) continue;
+      const after = order.filter((o) => o === "after").length >= order.filter((o) => o === "before").length;
+      labels.set(big, after ? `${big} ${small}` : `${small} ${big}`);
+      folded.add(small);
+      break;
+    }
+  }
+
+  return trends
+    .filter(([term]) => !folded.has(term))
     .slice(0, topN)
-    .map(([term, count]) => ({ term, count }));
+    .map(([term, list]) => ({ term, count: list.length, ...(labels.has(term) ? { label: labels.get(term) } : {}) }));
 }

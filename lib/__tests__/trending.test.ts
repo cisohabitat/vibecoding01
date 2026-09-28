@@ -60,4 +60,24 @@ describe("computeTrending", () => {
       { term: "ivanti", count: 2 },
     ]);
   });
+
+  it("folds a term into a bigger one it always appears next to", () => {
+    const now = new Date();
+    const story = (title: string) => ({
+      title, link: title, pubDate: now, description: "", source: "T", sourceTier: 2 as const,
+      score: 0, category: "Other" as const, alsoReportedBy: [], cves: [],
+    });
+    const topics = computeTrending([
+      story("Citrix NetScaler zero-days exploited"),
+      story("Attackers hit Citrix NetScaler gateways"),
+      story("Citrix confirms flaws"),
+      story("Prison sentence for soldier"),
+      story("Soldier gets prison time"),
+    ]);
+    const citrix = topics.find((t) => t.term === "citrix");
+    expect(citrix).toEqual({ term: "citrix", count: 3, label: "citrix netscaler" });
+    expect(topics.find((t) => t.term === "netscaler")).toBeUndefined();
+    // Always together but not next to each other: kept apart
+    expect(topics.map((t) => t.term)).toEqual(expect.arrayContaining(["prison", "soldier"]));
+  });
 });

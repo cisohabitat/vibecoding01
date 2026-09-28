@@ -23,7 +23,7 @@ export function TrendingStrip({ topics }: { topics: TrendingTopic[] }) {
         <li className="shrink-0 text-xs font-semibold text-slate-300 uppercase tracking-wider pr-1">
           Trending
         </li>
-        {topics.map(({ term, count }) => (
+        {topics.map(({ term, count, label }) => (
           <li key={term} className="shrink-0">
             <button
               type="button"
@@ -31,7 +31,7 @@ export function TrendingStrip({ topics }: { topics: TrendingTopic[] }) {
               title={`Filter by "${term}"`}
               className="px-3 py-1 text-xs rounded-full border border-cyber-accent/30 text-slate-300 capitalize hover:border-cyber-accent/60 hover:text-cyber-accent transition-colors"
             >
-              {term} <span className="font-mono text-slate-400">{count}</span>
+              {label ?? term} <span className="font-mono text-slate-400">{count}</span>
             </button>
           </li>
         ))}
@@ -54,7 +54,7 @@ export default function TrendingTopics({ topics }: { topics: TrendingTopic[] }) 
         </h2>
       </div>
       <ol className="space-y-2.5">
-        {topics.map(({ term, count }, i) => (
+        {topics.map(({ term, count, label }, i) => (
           <li key={term} className="flex items-center gap-2.5">
             <span className="text-xs font-mono text-slate-500 w-4 shrink-0 text-right" aria-hidden="true">
               {i + 1}
@@ -67,7 +67,7 @@ export default function TrendingTopics({ topics }: { topics: TrendingTopic[] }) 
                   className="text-xs text-slate-300 truncate capitalize hover:text-cyber-accent transition-colors text-left"
                   title={`Filter by "${term}"`}
                 >
-                  {term}
+                  {label ?? term}
                 </button>
                 <span className="text-xs font-mono text-slate-400 ml-2 shrink-0">{count}</span>
               </div>
