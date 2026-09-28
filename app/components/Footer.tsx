@@ -1,10 +1,12 @@
 import { FEED_SOURCES } from "@/lib/feeds";
 
 export default function Footer({ lastUpdated }: { lastUpdated: string }) {
-  const time = new Date(lastUpdated).toLocaleString("en-US", {
+  // Singapore time for the site's audience (a server component, so a fixed
+  // time zone can't mismatch on hydration)
+  const time = new Date(lastUpdated).toLocaleString("en-SG", {
     dateStyle: "medium",
     timeStyle: "short",
-    timeZone: "UTC",
+    timeZone: "Asia/Singapore",
   });
   // Most authoritative first, so the list reads like the ranking
   const sources = [...FEED_SOURCES].sort((a, b) => a.tier - b.tier).map((s) => s.name);
@@ -14,7 +16,7 @@ export default function Footer({ lastUpdated }: { lastUpdated: string }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-400 space-y-1">
         <p>Aggregated from {sources.join(", ")}.</p>
         <p>
-          Last updated: <time dateTime={lastUpdated}>{time} UTC</time> — feeds refresh every 15
+          Last updated: <time dateTime={lastUpdated}>{time} SGT</time> — feeds refresh every 15
           minutes
         </p>
         <p>
