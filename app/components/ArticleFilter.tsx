@@ -71,6 +71,7 @@ export default function ArticleFilter({
   const readRaw = useLocalStorage(READ_KEY);
   const now = useNow();
   const searchRef = useRef<HTMLInputElement>(null);
+  const focusResults = useRef(false);
 
   // Shortcuts, unless the user is typing somewhere: "/" focuses the search
   // box; "j"/"k" move to the next/previous story (its title link, so Enter
@@ -164,6 +165,7 @@ export default function ArticleFilter({
     function handler(e: Event) {
       const f = (e as CustomEvent<Partial<FilterState>>).detail;
       categoriesChangedByUser.current = false;
+      focusResults.current = true;
       setSearch(f.search ?? "");
       setCategories(f.categories ?? []);
       setTimeHours(f.timeHours ?? null);
@@ -173,6 +175,15 @@ export default function ArticleFilter({
     window.addEventListener(FILTER_EVENT, handler);
     return () => window.removeEventListener(FILTER_EVENT, handler);
   }, []);
+
+  // After a stat tile or notice switches the view, move focus to the results
+  // (keyboard and screen-reader users would otherwise stay on the button,
+  // unaware the content below changed)
+  useEffect(() => {
+    if (!focusResults.current || !document.getElementById("filtered-heading")) return;
+    focusResults.current = false;
+    document.getElementById("filtered-heading")?.focus({ preventScroll: true });
+  });
 
   const allArticles = useMemo(() => [...featured, ...recent], [featured, recent]);
 
@@ -199,6 +210,9 @@ export default function ArticleFilter({
     const read = new Set(parseStoredList<string>(READ_KEY, readRaw, isString));
     return allArticles.filter((a) => pubTime(a) > lastVisit && !read.has(a.link));
   }, [allArticles, lastVisit, readRaw]);
+  // "Mark all seen" moves the baseline at least past the newest story, in
+  // case this device's clock is behind the server's
+  const newestTime = useMemo(() => Math.max(0, ...allArticles.map(pubTime)), [allArticles]);
   // ...and those about the reader's stack: worth a notice above the list
   const newInStack = useMemo(
     () => (stackTerms.length === 0 ? 0 : newArticles.filter(watchlistMatcher(stackTerms)).length),
@@ -208,7 +222,9 @@ export default function ArticleFilter({
   // Only the stack filter, newest first: the new stories lead the list
   // (marked NEW), and no other filter can hide them
   function showNewInStack() {
-    categoriesChangedByUser.current = true;
+    // A view change, not a new default: keep the saved categories
+    categoriesChangedByUser.current = false;
+    focusResults.current = true;
     setSearch("");
     setCategories([]);
     setTimeHours(null);
@@ -351,7 +367,7 @@ export default function ArticleFilter({
           <p className="text-xs text-slate-400 px-1">
             <span className="text-cyber-accent font-semibold">{newArticles.length} new</span> since your
             last visit ·{" "}
-            <button type="button" onClick={markAllSeen} className="underline-offset-2 hover:underline hover:text-slate-200">
+            <button type="button" onClick={() => markAllSeen(newestTime)} className="underline-offset-2 hover:underline hover:text-slate-200">
               Mark all seen
             </button>
           </p>
@@ -374,7 +390,7 @@ export default function ArticleFilter({
       {/* Content: filtered view or default server-rendered content */}
       {isFiltered ? (
         <section aria-labelledby="filtered-heading">
-          <h2 id="filtered-heading" className="sr-only">
+          <h2 id="filtered-heading" tabIndex={-1} className="sr-only">
             Filtered articles
           </h2>
           <div className="flex items-center justify-between gap-3 mb-4">

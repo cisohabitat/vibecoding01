@@ -1,4 +1,3 @@
-import { unstable_cache } from "next/cache";
 import { Article, CveInfo, CveSeverity } from "./types";
 import type { EpssScore } from "./epss";
 
@@ -60,63 +59,70 @@ export function pickCvss(metrics: unknown): CvssScore {
   return { cvss: null, severity: null, vectorString: null };
 }
 
-// Scores are kept per CVE for 12 hours across runs, instances and deploys,
-// and the per-run NVD budget (MAX_CVE_LOOKUPS) is spent only on CVEs without
-// a kept score. So coverage fills in over successive runs instead of the
-// same top CVEs being looked up every time. Bump the key version when the
-// stored shape or pickCvss changes.
+// Scores are remembered per CVE in this process, so the per-run NVD budget
+// (MAX_CVE_LOOKUPS) goes to CVEs without one and coverage fills in over
+// successive runs instead of the same top CVEs being looked up every time.
+// The store is fed by our own lookups and by rememberScores() (the pipeline
+// seeds it from its cached result on every read). Not a Next.js cache: the
+// pipeline itself runs inside unstable_cache, where nested caches are
+// write-only.
 
 type Score = Pick<CveInfo, "cvss" | "severity">;
 
-/** Thrown to skip a lookup this run (budget spent, NVD failing): never cached. */
-class LookupSkipped extends Error {}
+// "No score yet" is rechecked sooner: NVD often scores a new CVE within hours
+const RECHECK_UNSCORED_MS = 60 * 60 * 1000;
+const RECHECK_SCORED_MS = 24 * 60 * 60 * 1000;
+const MAX_REMEMBERED = 5000;
 
-let budget = 0;
+const remembered = new Map<string, Score & { at: number }>();
 
-async function lookupScore(cveId: string): Promise<Score> {
-  if (budget <= 0) throw new LookupSkipped("NVD lookup budget spent");
-  budget--;
-  const res = await fetch(`${NVD_API_URL}?cveId=${cveId}`, {
-    headers: nvdHeaders(),
-    next: { revalidate: 3600 },
-    signal: AbortSignal.timeout(5000),
-  });
-  // Unknown to NVD: cache as unscored. Rate limits and outages: retry later.
-  if (res.status === 404) return { cvss: null, severity: null };
-  if (!res.ok) throw new LookupSkipped(`NVD status ${res.status}`);
-  const { cvss, severity } = pickCvss((await res.json()).vulnerabilities?.[0]?.cve?.metrics);
-  return { cvss, severity };
+function remember(id: string, score: Score, at: number) {
+  remembered.delete(id); // re-insert, so the oldest entries are pruned first
+  remembered.set(id, { ...score, at });
+  if (remembered.size > MAX_REMEMBERED) remembered.delete(remembered.keys().next().value!);
 }
 
-const cachedScore = unstable_cache(lookupScore, ["cve-score-v1", NVD_API_URL], {
-  revalidate: 12 * 60 * 60,
-});
-
-async function scoreFor(cveId: string): Promise<Score | null> {
-  try {
-    return await cachedScore(cveId);
-  } catch (err) {
-    if (err instanceof LookupSkipped) return null;
-    // No data cache outside a Next.js request (unit tests, scripts): look up
-    // directly, under the same budget
-    try {
-      return await lookupScore(cveId);
-    } catch {
-      return null;
-    }
+/** Seeds the store with already-known scores (unscored entries are ignored: they may never have been looked up). */
+export function rememberScores(cves: CveInfo[], at: number): void {
+  for (const c of cves) {
+    const known = remembered.get(c.id);
+    if (c.cvss !== null && (!known || known.at < at)) remember(c.id, { cvss: c.cvss, severity: c.severity }, at);
   }
 }
 
-// IDs are scored in priority order, a few at a time, so the budget goes to
-// the most important uncached CVEs first
-const SCORE_CONCURRENCY = 10;
-const MAX_SCORED_IDS = 200;
+/** For tests: forget every remembered score. */
+export function forgetScores(): void {
+  remembered.clear();
+}
+
+function needsLookup(id: string, now: number): boolean {
+  const known = remembered.get(id);
+  if (!known) return true;
+  return now - known.at > (known.cvss === null ? RECHECK_UNSCORED_MS : RECHECK_SCORED_MS);
+}
+
+/** An NVD score, or null if NVD couldn't answer (rate limit, outage, timeout): not remembered. */
+async function lookupScore(cveId: string): Promise<Score | null> {
+  try {
+    const res = await fetch(`${NVD_API_URL}?cveId=${cveId}`, {
+      headers: nvdHeaders(),
+      next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.status === 404) return { cvss: null, severity: null }; // unknown to NVD
+    if (!res.ok) return null;
+    const { cvss, severity } = pickCvss((await res.json()).vulnerabilities?.[0]?.cve?.metrics);
+    return { cvss, severity };
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Attaches CVE info to articles. `articles` must be in priority order
- * (most important first): CVEs without a kept score are looked up in that
- * order, up to MAX_CVE_LOOKUPS per run; the rest stay unscored until a later
- * run. KEV status and EPSS (already fetched in bulk) apply to every ID.
+ * (most important first): CVEs without a remembered score are looked up in
+ * that order, up to MAX_CVE_LOOKUPS per run; the rest stay unscored until a
+ * later run. KEV status and EPSS (already fetched in bulk) apply to every ID.
  */
 export async function enrichWithCves(
   articles: Article[],
@@ -129,18 +135,20 @@ export async function enrichWithCves(
     ids: extractCveIds(a.title + " " + a.description),
   }));
 
-  const ordered = [...new Set(articleCves.flatMap(({ ids }) => ids))].slice(0, MAX_SCORED_IDS);
+  // Look up CVEs without a (fresh enough) remembered score, most important first
+  const now = Date.now();
+  const ordered = [...new Set(articleCves.flatMap(({ ids }) => ids))];
+  const toFetch = ordered.filter((id) => needsLookup(id, now)).slice(0, MAX_CVE_LOOKUPS);
+  const results = await Promise.all(toFetch.map(lookupScore));
+  toFetch.forEach((id, i) => {
+    const score = results[i];
+    if (score) remember(id, score, now);
+  });
 
-  // Kept scores cost nothing; failures leave a CVE unscored without breaking the page
-  budget = MAX_CVE_LOOKUPS;
   const cveMap = new Map<string, CveInfo>();
-  for (let i = 0; i < ordered.length; i += SCORE_CONCURRENCY) {
-    const batch = ordered.slice(i, i + SCORE_CONCURRENCY);
-    const scores = await Promise.all(batch.map(scoreFor));
-    batch.forEach((id, k) => {
-      const score = scores[k];
-      if (score) cveMap.set(id, { id, ...score });
-    });
+  for (const id of ordered) {
+    const known = remembered.get(id);
+    if (known) cveMap.set(id, { id, cvss: known.cvss, severity: known.severity });
   }
 
   return articleCves.map(({ article, ids }) => {

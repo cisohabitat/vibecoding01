@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { enrichWithCves, extractCveIds, MAX_CVE_LOOKUPS, pickCvss } from "../cve";
+import { enrichWithCves, extractCveIds, forgetScores, MAX_CVE_LOOKUPS, pickCvss } from "../cve";
 import { Article } from "../types";
 
 function article(title: string): Article {
@@ -34,6 +34,7 @@ function mockNvd() {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  forgetScores();
 });
 
 describe("extractCveIds", () => {

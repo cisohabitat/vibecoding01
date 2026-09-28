@@ -45,6 +45,8 @@ test("counts known-exploited CVEs and ranks their story first", async ({ page })
   // The tile shows its stories: last 24h, known exploited
   await stat.click();
   await expect(page.getByRole("status").filter({ hasText: "result" })).toHaveText("1 result");
+  // Focus follows to the results, so keyboard/screen-reader users land there
+  await expect(page.locator("#filtered-heading")).toBeFocused();
   await expect(page).toHaveURL(/t=24/);
   await expect(page).toHaveURL(/f=kev/);
   await page.getByRole("group", { name: "Last 24 hours" }).getByRole("button", { name: /Ransomware/ }).click();
@@ -331,9 +333,11 @@ test("a notice counts new stories about your stack since the last visit", async 
     if (!sessionStorage.getItem("cyber-pulse-previous-visit")) {
       localStorage.setItem("cyber-pulse-last-visit", String(Date.now() - 6 * 3600e3));
       localStorage.setItem("cyber-pulse-watchlist", JSON.stringify(["Fortinet", "SonicWall"]));
+      localStorage.setItem("cyber-pulse-category", JSON.stringify(["Vulnerability"]));
     }
   });
   await page.goto("/");
+  const savedCategory = JSON.stringify(["Vulnerability"]);
   const notice = page.getByText("1 new story mentions your stack since your last visit.");
   await expect(notice).toBeVisible();
   await page.getByRole("button", { name: "Show it" }).click();
@@ -342,6 +346,8 @@ test("a notice counts new stories about your stack since the last visit", async 
   await expect(page.locator("article").first()).toContainText("Fortinet");
   await expect(page).toHaveURL(/f=stack/);
   await expect(notice).toHaveCount(0);
+  // A view change: the reader's saved categories are untouched
+  expect(await page.evaluate(() => localStorage.getItem("cyber-pulse-category"))).toBe(savedCategory);
 });
 
 test("filtered results can be sorted and are paginated", async ({ page }) => {

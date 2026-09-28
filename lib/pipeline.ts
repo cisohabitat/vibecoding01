@@ -2,7 +2,7 @@ import { unstable_cache } from "next/cache";
 import { fetchAllFeeds } from "./fetcher";
 import { tagArticles } from "./tagger";
 import { deduplicateArticles } from "./deduplicator";
-import { enrichWithCves, extractCveIds, NVD_API_URL } from "./cve";
+import { enrichWithCves, extractCveIds, NVD_API_URL, rememberScores } from "./cve";
 import { EPSS_URL, fetchEpss } from "./epss";
 import { rankArticles } from "./ranker";
 import { FEED_SOURCES } from "./feeds";
@@ -102,6 +102,14 @@ function cacheKey(): string[] {
 
 export async function getCachedArticles(): ReturnType<typeof getArticles> {
   const data = await cachedPipeline();
+  // Seed the CVSS score store from the cached result, so the next pipeline
+  // run (which this call may have just started in the background) spends its
+  // NVD budget on CVEs without a score. Runs before that run's enrichment,
+  // which waits for every feed first.
+  rememberScores(
+    [...data.featured, ...data.recent].flatMap((a) => a.cves ?? []),
+    Date.parse(data.lastUpdated) || 0
+  );
   // The data cache stores JSON, so Dates come back as strings
   const revive = (list: typeof data.featured) =>
     list.map((a) => ({ ...a, pubDate: new Date(a.pubDate) }));

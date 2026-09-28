@@ -85,9 +85,12 @@ function subscribe(onChange: () => void) {
   };
 }
 
-/** Moves the "new since" baseline to now: clears the NEW badges for this visit. */
-export function markAllSeen(): void {
-  setBaseline(Date.now());
+/**
+ * Moves the "new since" baseline to now (or `atLeast`, e.g. the newest
+ * story's time if this device's clock is behind): clears the NEW badges.
+ */
+export function markAllSeen(atLeast = 0): void {
+  setBaseline(Math.max(Date.now(), atLeast));
   listeners.forEach((l) => l());
 }
 

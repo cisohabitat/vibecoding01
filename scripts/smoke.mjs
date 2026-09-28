@@ -1,10 +1,11 @@
 // Post-deploy smoke test: checks the key pages and APIs of a deployed site.
 // Usage: node scripts/smoke.mjs <base-url>
 // Exits 1 on a real failure. A protected deployment (Vercel Authentication:
-// 401/403, or a redirect to the login page) is reported and skipped, not failed.
+// 401/403, or a redirect to Vercel's login) is reported and skipped, not
+// failed; any other redirect is followed and the final origin tested.
 import { appendFileSync } from "node:fs";
 
-const base = (process.argv[2] ?? "").replace(/\/$/, "");
+let base = (process.argv[2] ?? "").replace(/\/$/, "");
 if (!/^https?:\/\//.test(base)) {
   console.error("Usage: node scripts/smoke.mjs <base-url>");
   process.exit(2);
@@ -32,13 +33,20 @@ function finish() {
   process.exit(failed ? 1 : 0);
 }
 
-const home = await get("/");
+let home = await get("/");
 // Vercel Authentication answers 401/403, or redirects to its login page (200)
-const redirectedAway = new URL(home.res.url).host !== new URL(base).host;
-if (home.res.status === 401 || home.res.status === 403 || redirectedAway) {
-  const why = redirectedAway ? `redirected to ${new URL(home.res.url).host}` : String(home.res.status);
+const final = new URL(home.res.url);
+const toLogin = /(^|\.)vercel\.com$/.test(final.hostname) || /\/(login|sso)\b/.test(final.pathname);
+if (home.res.status === 401 || home.res.status === 403 || toLogin) {
+  const why = toLogin ? `redirected to ${final.host}` : String(home.res.status);
   rows.push(`| ⏭️ | / | ${why}: deployment is protected; set the PRODUCTION_URL repository variable to the public domain |`);
   finish();
+}
+// Any other redirect (e.g. apex → www): test the site where it actually is
+if (final.origin !== new URL(base).origin) {
+  rows.push(`| ℹ️ | redirect | ${base} → ${final.origin} |`);
+  base = final.origin;
+  home = await get("/");
 }
 const csp = home.res.headers.get("content-security-policy") ?? "";
 report("/", home.res.ok && home.body.includes("Cyber Pulse"), `status ${home.res.status}`);
