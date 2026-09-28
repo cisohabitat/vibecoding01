@@ -1,5 +1,6 @@
 import { Article, ArticleCategory } from "./types";
 import { pubTime } from "./dates";
+import { mentionsSingapore } from "./region";
 
 /** Triage filters: narrow to stories that matter for patching. */
 export type TriageKey = "cve" | "kev" | "critical" | "stack";
@@ -42,19 +43,24 @@ export const FILTERED_FEEDS = {
   kev: {
     title: "Cyber Pulse — Known exploited",
     description: "Stories naming a CVE in CISA's Known Exploited Vulnerabilities catalog",
-    triage: ["kev"],
+    matches: (a: Article) => matchesTriage(a, ["kev"]),
   },
   critical: {
     title: "Cyber Pulse — Critical CVEs",
     description: "Stories naming a CVE rated CVSS 9.0 or higher",
-    triage: ["critical"],
+    matches: (a: Article) => matchesTriage(a, ["critical"]),
   },
   cve: {
     title: "Cyber Pulse — CVEs",
     description: "Stories naming a CVE",
-    triage: ["cve"],
+    matches: (a: Article) => matchesTriage(a, ["cve"]),
   },
-} satisfies Record<string, { title: string; description: string; triage: TriageKey[] }>;
+  sg: {
+    title: "Cyber Pulse — Singapore",
+    description: "Stories that mention Singapore",
+    matches: (a: Article) => mentionsSingapore(a),
+  },
+} satisfies Record<string, { title: string; description: string; matches: (a: Article) => boolean }>;
 
 export type FilteredFeedKey = keyof typeof FILTERED_FEEDS;
 

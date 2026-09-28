@@ -668,6 +668,10 @@ test("filtered RSS feeds carry only matching stories", async ({ request }) => {
   const critical = await (await request.get("/api/feed/critical")).text();
   expect(critical.match(/<item>/g)).toHaveLength(3);
 
+  const sg = await (await request.get("/api/feed/sg")).text();
+  expect(sg).toContain("Police dismantle bulletproof hosting provider");
+  expect(sg.match(/<item>/g)).toHaveLength(1);
+
   expect((await request.get("/api/feed/nope")).status()).toBe(404);
 });
 

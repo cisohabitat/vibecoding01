@@ -1,4 +1,4 @@
-import { FILTERED_FEEDS, FilteredFeedKey, matchesTriage, sortArticles } from "@/lib/filters";
+import { FILTERED_FEEDS, FilteredFeedKey, sortArticles } from "@/lib/filters";
 import { getArticles } from "@/lib/pipeline";
 import { buildRss } from "@/lib/rss";
 import { siteUrl } from "@/lib/site";
@@ -25,7 +25,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ filter:
 
   const { featured, recent, lastUpdated } = await getArticles();
   const articles = sortArticles(
-    [...featured, ...recent].filter((a) => matchesTriage(a, feed.triage)),
+    [...featured, ...recent].filter(feed.matches),
     "new"
   );
   const xml = buildRss(articles, lastUpdated, siteUrl(), {

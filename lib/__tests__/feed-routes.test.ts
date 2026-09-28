@@ -65,6 +65,16 @@ describe("GET /api/feed/[filter]", () => {
     expect(titles(await (await call("cve")).text())).toEqual(["Exploited bug", "Newer medium", "Older critical"]);
   });
 
+  it("has a Singapore feed", async () => {
+    data.value = {
+      featured: [article("Singapore bank phished")],
+      recent: [article("Unrelated")],
+      lastUpdated: "2026-09-28T00:00:00.000Z",
+      failedFeeds: [],
+    };
+    expect(titles(await (await call("sg")).text())).toEqual(["Singapore bank phished"]);
+  });
+
   it("names its own channel and self link", async () => {
     const xml = await (await call("kev")).text();
     expect(xml).toContain("<title>Cyber Pulse — Known exploited</title>");
@@ -74,6 +84,6 @@ describe("GET /api/feed/[filter]", () => {
   it("404s unknown filters and lists the static ones", async () => {
     expect((await call("stack")).status).toBe(404);
     const { generateStaticParams } = await import("@/app/api/feed/[filter]/route");
-    expect(generateStaticParams()).toEqual([{ filter: "kev" }, { filter: "critical" }, { filter: "cve" }]);
+    expect(generateStaticParams()).toEqual([{ filter: "kev" }, { filter: "critical" }, { filter: "cve" }, { filter: "sg" }]);
   });
 });

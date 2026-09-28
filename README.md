@@ -57,7 +57,7 @@ nonce.
 | Path | Description |
 | --- | --- |
 | `/api/feed.xml` | Ranked articles as RSS 2.0 |
-| `/api/feed/kev`, `/api/feed/critical`, `/api/feed/cve` | RSS of only known-exploited, CVSS 9+ or CVE stories (for a reader or chat channel) |
+| `/api/feed/kev`, `/api/feed/critical`, `/api/feed/cve`, `/api/feed/sg` | RSS of only known-exploited, CVSS 9+, CVE or Singapore stories (for a reader or chat channel) |
 | `/api/feed.json` | Ranked articles as JSON: `{ lastUpdated, count, failedFeeds, featured, recent }` (CORS-enabled); each article's `cves` carry `cvss`, `severity`, `kev` and `epss`/`epssPercentile` where known |
 | `/api/health` | Feed health: `{ status, feedsUp, feedsDown, failedFeeds, kev, dataUpdated, lastCheck }` (at most ~60s old); `degraded` if a feed is down or the page data is over an hour old |
 | `/api/cve/:id` | CVE details from the NVD plus KEV status and EPSS (cached 1h); only CVEs in current stories |

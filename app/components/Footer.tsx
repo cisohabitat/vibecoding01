@@ -33,6 +33,10 @@ export default function Footer({ lastUpdated }: { lastUpdated: string }) {
           <a href="/api/feed/critical" className="text-cyber-accent hover:underline">
             CVSS 9+
           </a>
+          {" · "}
+          <a href="/api/feed/sg" className="text-cyber-accent hover:underline">
+            Singapore
+          </a>
           {/* eslint-enable @next/next/no-html-link-for-pages */}
         </p>
         <p className="text-xs">
