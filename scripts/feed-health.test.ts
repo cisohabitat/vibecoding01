@@ -7,6 +7,7 @@ import { expect, it } from "vitest";
 import { fetchAllFeeds } from "@/lib/fetcher";
 import { FEED_SOURCES } from "@/lib/feeds";
 import { tagArticles } from "@/lib/tagger";
+import { computeTrending } from "@/lib/trending";
 
 it("every feed can be fetched and parsed", async () => {
   const { articles, failedFeeds } = await fetchAllFeeds();
@@ -36,7 +37,8 @@ it("every feed can be fetched and parsed", async () => {
     .slice(0, 40)
     .map((a) => `- ${a.title.replace(/[|\n]/g, " ")} (${a.source})`)
     .join("\n");
-  const tagging = `Categories: ${mix}\n\nSample of untagged titles:\n\n${untagged}`;
+  const trending = computeTrending(tagged, 20).map((t) => `${t.term} ${t.count}`).join(" · ");
+  const tagging = `Categories: ${mix}\n\nTrending: ${trending}\n\nSample of untagged titles:\n\n${untagged}`;
 
   console.log(report);
   console.log(tagging);

@@ -25,6 +25,16 @@ const GENERIC_TERMS = new Set([
   "discovered", "targets", "targeting", "campaign", "news", "issue",
   "issues", "fixes", "fixed", "bugs", "risk", "risks", "linked", "online",
   "zero-day", "zero-days", "0-day", "malware", "breach", "ransomware",
+  // Vulnerability and incident vocabulary (common verbs and nouns, not names)
+  "bypass", "remote", "access", "code", "execution", "authentication",
+  "privilege", "escalation", "vulnerable", "takeover", "allows", "exposed",
+  "exposes", "leak", "leaks", "leaked", "stolen", "steal", "steals", "hits",
+  "active", "actively", "wild", "phishing", "spyware", "botnet", "backdoor",
+  "support", "system", "systems", "server", "servers", "device", "devices",
+  "network", "networks", "software", "service", "services", "tool", "tools",
+  "customer", "customers", "company", "companies", "organizations", "firms",
+  "gang", "gangs", "group", "groups", "actor", "actors", "release", "released",
+  "version", "latest", "major", "global", "warning", "alert", "advisory",
 ]);
 
 const CVE_TERM = /CVE-\d{4}-\d{4,}/gi;

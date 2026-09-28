@@ -33,6 +33,9 @@ describe("extractTerms", () => {
 
   it("returns each term once", () => {
     expect([...extractTerms("Ivanti Ivanti Ivanti")]).toEqual(["ivanti"]);
+    // Vulnerability vocabulary isn't a name
+    expect([...extractTerms("SonicWall firewall bug allows remote takeover")]).toEqual(["sonicwall", "firewall"]);
+    expect([...extractTerms("Phishing kits bypass Okta authentication")]).toEqual(["kits", "okta"]);
   });
 });
 
