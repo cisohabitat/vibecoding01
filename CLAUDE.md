@@ -85,6 +85,7 @@ e2e/
 
 - The page is a **server component**; interactive pieces (cards, filters, trending) are client components.
 - **Pages render per request** (root layout calls `await connection()`) because the CSP nonce from `proxy.ts` only exists at request time; static HTML would carry un-nonced, blocked scripts. Don't add `revalidate`/static rendering to pages. Rendering is cheap because pages read `getCachedArticles()`: the pipeline result lives in Next's data cache for 15 min (`unstable_cache`, keyed by deployment + feed list + NVD endpoint, since the cache outlives builds/deploys; Dates are revived after JSON round-tripping). Feeds and NVD are hit at most once per 15 min, not per view.
+- Routes that can run the pipeline (page, feed routes, health, CVE API) set `maxDuration = 60`: a cold data cache can take ~25s (feed timeout + retry, then NVD), more than some platform defaults.
 - `/api/feed.json` and `/api/feed.xml` stay ISR (`revalidate = 900`) and call `getArticles()` directly.
 - If **every** feed fails, `getArticles()` throws `AllFeedsFailedError` so the previous cached data / ISR output keeps being served instead of an empty result (except during `next build`, detected via `NEXT_PHASE`, which renders the empty state).
 - RSS feeds are fetched concurrently via `Promise.allSettled` — individual feed failures don't break the page. Failed feed names are surfaced via `FeedFailureBanner` when ≥2 feeds are down.

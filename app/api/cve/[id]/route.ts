@@ -4,6 +4,10 @@ import { getKevIds } from "@/lib/kev";
 import { getKnownCveIds } from "@/lib/pipeline";
 import { safeLink } from "@/lib/url";
 
+// A cold data cache runs the whole pipeline: worst case ~25s (10s feed
+// timeout + retry, then NVD). Don't rely on the platform's default limit.
+export const maxDuration = 60;
+
 export interface CveDetail {
   id: string;
   description: string;

@@ -2,6 +2,10 @@ import { getArticles } from "@/lib/pipeline";
 import { buildRss } from "@/lib/rss";
 import { siteUrl } from "@/lib/site";
 
+// A cold data cache runs the whole pipeline: worst case ~25s (10s feed
+// timeout + retry, then NVD). Don't rely on the platform's default limit.
+export const maxDuration = 60;
+
 export const revalidate = 900;
 
 export async function GET() {

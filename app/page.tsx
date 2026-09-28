@@ -10,6 +10,10 @@ import FeedFailureBanner from "./components/FeedFailureBanner";
 import StatsBanner from "./components/StatsBanner";
 import UpdatedAgo from "./components/UpdatedAgo";
 
+// A cold data cache runs the whole pipeline: worst case ~25s (10s feed
+// timeout + retry, then NVD). Don't rely on the platform's default limit.
+export const maxDuration = 60;
+
 export default async function Home() {
   const { featured, recent, lastUpdated, failedFeeds } = await getCachedArticles();
   const trending = computeTrending([...featured, ...recent]);

@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { fetchAllFeeds } from "@/lib/fetcher";
 import { FEED_SOURCES } from "@/lib/feeds";
 
+// A cold data cache runs the whole pipeline: worst case ~25s (10s feed
+// timeout + retry, then NVD). Don't rely on the platform's default limit.
+export const maxDuration = 60;
+
 // Rendered per request (ISR's stale-while-revalidate would hand a monitor
 // the *previous* check's result). Checking fetches every feed, so results
 // are memoised for 60s per instance; the CDN may cache a response only for
