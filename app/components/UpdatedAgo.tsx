@@ -2,7 +2,7 @@
 
 import { useNow } from "./useNow";
 
-/** "Updated 5m ago" for the page's data; client-only so it can't mismatch the cached HTML. */
+/** "Updated 5m ago" for the page's data; client-only so it can't mismatch the server HTML. */
 export default function UpdatedAgo({ lastUpdated }: { lastUpdated: string }) {
   const now = useNow();
   const updated = Date.parse(lastUpdated);

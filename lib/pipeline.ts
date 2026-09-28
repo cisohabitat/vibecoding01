@@ -42,9 +42,9 @@ let memo: { at: number; result: ReturnType<typeof runPipeline> } | null = null;
 async function runPipeline() {
   const { articles: raw, failedFeeds } = await fetchAllFeeds();
 
-  // If every feed failed (network outage, egress block), throwing makes ISR
-  // keep serving the last good page instead of caching an empty one for 15
-  // minutes. During `next build` there's no previous page, so render the
+  // If every feed failed (network outage, egress block), throwing makes the
+  // data cache (page) and ISR (feed routes) keep serving the last good result
+  // instead of caching an empty one for 15 minutes. During `next build` there's no previous page, so render the
   // empty state (with the failure banner) instead of failing the build.
   if (
     failedFeeds.length === FEED_SOURCES.length &&

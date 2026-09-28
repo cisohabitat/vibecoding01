@@ -3,8 +3,9 @@
 import { useSyncExternalStore } from "react";
 
 // A shared clock for relative times ("5m ago", BREAKING). The server snapshot
-// is null so ISR-cached HTML never bakes in a time that disagrees with the
-// client at hydration; after hydration it ticks once a minute.
+// is null so server-rendered HTML never bakes in a time that disagrees with
+// the client at hydration (a minute can tick over between the two); after
+// hydration it ticks once a minute.
 
 const TICK_MS = 60_000;
 
