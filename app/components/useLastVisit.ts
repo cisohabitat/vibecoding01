@@ -85,6 +85,12 @@ function subscribe(onChange: () => void) {
   };
 }
 
+/** Moves the "new since" baseline to now: clears the NEW badges for this visit. */
+export function markAllSeen(): void {
+  setBaseline(Date.now());
+  listeners.forEach((l) => l());
+}
+
 function getServerSnapshot(): null {
   return null;
 }

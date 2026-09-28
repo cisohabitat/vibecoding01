@@ -197,6 +197,15 @@ test("marks articles published since the last visit as NEW", async ({ page }) =>
   // Still marked after a reload in the same session
   await page.reload();
   await expect(card(page, "Attackers adapt").getByText("NEW", { exact: true })).toBeVisible();
+
+  // 10 min, 57 min and 1h44m old: three new stories, which can be dismissed
+  await expect(page.getByText("3 new since your last visit")).toBeVisible();
+  await page.getByRole("button", { name: "Mark all seen" }).click();
+  await expect(page.getByText("NEW", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("since your last visit")).toHaveCount(0);
+  await page.reload();
+  await page.locator("article time").first().waitFor();
+  await expect(page.getByText("NEW", { exact: true })).toHaveCount(0);
 });
 
 test("the visit is recorded when the page is hidden, not when it opens", async ({ page }) => {

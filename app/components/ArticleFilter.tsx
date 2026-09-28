@@ -19,7 +19,7 @@ import { useNow } from "./useNow";
 import { pubTime } from "@/lib/dates";
 import { parseWatchlist, WATCHLIST_KEY, watchlistMatcher } from "@/lib/watchlist";
 import { parseStoredList, useLocalStorage } from "./useLocalStorage";
-import { useLastVisit } from "./useLastVisit";
+import { markAllSeen, useLastVisit } from "./useLastVisit";
 import { isString, READ_KEY } from "./NewsCard";
 import StackEditor from "./StackEditor";
 
@@ -175,14 +175,17 @@ export default function ArticleFilter({
     return sortArticles(matches, sort);
   }, [allArticles, search, categories, timeHours, triage, sort, isFiltered, now, stackTerms]);
 
-  // Unread stories about the reader's stack published since their last
-  // visit (the NEW badge rule): worth a notice above the list
-  const newInStack = useMemo(() => {
-    if (lastVisit === null || stackTerms.length === 0) return 0;
+  // Unread stories published since the last visit (the NEW badge rule)
+  const newArticles = useMemo(() => {
+    if (lastVisit === null) return [];
     const read = new Set(parseStoredList<string>(READ_KEY, readRaw, isString));
-    const inStack = watchlistMatcher(stackTerms);
-    return allArticles.filter((a) => pubTime(a) > lastVisit && !read.has(a.link) && inStack(a)).length;
-  }, [allArticles, lastVisit, readRaw, stackTerms]);
+    return allArticles.filter((a) => pubTime(a) > lastVisit && !read.has(a.link));
+  }, [allArticles, lastVisit, readRaw]);
+  // ...and those about the reader's stack: worth a notice above the list
+  const newInStack = useMemo(
+    () => (stackTerms.length === 0 ? 0 : newArticles.filter(watchlistMatcher(stackTerms)).length),
+    [newArticles, stackTerms]
+  );
 
   // Only the stack filter, newest first: the new stories lead the list
   // (marked NEW), and no other filter can hide them
@@ -325,6 +328,16 @@ export default function ArticleFilter({
         </div>
 
         {editingStack && <StackEditor id="stack-editor" terms={stackTerms} />}
+
+        {newArticles.length > 0 && (
+          <p className="text-xs text-slate-400 px-1">
+            <span className="text-cyber-accent font-semibold">{newArticles.length} new</span> since your
+            last visit ·{" "}
+            <button type="button" onClick={markAllSeen} className="underline-offset-2 hover:underline hover:text-slate-200">
+              Mark all seen
+            </button>
+          </p>
+        )}
 
         {newInStack > 0 && !triage.includes("stack") && (
           <p className="flex items-start gap-2 text-sm text-slate-300 rounded-lg border border-cyber-blue/40 bg-cyber-blue/10 px-3 py-2">
