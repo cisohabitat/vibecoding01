@@ -1,7 +1,7 @@
 // Post-deploy smoke test: checks the key pages and APIs of a deployed site.
 // Usage: node scripts/smoke.mjs <base-url>
 // Exits 1 on a real failure. A protected deployment (Vercel Authentication:
-// 401/403 on the first page) is reported and skipped, not failed.
+// 401/403, or a redirect to the login page) is reported and skipped, not failed.
 import { appendFileSync } from "node:fs";
 
 const base = (process.argv[2] ?? "").replace(/\/$/, "");
@@ -33,8 +33,11 @@ function finish() {
 }
 
 const home = await get("/");
-if (home.res.status === 401 || home.res.status === 403) {
-  rows.push(`| ⏭️ | / | ${home.res.status}: deployment is protected; set the PRODUCTION_URL repository variable to the public domain |`);
+// Vercel Authentication answers 401/403, or redirects to its login page (200)
+const redirectedAway = new URL(home.res.url).host !== new URL(base).host;
+if (home.res.status === 401 || home.res.status === 403 || redirectedAway) {
+  const why = redirectedAway ? `redirected to ${new URL(home.res.url).host}` : String(home.res.status);
+  rows.push(`| ⏭️ | / | ${why}: deployment is protected; set the PRODUCTION_URL repository variable to the public domain |`);
   finish();
 }
 const csp = home.res.headers.get("content-security-policy") ?? "";
