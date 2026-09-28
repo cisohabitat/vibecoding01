@@ -56,13 +56,40 @@ describe("deduplicateArticles", () => {
     expect(result[0].alsoReportedBy).toEqual(["B"]);
   });
 
-  it("does not list the primary source as also reporting", () => {
+  it("never merges two posts from the same outlet by similarity", () => {
     const result = deduplicateArticles([
       article({ title: "Chrome update fixes exploited zero-day flaw", source: "BleepingComputer" }),
       article({ title: "Chrome update fixes exploited zero-day", source: "BleepingComputer" }),
     ]);
+    expect(result).toHaveLength(2);
+    expect(result.every((a) => a.alsoReportedBy.length === 0)).toBe(true);
+  });
+
+  it("keeps recurring series apart", () => {
+    const day = 24 * 3600e3;
+    const t = Date.parse("2026-09-10T17:00:00Z");
+    const result = deduplicateArticles([
+      // Same outlet, monthly series
+      article({ title: "Microsoft September 2026 Patch Tuesday fixes 80 flaws, 2 zero-days", source: "BleepingComputer", pubDate: new Date(t) }),
+      article({ title: "Microsoft August 2026 Patch Tuesday fixes 90 flaws, 3 zero-days", source: "BleepingComputer", pubDate: new Date(t - 28 * day) }),
+      // Same outlet, daily podcast
+      article({ title: "ISC Stormcast For Monday, September 7th, 2026", source: "SANS", pubDate: new Date(t - 3 * day) }),
+      article({ title: "ISC Stormcast For Friday, September 4th, 2026", source: "SANS", pubDate: new Date(t - 6 * day) }),
+      // Different outlets, similar wording, a week apart
+      article({ title: "CISA adds two known exploited vulnerabilities to catalog", source: "CISA Alerts", sourceTier: 1, pubDate: new Date(t) }),
+      article({ title: "CISA adds two known exploited vulnerabilities to its catalog", source: "SecurityWeek", sourceTier: 3, pubDate: new Date(t - 7 * day) }),
+    ]);
+    expect(result).toHaveLength(6);
+  });
+
+  it("merges the same story from different outlets within 72 hours", () => {
+    const t = Date.parse("2026-09-10T17:00:00Z");
+    const result = deduplicateArticles([
+      article({ title: "Ivanti Connect Secure zero-day exploited in attacks", source: "A", pubDate: new Date(t) }),
+      article({ title: "Ivanti Connect Secure zero-day exploited in the wild attacks", source: "B", pubDate: new Date(t - 48 * 3600e3) }),
+    ]);
     expect(result).toHaveLength(1);
-    expect(result[0].alsoReportedBy).toEqual([]);
+    expect(result[0].alsoReportedBy).toEqual(["B"]);
   });
 
   it("does not mutate the input articles", () => {

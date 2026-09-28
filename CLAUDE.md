@@ -65,7 +65,7 @@ lib/
   keywords.ts       — Word-boundary keyword matching shared by ranker and tagger
   ranker.ts         — Relevance scoring (tier weight + keyword match + recency boost)
   tagger.ts         — Keyword-based category tagging (first-match rules)
-  deduplicator.ts   — Deduplication by identical link or title similarity (never merges titles naming different CVEs); keeps the lowest-tier, newest copy
+  deduplicator.ts   — Deduplication by identical link, or title similarity across *different* outlets within 72h (never merges titles naming different CVEs); keeps the lowest-tier, newest copy
   cve.ts            — CVE ID extraction + CVSS enrichment via NVD API (capped lookups, optional NVD_API_KEY; NVD_API_URL override for tests); flags KEV CVEs
   kev.ts            — CISA Known Exploited Vulnerabilities catalog IDs (6h memo, empty set on failure; KEV_URL override for tests)
   trending.ts       — Trending terms (names, CVE IDs) from last-24h titles; ≥2 stories, generic words excluded
