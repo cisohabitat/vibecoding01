@@ -51,6 +51,16 @@ describe("assignCategory", () => {
     expect(assignCategory("Someone went shopping in ASUS's eShop – for customer data")).toBe("Data Breach");
   });
 
+  it("lets broad words decide only when nothing specific matches (live misfires)", () => {
+    expect(assignCategory("Cloudflare fixes Containers cross-tenant flaw exposing customer data")).toBe("Vulnerability");
+    expect(assignCategory("Carbonato Botnet Compromises Docker Hosts to Deploy AI Agent")).toBe("Malware");
+    expect(assignCategory("Compromised GitHub Actions Resumed Executing Mini Shai-Hulud Malware")).toBe("Malware");
+    expect(assignCategory("Microsoft patches Exchange bug used by ransomware gangs")).toBe("Ransomware");
+    // ...and still decide when nothing else does
+    expect(assignCategory("Campaign Compromises Seven Microsoft 365 Accounts")).toBe("Data Breach");
+    expect(assignCategory("Vendor ships patch for router")).toBe("Vulnerability");
+  });
+
   it("tags AI security stories, after the threat categories", () => {
     expect(assignCategory("Zero Trust for AI Agents Starts With Fixing Zero Visibility")).toBe("AI");
     expect(assignCategory("OpenAI's agents uploaded user images to third-party sites")).toBe("AI");

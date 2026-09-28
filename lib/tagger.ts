@@ -1,8 +1,11 @@
 import { Article, ArticleCategory } from "./types";
 import { compileKeywords } from "./keywords";
 
-// Rules are checked in order — first match wins
-const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> = [
+// Rules are checked in order — first match wins. `weak` keywords are broad
+// ("compromised", "patch", "malicious") and only decide when no rule's
+// regular keywords match: "Botnet compromises Docker hosts" is Malware, and
+// "Campaign compromises 365 accounts" a Data Breach.
+const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[]; weak?: string[] }> = [
   {
     category: "Ransomware",
     keywords: [
@@ -42,10 +45,11 @@ const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> =
   {
     category: "Data Breach",
     keywords: [
-      "breach", "data breach", "data leak", "leaked", "exposed records", "stolen data", "exfiltrate", "exfiltration",
-      // Not "compromise": "business email compromise" is phishing/fraud
-      "data theft", "theft", "stole", "compromised", "compromises", "customer data",
+      "breach", "data breach", "data leak", "exposed records", "stolen data", "exfiltrate", "exfiltration",
+      "data theft",
     ],
+    // Not "compromise": "business email compromise" is phishing/fraud
+    weak: ["leaked", "theft", "stole", "compromised", "compromises", "customer data"],
   },
   {
     category: "Phishing",
@@ -58,19 +62,21 @@ const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> =
     category: "Vulnerability",
     keywords: [
       "vulnerability", "vulnerabilities", "vulnerable", "cve-", "zero-day", "0day", "0-day", "exploit", "rce",
-      "remote code execution", "code execution", "patch tuesday", "security flaw", "flaw", "flaws", "bug", "bugs",
-      "patch", "hotfix", "security update", "security updates", "out-of-band", "privilege escalation",
-      "authentication bypass", "auth bypass", "bypass", "sql injection", "command injection", "path traversal",
+      "remote code execution", "code execution", "patch tuesday", "security flaw", "flaw", "flaws",
+      "hotfix", "security update", "security updates", "out-of-band", "privilege escalation",
+      "authentication bypass", "auth bypass", "sql injection", "command injection", "path traversal",
       "cross-site scripting", "xss", "buffer overflow", "memory corruption", "use-after-free",
     ],
+    weak: ["bug", "bugs", "patch", "bypass"],
   },
   {
     category: "Malware",
     keywords: [
       "malware", "trojan", "backdoor", "rootkit", "spyware", "worm", "botnet", "infostealer", "stealer", "rat",
-      "wiper", "keylogger", "loader", "cryptominer", "cryptojacking", "malicious package", "typosquat",
-      "malicious", "payload", "supply chain attack", "supply-chain attack", "shai-hulud", "edr evasion", "edr killer",
+      "wiper", "keylogger", "cryptominer", "cryptojacking", "malicious package", "typosquat",
+      "supply chain attack", "supply-chain attack", "shai-hulud", "edr evasion", "edr killer",
     ],
+    weak: ["malicious", "payload", "loader"],
   },
   {
     // After the threat categories: "Prompt injection flaw in Copilot" is a Vulnerability
@@ -95,13 +101,14 @@ const CATEGORY_RULES: Array<{ category: ArticleCategory; keywords: string[] }> =
 const COMPILED_RULES = CATEGORY_RULES.map((rule) => ({
   category: rule.category,
   patterns: compileKeywords(rule.keywords),
+  weak: compileKeywords(rule.weak ?? []),
 }));
 
 export function assignCategory(text: string): ArticleCategory {
   const lower = text.toLowerCase();
-  for (const rule of COMPILED_RULES) {
-    if (rule.patterns.some((re) => re.test(lower))) {
-      return rule.category;
+  for (const strength of ["patterns", "weak"] as const) {
+    for (const rule of COMPILED_RULES) {
+      if (rule[strength].some((re) => re.test(lower))) return rule.category;
     }
   }
   return "Other";
