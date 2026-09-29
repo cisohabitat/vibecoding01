@@ -283,14 +283,14 @@ export default function ArticleFilter({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search articles…  ( / )"
-              className="flex-1 bg-cyber-800 border border-cyber-600/50 rounded-lg px-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyber-accent/50 transition-colors"
+              className="flex-1 min-w-0 bg-cyber-800 border border-cyber-600/50 rounded-lg px-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyber-accent/50 transition-colors"
             />
             <button
               type="button"
               onClick={toggleViewMode}
               title={viewMode === "grid" ? "Switch to list view" : "Switch to grid view"}
               aria-label={viewMode === "grid" ? "Switch to list view" : "Switch to grid view"}
-              className="px-3 py-2 text-xs text-slate-400 border border-cyber-600/50 rounded-lg hover:border-cyber-500 hover:text-slate-200 transition-colors font-mono"
+              className="px-3 py-2 text-xs text-slate-400 border border-cyber-600/50 rounded-lg hover:border-cyber-500 hover:text-slate-200 transition-colors font-mono whitespace-nowrap"
             >
               {viewMode === "grid" ? "≡ List" : "⊞ Grid"}
             </button>
