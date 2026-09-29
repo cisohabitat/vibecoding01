@@ -46,7 +46,7 @@ app/
   components/
     Header.tsx              — Skip link + sticky header with branding
     NavLinks.tsx            — Header nav with aria-current for the active page [client]
-    FeaturedNews.tsx        — Top 5 ranked articles grid
+    FeaturedNews.tsx        — Top 5 ranked articles (server shell; FeaturedGrid [client] lays them out per the grid/list toggle)
     NewsList.tsx            — Remaining articles section (server shell)
     NewsListClient.tsx      — Paginated "Load more" grid for recent articles [client]
     NewsCard.tsx            — Article card (featured + default variants), read/bookmark state [client]

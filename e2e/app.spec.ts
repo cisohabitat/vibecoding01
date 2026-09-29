@@ -67,13 +67,18 @@ test("tags categories on whole words only", async ({ page }) => {
 test("grid/list toggle applies immediately and persists", async ({ page }) => {
   await page.goto("/");
   const grid = page.locator("section", { has: page.getByRole("heading", { name: "Latest News" }) }).locator("> div").first();
+  // Top Stories follow the toggle too
+  const top = page.locator("section", { has: page.getByRole("heading", { name: /Top Stories/ }) }).locator("> div").first();
   await expect(grid).toHaveClass(/grid/);
+  await expect(top).toHaveClass(/grid/);
 
   await page.getByRole("button", { name: "Switch to list view" }).click();
   await expect(grid).toHaveClass(/flex-col/);
+  await expect(top).toHaveClass(/flex-col/);
 
   await page.reload();
   await expect(grid).toHaveClass(/flex-col/);
+  await expect(top).toHaveClass(/flex-col/);
 });
 
 test("clicking a card opens the article and marks it read", async ({ page, context }) => {

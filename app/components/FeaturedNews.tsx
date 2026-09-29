@@ -1,5 +1,5 @@
 import { Article } from "@/lib/types";
-import NewsCard from "./NewsCard";
+import FeaturedGrid from "./FeaturedGrid";
 
 export default function FeaturedNews({ articles }: { articles: Article[] }) {
   if (articles.length === 0) {
@@ -22,19 +22,7 @@ export default function FeaturedNews({ articles }: { articles: Article[] }) {
         <span className="w-2 h-2 rounded-full bg-cyber-red animate-pulse" />
         Top Stories — Last 24 Hours
       </h2>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {/* First article takes full width on larger screens */}
-        {articles[0] && (
-          <div className="sm:col-span-2 lg:col-span-2">
-            <NewsCard article={articles[0]} featured filterable />
-          </div>
-        )}
-        {articles.slice(1).map((article) => (
-          <div key={article.link}>
-            <NewsCard article={article} featured filterable />
-          </div>
-        ))}
-      </div>
+      <FeaturedGrid articles={articles} />
     </section>
   );
 }
