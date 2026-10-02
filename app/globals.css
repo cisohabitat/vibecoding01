@@ -12,6 +12,12 @@
   --color-cyber-red: #ef4444;
 }
 
+/* A dark-only design: tell the browser, so scrollbars, form controls and
+   the page before CSS loads are dark too (no white flash in light mode) */
+:root {
+  color-scheme: dark;
+}
+
 body {
   background-color: var(--color-cyber-900);
   color: #e2e8f0;

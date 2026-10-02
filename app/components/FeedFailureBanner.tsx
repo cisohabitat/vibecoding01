@@ -26,7 +26,7 @@ export default function FeedFailureBanner({
           document.getElementById("main")?.focus();
         }}
         aria-label="Dismiss warning"
-        className="shrink-0 text-amber-400 hover:text-amber-200 transition-colors"
+        className="shrink-0 -my-1 -mr-2 px-2 py-0.5 text-base leading-none min-h-7 min-w-7 rounded text-amber-400 hover:text-amber-200 hover:bg-amber-500/10 transition-colors"
       >
         ×
       </button>

@@ -43,6 +43,10 @@ test("counts known-exploited CVEs and ranks their story first", async ({ page })
   await expect(top).toContainText("Critical RCE in Jenkins");
   // ...and its score explains itself
   await expect(top.getByText("16.0")).toHaveAttribute("title", /^Relevance score: Source 2 · Keywords \+\d+ · Recency \+\d.* · Exploitation \+3/);
+  // ...also on tap, for touch and keyboard users
+  await top.getByRole("button", { name: /^Relevance score 16\.0/ }).click();
+  await expect(top.getByRole("note")).toContainText("Exploitation+3");
+  await expect(top.getByRole("note")).toContainText("Total16.0");
 
   // The tile shows its stories: last 24h, known exploited
   await stat.click();
@@ -701,6 +705,21 @@ test("filtered RSS feeds carry only matching stories", async ({ request }) => {
 
 test.describe("on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 } });
+
+  test("filters fold behind a toggle; the CVE dialog fits the screen", async ({ page }) => {
+    await page.goto("/");
+    const kev = page.getByRole("button", { name: /^KEV: / });
+    await expect(kev).toBeHidden();
+    await page.getByRole("button", { name: /^Filters/ }).click();
+    await kev.click();
+    await expect(page.getByRole("button", { name: "Filters (1 on)" })).toBeVisible();
+    await expect(page.getByRole("status").filter({ hasText: "result" })).toHaveText("2 results");
+
+    await card(page, "Critical RCE in Jenkins").getByRole("button", { name: /CVE-2024-23897 details/ }).click();
+    const box = (await page.getByRole("dialog").boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(8);
+    expect(box.x + box.width).toBeLessThanOrEqual(390 - 8);
+  });
 
   test("trending strip filters articles", async ({ page }) => {
     await page.goto("/");

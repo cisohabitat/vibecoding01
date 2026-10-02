@@ -34,6 +34,20 @@ const TRIAGE_OPTIONS: Array<{ key: TriageKey; label: string; description: string
   { key: "stack", label: "My stack", description: "Only stories about your stack" },
 ];
 
+const CHIP = "min-h-8 sm:min-h-7 px-3 text-xs rounded-full border transition-colors";
+
+/** A labelled row of filter chips; the label is visible, and names the group for screen readers. */
+function FilterGroup({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-wrap items-center gap-2">
+      <span aria-hidden="true" className="w-16 shrink-0 text-[11px] uppercase tracking-wide text-slate-400">
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
+
 /** Everything a search can match: text, sources, category and CVE IDs. */
 function searchText(a: Article): string {
   return [
@@ -68,6 +82,7 @@ export default function ArticleFilter({
   const [sort, setSort] = useState<SortKey>("new");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [editingStack, setEditingStack] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const stackRaw = useLocalStorage(WATCHLIST_KEY);
   const stackTerms = useMemo(() => parseWatchlist(stackRaw), [stackRaw]);
   const lastVisit = useLastVisit();
@@ -192,6 +207,7 @@ export default function ArticleFilter({
 
   const allArticles = useMemo(() => [...featured, ...recent], [featured, recent]);
 
+  const activeFilters = categories.length + (timeHours ? 1 : 0) + triage.length + (source ? 1 : 0);
   const isFiltered = !!(search.trim() || source || categories.length > 0 || timeHours || triage.length > 0);
 
   const filtered = useMemo(() => {
@@ -319,14 +335,32 @@ export default function ArticleFilter({
           </p>
         )}
 
-        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filters">
+        {/* Phones: the filter groups fold away so stories start sooner */}
+        <button
+          type="button"
+          onClick={() => setFiltersOpen((v) => !v)}
+          aria-expanded={filtersOpen}
+          aria-controls="filter-groups"
+          className="sm:hidden inline-flex items-center gap-1.5 min-h-8 px-3 text-xs rounded-lg border border-cyber-600/50 text-slate-300 hover:border-cyber-500"
+        >
+          Filters{activeFilters > 0 ? ` (${activeFilters} on)` : ""}
+          <span aria-hidden="true">{filtersOpen ? "▴" : "▾"}</span>
+        </button>
+
+        <div
+          id="filter-groups"
+          className={`${filtersOpen ? "flex" : "hidden"} sm:flex flex-col gap-2`}
+          role="group"
+          aria-label="Filters"
+        >
+          <FilterGroup label="Category">
             {CATEGORIES.map((cat) => (
               <button
                 type="button"
                 key={cat}
                 onClick={() => toggleCategory(cat)}
                 aria-pressed={categories.includes(cat)}
-                className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                className={`${CHIP} ${
                   categories.includes(cat)
                     ? "bg-cyber-accent/20 border-cyber-accent/50 text-cyber-accent"
                     : "border-cyber-600/50 text-slate-400 hover:border-cyber-500 hover:text-slate-200"
@@ -335,54 +369,59 @@ export default function ArticleFilter({
                 {cat}
               </button>
             ))}
-            <span className="hidden sm:inline-block border-l border-cyber-600/30 h-4 mx-1" aria-hidden="true" />
-            {TIME_OPTIONS.map(({ label, hours }) => (
-              <button
-                type="button"
-                key={label}
-                onClick={() => toggleTime(hours)}
-                aria-pressed={timeHours === hours}
-                aria-label={`Last ${label}`}
-                className={`px-3 py-1 text-xs rounded-full border font-mono transition-colors ${
-                  timeHours === hours
-                    ? "bg-cyber-blue/20 border-cyber-blue/50 text-cyber-blue"
-                    : "border-cyber-600/50 text-slate-400 hover:border-cyber-500 hover:text-slate-200"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-            <span className="hidden sm:inline-block border-l border-cyber-600/30 h-4 mx-1" aria-hidden="true" />
-            {TRIAGE_OPTIONS.map(({ key, label, description }) => (
-              <button
-                type="button"
-                key={key}
-                onClick={() => toggleTriage(key)}
-                aria-pressed={triage.includes(key)}
-                // Starts with the visible label, so voice control ("click KEV") finds it
-                aria-label={`${label}: ${description}`}
-                title={description}
-                className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                  !triage.includes(key)
-                    ? "border-cyber-600/50 text-slate-400 hover:border-cyber-500 hover:text-slate-200"
-                    : key === "stack"
+          </FilterGroup>
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <FilterGroup label="Time">
+              {TIME_OPTIONS.map(({ label, hours }) => (
+                <button
+                  type="button"
+                  key={label}
+                  onClick={() => toggleTime(hours)}
+                  aria-pressed={timeHours === hours}
+                  aria-label={`Last ${label}`}
+                  className={`${CHIP} font-mono ${
+                    timeHours === hours
                       ? "bg-cyber-blue/20 border-cyber-blue/50 text-cyber-blue"
-                      : "bg-red-500/15 border-red-400/50 text-red-300"
-                }`}
+                      : "border-cyber-600/50 text-slate-400 hover:border-cyber-500 hover:text-slate-200"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </FilterGroup>
+            <FilterGroup label="Triage">
+              {TRIAGE_OPTIONS.map(({ key, label, description }) => (
+                <button
+                  type="button"
+                  key={key}
+                  onClick={() => toggleTriage(key)}
+                  aria-pressed={triage.includes(key)}
+                  // Starts with the visible label, so voice control ("click KEV") finds it
+                  aria-label={`${label}: ${description}`}
+                  title={description}
+                  className={`${CHIP} ${
+                    !triage.includes(key)
+                      ? "border-cyber-600/50 text-slate-400 hover:border-cyber-500 hover:text-slate-200"
+                      : key === "stack"
+                        ? "bg-cyber-blue/20 border-cyber-blue/50 text-cyber-blue"
+                        : "bg-red-500/15 border-red-400/50 text-red-300"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setEditingStack((v) => !v)}
+                aria-expanded={editingStack}
+                aria-controls={editingStack ? "stack-editor" : undefined}
+                className={`${CHIP} border-dashed border-cyber-blue/40 text-cyber-blue hover:border-cyber-blue/70 hover:bg-cyber-blue/10`}
               >
-                {label}
+                {stackTerms.length > 0 ? `Edit stack (${stackTerms.length})` : "+ Set up stack"}
               </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => setEditingStack((v) => !v)}
-              aria-expanded={editingStack}
-              aria-controls={editingStack ? "stack-editor" : undefined}
-              className="px-1 text-xs text-slate-400 hover:text-slate-200 underline-offset-2 hover:underline"
-            >
-              {stackTerms.length > 0 ? `Edit stack (${stackTerms.length})` : "Set up stack"}
-            </button>
+            </FilterGroup>
           </div>
+        </div>
 
           {editingStack && <StackEditor id="stack-editor" terms={stackTerms} />}
 
@@ -390,7 +429,11 @@ export default function ArticleFilter({
             <p className="text-xs text-slate-400 px-1">
               <span className="text-cyber-accent font-semibold">{newArticles.length} new</span> since your
               last visit ·{" "}
-              <button type="button" onClick={() => markAllSeen(newestTime)} className="underline-offset-2 hover:underline hover:text-slate-200">
+              <button
+                type="button"
+                onClick={() => markAllSeen(newestTime)}
+                className="py-1 underline decoration-slate-500 underline-offset-2 hover:text-slate-200 hover:decoration-slate-300"
+              >
                 Mark all seen
               </button>
             </p>
@@ -440,11 +483,20 @@ export default function ArticleFilter({
               </div>
             </div>
             {filtered.length === 0 ? (
-              <p className="text-slate-400 text-center py-16 text-sm">
-                {triage.includes("stack") && stackTerms.length === 0
-                  ? "Your stack is empty: add the vendors and products you run."
-                  : "No articles match your filters."}
-              </p>
+              <div className="text-center py-16 text-sm text-slate-400 space-y-4">
+                <p>
+                  {triage.includes("stack") && stackTerms.length === 0
+                    ? "Your stack is empty: add the vendors and products you run."
+                    : "No articles match your filters."}
+                </p>
+                <button
+                  type="button"
+                  onClick={clearAll}
+                  className="min-h-8 px-4 rounded-lg border border-cyber-600/50 text-slate-200 hover:border-cyber-accent/50 hover:text-cyber-accent transition-colors"
+                >
+                  Clear filters
+                </button>
+              </div>
             ) : (
               <ViewModeContext.Provider value={viewMode}>
                 {/* Paginated like the default list; keyed so filter/sort changes start from page 1 */}

@@ -60,21 +60,29 @@ export default function StatsBanner({
     {
       label: "Data Breaches",
       value: breachCount,
-      color: breachCount > 0 ? "text-rose-400" : "text-slate-400",
+      color: breachCount > 0 ? "text-pink-300" : "text-slate-400",
       filter: { categories: ["Data Breach" as const] },
     },
     {
       label: "Ransomware",
       value: ransomwareCount,
-      color: ransomwareCount > 0 ? "text-orange-400" : "text-slate-400",
+      color: ransomwareCount > 0 ? "text-fuchsia-300" : "text-slate-400",
       filter: { categories: ["Ransomware" as const] },
     },
   ];
 
   return (
-    <div className="flex flex-wrap gap-2 sm:gap-4 mb-6 px-1" role="group" aria-label="Last 24 hours">
-      {stats.map(({ label, value, color, filter }) => (
-        <StatTile key={label} label={label} value={value} color={color} filter={{ timeHours: 24, ...filter }} />
+    // Phones: total on its own row, then 2 + 2; wider: one row of five
+    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 lg:gap-3 mb-6" role="group" aria-label="Last 24 hours">
+      {stats.map(({ label, value, color, filter }, i) => (
+        <StatTile
+          key={label}
+          label={label}
+          value={value}
+          color={color}
+          filter={{ timeHours: 24, ...filter }}
+          className={i === 0 ? "col-span-2 sm:col-span-1" : ""}
+        />
       ))}
     </div>
   );

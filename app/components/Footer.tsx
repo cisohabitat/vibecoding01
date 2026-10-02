@@ -71,7 +71,7 @@ export default function Footer({ lastUpdated }: { lastUpdated: string }) {
             </li>
             <li>
               <strong className="text-slate-300">Singapore:</strong> stories that mention Singapore get
-              a boost and are marked <span className="font-semibold text-red-300">SG</span>.
+              a boost and are marked <span className="font-semibold text-slate-200">SG</span>.
             </li>
             <li>
               <strong className="text-slate-300">Recency:</strong> a boost for the last few hours,

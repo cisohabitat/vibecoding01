@@ -12,7 +12,7 @@ const LINKS = [
 export default function NavLinks() {
   const pathname = usePathname();
   return (
-    <nav aria-label="Main" className="flex items-center gap-3">
+    <nav aria-label="Main" className="flex items-center gap-1 -mr-2">
       {LINKS.map(({ href, label, icon }) => {
         const current = pathname === href;
         return (
@@ -20,7 +20,7 @@ export default function NavLinks() {
             key={href}
             href={href}
             aria-current={current ? "page" : undefined}
-            className={`text-xs transition-colors flex items-center gap-1 ${
+            className={`text-xs transition-colors flex items-center gap-1 min-h-8 px-2 rounded ${
               current ? "text-cyber-accent" : "text-slate-400 hover:text-slate-200"
             }`}
           >

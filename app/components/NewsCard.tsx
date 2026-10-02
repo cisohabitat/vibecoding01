@@ -46,15 +46,17 @@ const cveSeverityStyles: Record<CveSeverity | "null", string> = {
   null:     "bg-slate-500/10 text-slate-400 border-slate-500/30 hover:bg-slate-500/20",
 };
 
+// Red is reserved for urgency (exploited or critical CVEs), so it stays a
+// signal; categories use distinct non-red hues
 const categoryStyles: Record<ArticleCategory, string> = {
   Vulnerability: "bg-amber-500/10 text-amber-400 border-amber-500/30",
-  Ransomware:    "bg-red-500/10 text-red-400 border-red-500/30",
-  APT:           "bg-purple-500/10 text-purple-400 border-purple-500/30",
-  "Data Breach": "bg-rose-500/10 text-rose-400 border-rose-500/30",
+  Ransomware:    "bg-fuchsia-500/10 text-fuchsia-300 border-fuchsia-500/30",
+  APT:           "bg-violet-500/10 text-violet-300 border-violet-500/30",
+  "Data Breach": "bg-pink-500/10 text-pink-300 border-pink-500/30",
   Malware:       "bg-orange-500/10 text-orange-400 border-orange-500/30",
-  Phishing:      "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
-  AI:            "bg-teal-500/10 text-teal-300 border-teal-500/30",
-  Policy:        "bg-indigo-500/10 text-indigo-400 border-indigo-500/30",
+  Phishing:      "bg-lime-500/10 text-lime-300 border-lime-500/30",
+  AI:            "bg-indigo-500/10 text-indigo-300 border-indigo-500/30",
+  Policy:        "bg-slate-500/10 text-slate-300 border-slate-400/40",
   Other:         "bg-slate-500/10 text-slate-400 border-slate-500/30",
 };
 
@@ -100,7 +102,7 @@ function Label({
       onClick={() => showFiltered(filter)}
       aria-label={label}
       title={label.slice(label.indexOf(":") + 2).replace(/^./, (c) => c.toUpperCase())}
-      className={`relative z-10 hover:brightness-125 ${className}`}
+      className={`relative z-10 inline-flex items-center min-h-6 hover:brightness-125 ${className}`}
     >
       {children}
     </button>
@@ -120,6 +122,7 @@ export default function NewsCard({
   const [openCve, setOpenCve] = useState<string | null>(null);
   const allArticles = useContext(ArticlesContext);
   const [copied, setCopied] = useState(false);
+  const [showScore, setShowScore] = useState(false);
   const now = useNow();
   const readRaw = useLocalStorage(READ_KEY);
   const bookmarksRaw = useLocalStorage(BOOKMARK_KEY);
@@ -173,7 +176,7 @@ export default function NewsCard({
   return (
     <>
       <article
-        className={`group relative rounded-lg border transition-all duration-200 ${
+        className={`group relative h-full flex flex-col rounded-lg border transition-all duration-200 ${
           isRead ? "opacity-60 hover:opacity-90" : ""
         } ${
           featured
@@ -188,9 +191,9 @@ export default function NewsCard({
             }`}
           >
             {isBreaking && (
-              <span className="inline-flex items-center gap-1 mr-2 px-1.5 py-0.5 text-xs font-bold bg-red-500/20 text-red-300 border border-red-500/50 rounded align-middle">
+              <span className="inline-flex items-center gap-1 mr-2 px-1.5 py-0.5 text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/50 rounded align-middle">
                 {/* Pulse only the dot: fading the text drops its contrast below 4.5:1 */}
-                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" aria-hidden="true" />
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" aria-hidden="true" />
                 BREAKING
               </span>
             )}
@@ -208,21 +211,48 @@ export default function NewsCard({
           </h3>
           <div className="relative z-10 flex items-center gap-1.5 shrink-0">
             {featured && article.score > 0 && (
-              <span
-                className="text-xs font-mono bg-cyber-accent/10 text-cyber-accent px-2 py-0.5 rounded"
+              // Tap or click (not just hover) shows how the score adds up
+              <button
+                type="button"
+                onClick={() => setShowScore((v) => !v)}
+                onBlur={() => setShowScore(false)}
+                aria-expanded={showScore}
+                aria-label={`Relevance score ${article.score.toFixed(1)}: show how it adds up`}
                 title={scoreTitle(article)}
+                className="min-h-7 text-xs font-mono bg-cyber-accent/10 text-cyber-accent px-2 rounded hover:bg-cyber-accent/20 transition-colors"
               >
                 {article.score.toFixed(1)}
-                {/* The breakdown for keyboard, touch and screen-reader users too */}
-                <span className="sr-only">{`. ${scoreTitle(article)}`}</span>
-              </span>
+              </button>
+            )}
+            {showScore && (
+              <div
+                role="note"
+                className="absolute right-0 top-full mt-1 z-20 w-56 rounded-lg border border-cyber-600/60 bg-cyber-800 p-3 text-xs text-slate-300 shadow-lg"
+              >
+                <p className="font-semibold text-slate-200 mb-1.5">Relevance score</p>
+                <ul className="space-y-0.5 font-mono">
+                  {Object.entries(article.scoreBreakdown ?? {}).map(([name, n]) => (
+                    <li key={name} className="flex justify-between gap-3">
+                      <span className="font-sans">{name}</span>
+                      <span className={n < 0 ? "text-amber-300" : ""}>
+                        {n > 0 && name !== "Source" ? "+" : ""}
+                        {Number(n.toFixed(2))}
+                      </span>
+                    </li>
+                  ))}
+                  <li className="flex justify-between gap-3 border-t border-cyber-600/50 pt-1 mt-1 text-cyber-accent">
+                    <span className="font-sans">Total</span>
+                    {article.score.toFixed(1)}
+                  </li>
+                </ul>
+              </div>
             )}
             <button
               type="button"
               onClick={handleShare}
               title="Share article"
               aria-label={copied ? "Link copied" : "Share article"}
-              className="p-1 text-slate-500 hover:text-slate-200 transition-colors"
+              className="p-2 -m-0.5 rounded text-slate-500 hover:text-slate-200 hover:bg-cyber-700/60 transition-colors"
             >
               {copied ? (
                 <span className="text-xs text-cyber-accent font-mono">Copied!</span>
@@ -238,7 +268,7 @@ export default function NewsCard({
               title={isBookmarked ? "Remove bookmark" : "Save for later"}
               aria-label={isBookmarked ? "Remove bookmark" : "Save for later"}
               aria-pressed={isBookmarked}
-              className={`p-1 text-base leading-none transition-colors ${
+              className={`p-1.5 -m-0.5 min-w-8 min-h-8 rounded text-base leading-none hover:bg-cyber-700/60 transition-colors ${
                 isBookmarked
                   ? "text-cyber-accent"
                   : "text-slate-500 hover:text-slate-200"
@@ -270,7 +300,7 @@ export default function NewsCard({
                   showEpss(cve) ? `, ${formatProbability(cve.epss ?? 0)} chance of exploitation (EPSS)` : ""
                 }`}
                 aria-haspopup="dialog"
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-mono transition-colors cursor-pointer ${
+                className={`inline-flex items-center gap-1 min-h-6 px-2 py-0.5 rounded border text-xs font-mono transition-colors cursor-pointer ${
                   cveSeverityStyles[cve.severity ?? "null"]
                 }`}
               >
@@ -299,7 +329,7 @@ export default function NewsCard({
           </div>
         )}
 
-        <div className="flex items-center flex-wrap gap-2 text-xs">
+        <div className="mt-auto flex items-center flex-wrap gap-2 text-xs">
           <Label
             filter={filterable ? { source: article.source } : undefined}
             label={`${article.source}: show its stories`}
@@ -322,7 +352,7 @@ export default function NewsCard({
           )}
           {mentionsSingapore(article) && (
             <span
-              className="px-1.5 py-0.5 rounded border border-red-400/40 text-red-300 font-semibold"
+              className="px-1.5 py-0.5 rounded border border-slate-400/40 text-slate-200 font-semibold"
               title="Mentions Singapore"
             >
               SG

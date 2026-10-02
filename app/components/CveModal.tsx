@@ -78,7 +78,7 @@ export default function CveModal({
       aria-labelledby="cve-modal-title"
       onClose={onClose}
       onClick={handleBackdropClick}
-      className="rounded-xl border border-cyber-600/50 bg-cyber-800 p-0 max-w-lg w-full mx-4 backdrop:bg-black/70 open:animate-none"
+      className="m-auto rounded-xl border border-cyber-600/50 bg-cyber-800 p-0 w-[calc(100%-2rem)] max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto backdrop:bg-black/70 open:animate-none"
     >
       <div className="p-6">
         {/* Header */}

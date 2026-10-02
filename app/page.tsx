@@ -10,6 +10,7 @@ import FeedFailureBanner from "./components/FeedFailureBanner";
 import StatsBanner from "./components/StatsBanner";
 import UpdatedAgo from "./components/UpdatedAgo";
 import AutoRefresh from "./components/AutoRefresh";
+import SubscribeCard from "./components/SubscribeCard";
 
 // A cold data cache runs the whole pipeline: worst case ~25s (10s feed
 // timeout + retry, then NVD). Don't rely on the platform's default limit.
@@ -38,8 +39,9 @@ export default async function Home() {
               <NewsList articles={recent} />
             </ArticleFilter>
           </div>
-          <aside className="w-60 shrink-0 hidden lg:block sticky top-20">
+          <aside className="w-60 shrink-0 hidden lg:flex flex-col gap-4 sticky top-20">
             <TrendingTopics topics={trending} />
+            <SubscribeCard />
           </aside>
         </div>
       </main>
