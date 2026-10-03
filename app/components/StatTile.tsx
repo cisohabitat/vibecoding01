@@ -9,19 +9,22 @@ export default function StatTile({
   value,
   color,
   filter,
+  hint = "Show these stories",
   className = "",
 }: {
   label: string;
   value: number;
   color: string;
   filter: Partial<FilterState>;
+  /** Tooltip: what the number counts */
+  hint?: string;
   className?: string;
 }) {
   return (
     <button
       type="button"
       onClick={() => showFiltered(filter)}
-      title="Show these stories"
+      title={hint}
       className={`group flex items-baseline sm:flex-col sm:items-start lg:flex-row lg:items-baseline gap-1.5 sm:gap-0.5 lg:gap-2 text-left bg-cyber-800/40 border border-cyber-600/50 rounded-lg px-3 py-2 sm:px-4 hover:border-cyber-accent/50 hover:bg-cyber-800/80 transition-colors ${className}`}
     >
       <span className={`text-lg sm:text-xl font-bold font-mono ${color}`}>{value}</span>

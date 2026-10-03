@@ -48,6 +48,10 @@ export default function AboutPage() {
           merges the same story from different outlets, ranks what matters most, and adds CVE data so you can
           see at a glance what to patch first.
         </p>
+        <p className="mt-3">
+          New to cybersecurity? <Link href="/guide" className={link}>How to read Cyber Pulse</Link> explains
+          the scores, badges and jargon in plain English.
+        </p>
 
         <h2 className={h2}>Sources</h2>
         {tiers.map(({ tier, sources }) => (

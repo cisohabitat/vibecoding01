@@ -227,9 +227,10 @@ export default function NewsCard({
             {showScore && (
               <div
                 role="note"
-                className="absolute right-0 top-full mt-1 z-20 w-56 rounded-lg border border-cyber-600/60 bg-cyber-800 p-3 text-xs text-slate-300 shadow-lg"
+                className="absolute right-0 top-full mt-1 z-20 w-60 rounded-lg border border-cyber-600/60 bg-cyber-800 p-3 text-xs text-slate-300 shadow-lg"
               >
-                <p className="font-semibold text-slate-200 mb-1.5">Relevance score</p>
+                <p className="font-semibold text-slate-200">Relevance score</p>
+                <p className="text-slate-400 mb-1.5">How important this story is today, not how severe a flaw is.</p>
                 <ul className="space-y-0.5 font-mono">
                   {Object.entries(article.scoreBreakdown ?? {}).map(([name, n]) => (
                     <li key={name} className="flex justify-between gap-3">

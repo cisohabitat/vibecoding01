@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import Link from "next/link";
 import type { CveDetail } from "@/app/api/cve/[id]/route";
 import type { Article } from "@/lib/types";
 import { formatPercentile, formatProbability, HIGH_EPSS } from "@/lib/epss-format";
@@ -86,6 +87,7 @@ export default function CveModal({
           <div>
             <p className="text-xs text-slate-400 font-mono mb-1">Vulnerability Detail</p>
             <h2 id="cve-modal-title" className="text-lg font-bold text-white font-mono">{cveId}</h2>
+            <p className="text-xs text-slate-400 mt-0.5">The public ID of one security flaw</p>
           </div>
           <button
             type="button"
@@ -142,11 +144,7 @@ export default function CveModal({
                     <span className="text-sm text-slate-400 ml-1">/ 10</span>
                   </span>
                 )}
-                {data.vectorString && (
-                  <span className="text-xs font-mono text-slate-400 break-all">
-                    {data.vectorString}
-                  </span>
-                )}
+                <span className="text-xs text-slate-400">severity (CVSS)</span>
               </div>
             )}
 
@@ -206,13 +204,17 @@ export default function CveModal({
             )}
 
             {/* Dates */}
-            {(data.published || data.lastModified) && (
-              <div className="flex flex-wrap gap-4 text-xs text-slate-400">
+            {(data.published || data.lastModified || data.vectorString) && (
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
                 {data.published && (
                   <span>Published: {formatDay(data.published.slice(0, 10))}</span>
                 )}
                 {data.lastModified && (
                   <span>Updated: {formatDay(data.lastModified.slice(0, 10))}</span>
+                )}
+                {/* For specialists: how the severity was derived */}
+                {data.vectorString && (
+                  <span className="font-mono break-all">Vector: {data.vectorString}</span>
                 )}
               </div>
             )}
@@ -241,7 +243,7 @@ export default function CveModal({
             )}
 
             {/* NVD link */}
-            <div className="pt-2 border-t border-cyber-700">
+            <div className="pt-2 border-t border-cyber-700 flex flex-wrap justify-between gap-x-4 gap-y-1">
               <a
                 href={`https://nvd.nist.gov/vuln/detail/${cveId}`}
                 target="_blank"
@@ -250,6 +252,9 @@ export default function CveModal({
               >
                 View full record on NVD →
               </a>
+              <Link href="/guide#glossary" className="text-xs text-slate-400 hover:text-cyber-accent transition-colors">
+                What do these terms mean?
+              </Link>
             </div>
           </div>
         )}

@@ -293,19 +293,49 @@ test("triage filters narrow to CVE, KEV and CVSS 9+ stories", async ({ page }) =
   await page.goto("/");
   const results = page.getByRole("status").filter({ hasText: "result" });
 
-  await page.getByRole("button", { name: "Only known-exploited CVEs (CISA KEV)" }).click();
+  await page.getByRole("button", { name: "Only flaws attackers are already using (CISA KEV)" }).click();
   await expect(results).toHaveText("2 results");
   await expect(page.locator("article")).toContainText(["Critical RCE in Jenkins"]);
   await expect(page).toHaveURL(/f=kev/);
 
   await page.getByRole("button", { name: "Clear ×" }).click();
-  await page.getByRole("button", { name: "Only CVSS 9.0 or higher" }).click();
+  await page.getByRole("button", { name: "Only critical flaws, rated 9 or more out of 10" }).click();
   await expect(results).toHaveText("3 results");
 
   // A shared triage link restores the filter
   await page.goto("/?f=cve");
-  await expect(page.getByRole("button", { name: "Only stories naming a CVE" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Only stories naming a specific flaw (CVE)" })).toHaveAttribute("aria-pressed", "true");
   await expect(results).toHaveText("3 results");
+});
+
+test("newcomers get the jargon explained without hovering", async ({ page }) => {
+  await page.goto("/");
+  // Jargon filters say what they mean where they're used (tooltips never reach phones)
+  const showOnly = page.getByRole("group", { name: "Show only" });
+  await showOnly.getByRole("button", { name: /^KEV/ }).click();
+  await expect(page.getByText("KEV: flaws attackers are already using (CISA's list)")).toBeVisible();
+  await page.getByRole("button", { name: /^CVSS 9\+/ }).click();
+  await expect(page.getByText(/CVSS 9\+: flaws rated critical: 9 or more out of 10/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Jargon explained" })).toHaveAttribute("href", "/guide#kev");
+
+  // The CVE dialog links to the glossary
+  await page.goto("/");
+  await page.getByRole("button", { name: /^CVE-2024-23897 details/ }).first().click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("severity (CVSS)")).toBeVisible();
+  await expect(dialog.getByRole("link", { name: "What do these terms mean?" })).toHaveAttribute("href", "/guide#glossary");
+  await page.keyboard.press("Escape");
+
+  // The guide is one tap from the home page, and its anchors land on the term
+  await page.getByRole("link", { name: "New here? Read the guide" }).click();
+  await expect(page).toHaveURL(/\/guide$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("How to read Cyber Pulse");
+  await page.goto("/guide#kev");
+  const kev = page.locator("#kev");
+  await expect(kev).toContainText("attackers are confirmed to be using");
+  // Not hidden under the sticky header
+  const headerBottom = await page.locator("header").evaluate((h) => h.getBoundingClientRect().bottom);
+  expect((await kev.boundingBox())!.y).toBeGreaterThanOrEqual(headerBottom);
 });
 
 test("My stack: watchlist marks and filters matching stories", async ({ page }) => {
@@ -587,6 +617,7 @@ test.describe("accessibility (axe-core)", () => {
     }],
     ["saved", async (page) => { await page.goto("/saved"); }],
     ["about", async (page) => { await page.goto("/about"); }],
+    ["guide", async (page) => { await page.goto("/guide#kev"); }],
   ];
 
   for (const [name, setup] of states) {
@@ -630,7 +661,7 @@ test("sends security headers with a per-request CSP nonce", async ({ request }) 
   expect(headers["x-powered-by"]).toBeUndefined();
 });
 
-for (const path of ["/", "/saved", "/about", "/does-not-exist"]) {
+for (const path of ["/", "/saved", "/about", "/guide", "/does-not-exist"]) {
   test(`no CSP violations and every script nonced on ${path}`, async ({ page }) => {
     const violations: string[] = [];
     page.on("console", (m) => {

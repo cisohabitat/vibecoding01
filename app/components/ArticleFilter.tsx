@@ -26,11 +26,13 @@ import { isString, READ_KEY } from "./NewsCard";
 import StackEditor from "./StackEditor";
 import { FILTER_EVENT } from "./filterEvents";
 import { ArticlesContext } from "./ArticlesContext";
+import { CATEGORY_HINTS, TRIAGE_HINTS } from "./glossary";
+import Link from "next/link";
 
 const TRIAGE_OPTIONS: Array<{ key: TriageKey; label: string; description: string }> = [
-  { key: "cve", label: "Has CVE", description: "Only stories naming a CVE" },
-  { key: "kev", label: "KEV", description: "Only known-exploited CVEs (CISA KEV)" },
-  { key: "critical", label: "CVSS 9+", description: "Only CVSS 9.0 or higher" },
+  { key: "cve", label: "Has CVE", description: "Only stories naming a specific flaw (CVE)" },
+  { key: "kev", label: "KEV", description: "Only flaws attackers are already using (CISA KEV)" },
+  { key: "critical", label: "CVSS 9+", description: "Only critical flaws, rated 9 or more out of 10" },
   { key: "stack", label: "My stack", description: "Only stories about your stack" },
 ];
 
@@ -40,7 +42,7 @@ const CHIP = "min-h-8 sm:min-h-7 px-3 text-xs rounded-full border transition-col
 function FilterGroup({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div role="group" aria-label={label} className="flex flex-wrap items-center gap-2">
-      <span aria-hidden="true" className="w-16 shrink-0 text-[11px] uppercase tracking-wide text-slate-400">
+      <span aria-hidden="true" className="w-[4.5rem] shrink-0 whitespace-nowrap text-[11px] uppercase tracking-wide text-slate-400">
         {label}
       </span>
       {children}
@@ -207,6 +209,10 @@ export default function ArticleFilter({
 
   const allArticles = useMemo(() => [...featured, ...recent], [featured, recent]);
 
+  const hints = [
+    ...categories.flatMap((cat) => (CATEGORY_HINTS[cat] ? [{ term: cat, ...CATEGORY_HINTS[cat] }] : [])),
+    ...TRIAGE_OPTIONS.filter(({ key }) => triage.includes(key)).map(({ key, label }) => ({ term: label, ...TRIAGE_HINTS[key] })),
+  ];
   const activeFilters = categories.length + (timeHours ? 1 : 0) + triage.length + (source ? 1 : 0);
   const isFiltered = !!(search.trim() || source || categories.length > 0 || timeHours || triage.length > 0);
 
@@ -360,6 +366,7 @@ export default function ArticleFilter({
                 key={cat}
                 onClick={() => toggleCategory(cat)}
                 aria-pressed={categories.includes(cat)}
+                title={CATEGORY_HINTS[cat] ? `${cat}: ${CATEGORY_HINTS[cat].meaning}` : undefined}
                 className={`${CHIP} ${
                   categories.includes(cat)
                     ? "bg-cyber-accent/20 border-cyber-accent/50 text-cyber-accent"
@@ -389,7 +396,7 @@ export default function ArticleFilter({
                 </button>
               ))}
             </FilterGroup>
-            <FilterGroup label="Triage">
+            <FilterGroup label="Show only">
               {TRIAGE_OPTIONS.map(({ key, label, description }) => (
                 <button
                   type="button"
@@ -482,6 +489,20 @@ export default function ArticleFilter({
                 ))}
               </div>
             </div>
+            {hints.length > 0 && (
+              // Says what the jargon filters mean where they're used: chip tooltips never reach phones
+              <p className="-mt-2 mb-4 text-xs text-slate-400">
+                {hints.map(({ term, meaning }, i) => (
+                  <span key={term}>
+                    {i > 0 && " · "}
+                    <span className="text-slate-200">{term}</span>: {meaning}
+                  </span>
+                ))}{" "}
+                <Link href={`/guide#${hints[0].anchor}`} className="text-cyber-accent underline underline-offset-2 hover:text-white whitespace-nowrap">
+                  Jargon explained
+                </Link>
+              </p>
+            )}
             {filtered.length === 0 ? (
               <div className="text-center py-16 text-sm text-slate-400 space-y-4">
                 <p>

@@ -50,12 +50,14 @@ export default function StatsBanner({
       value: criticalCves,
       color: criticalCves > 0 ? "text-red-400" : "text-slate-400",
       filter: { triage: ["critical" as const] },
+      hint: "Distinct flaws rated critical (CVSS 9+ out of 10): show their stories",
     },
     {
       label: "Exploited CVEs",
       value: exploitedCves,
       color: exploitedCves > 0 ? "text-red-400" : "text-slate-400",
       filter: { triage: ["kev" as const] },
+      hint: "Distinct flaws attackers are already using (CISA KEV): show their stories",
     },
     {
       label: "Data Breaches",
@@ -74,13 +76,14 @@ export default function StatsBanner({
   return (
     // Phones: total on its own row, then 2 + 2; wider: one row of five
     <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 lg:gap-3 mb-6" role="group" aria-label="Last 24 hours">
-      {stats.map(({ label, value, color, filter }, i) => (
+      {stats.map(({ label, value, color, filter, hint }, i) => (
         <StatTile
           key={label}
           label={label}
           value={value}
           color={color}
           filter={{ timeHours: 24, ...filter }}
+          hint={hint}
           className={i === 0 ? "col-span-2 sm:col-span-1" : ""}
         />
       ))}

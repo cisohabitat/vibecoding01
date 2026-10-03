@@ -40,6 +40,7 @@ app/
     feed/[filter]/route.ts  — Filtered RSS (/api/feed/kev|critical|cve|sg, from FILTERED_FEEDS in lib/filters.ts: title, description, matches predicate); ISR per filter, other filters 404
     health/route.ts         — Health check API (dynamic; 60s memo, never stale); returns { status, feedsUp, feedsDown, failedFeeds, kev, dataUpdated, lastCheck }
     cve/[id]/route.ts       — NVD proxy for CveModal, only for CVEs in current stories, not all of KEV (1h data + CDN cache; 404 unknown/untracked, 502 NVD down/rate-limited)
+  guide/page.tsx            — Newcomer guide: reading the page (scores vs severity, badges), what to do, glossary (from components/glossary.ts; each term's id is its anchor, e.g. /guide#kev)
   about/page.tsx            — About: sources by tier, ranking (numbers imported from lib/ranker.ts), duplicates, CVE data, privacy, feeds/API
   saved/layout.tsx          — Metadata for /saved (noindex)
   saved/page.tsx            — Bookmarked articles from localStorage; "Copy as briefing" (lib/briefing.ts), undoable Clear all [client]
@@ -51,7 +52,7 @@ app/
     NewsListClient.tsx      — Paginated "Load more" grid for recent articles [client]
     NewsCard.tsx            — Article card (featured + default variants), read/bookmark state [client]
     CveModal.tsx            — CVE detail dialog opened from a card's CVE chip [client]
-    ArticleFilter.tsx       — Search, category, time and triage (Has CVE / KEV / CVSS 9+ / My stack) filters in labelled groups (folded behind a "Filters" toggle on phones), "N new since your last visit · Mark all seen" line and "new stories about your stack" notice (NEW-badge rule); "/" and j/k keyboard shortcuts, Newest/Top sort; syncs to URL + localStorage; filtered results paginate via NewsListClient; provides view mode [client]
+    ArticleFilter.tsx       — Search, category, time and triage ("Show only": Has CVE / KEV / CVSS 9+ / My stack) filters in labelled groups (folded behind a "Filters" toggle on phones), "N new since your last visit · Mark all seen" line and "new stories about your stack" notice (NEW-badge rule); "/" and j/k keyboard shortcuts, Newest/Top sort; syncs to URL + localStorage; filtered results paginate via NewsListClient; provides view mode [client]
     StatsBanner.tsx         — 24h counts (stories, distinct critical/KEV CVEs, breaches, ransomware); each StatTile [client] shows its stories via filterEvents.showFiltered()
     UpdatedAgo.tsx          — Live "Updated Nm ago" for the page's data [client]
     AutoRefresh.tsx         — router.refresh() when data is >15 min old and the tab is visible (≤1 per 5 min) [client]
@@ -61,6 +62,7 @@ app/
     useLastVisit.ts         — markAllSeen(); previous visit end time for NEW badges (recorded on hide/close; baseline kept across reloads, new visit after >30 min away) [client]
     FeedFailureBanner.tsx   — Dismissible warning banner shown when ≥2 feeds fail [client]
     StackEditor.tsx         — "My stack" watchlist editor (add comma-separated terms, remove); writes via writeLocalStorage so cards update [client]
+    glossary.ts             — Plain-English glossary + TRIAGE_HINTS/CATEGORY_HINTS (the "KEV: flaws attackers are already using" line under active jargon filters)
     SubscribeCard.tsx       — Desktop sidebar card with the RSS feed links (below Trending)
     TrendingTopics.tsx      — Trending sidebar (lg+) and TrendingStrip chips (below lg); click dispatches a search event [client]
     Footer.tsx              — Last-updated timestamp, source list (from FEED_SOURCES), RSS link, "How stories are ranked" explainer (keep in sync with ranker.ts)
@@ -113,7 +115,7 @@ e2e/
 - Keywords match at word boundaries with common inflections (`lib/keywords.ts`), so "apt" doesn't match "adapt" and "conti" doesn't match "continues". A keyword ending in a non-alphanumeric character (e.g. `cve-`) acts as a prefix.
 - Duplicate articles (same story from multiple sources) are merged; `alsoReportedBy` tracks secondary sources.
 - Content-Security-Policy is set per request in `proxy.ts`: `script-src 'self' 'nonce-…' 'strict-dynamic'` (no `'unsafe-inline'`). Next.js nonces its own scripts automatically; scripts injected from JS by a nonced script (Vercel Analytics/Speed Insights) are allowed by `'strict-dynamic'`. Any hand-written inline `<script>` must use the nonce from `headers().get("x-nonce")`. `style-src` keeps `'unsafe-inline'` (inline style attributes). `connect-src` is `'self'` only: browser-side fetches must go through an API route (e.g. `/api/cve/[id]`). The other security headers (X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy, HSTS without includeSubDomains, COOP same-origin) are in `next.config.ts`.
-- Custom theme colors are defined in `globals.css` under `@theme` (Tailwind v4 syntax), prefixed `cyber-*`. The design is dark-only (`color-scheme: dark`). Red is reserved for urgency (KEV, critical CVSS, the critical/exploited stats); keep categories and other badges off red. Tap targets should be ≥24px (icon buttons and filter chips 28–32px).
+- Custom theme colors are defined in `globals.css` under `@theme` (Tailwind v4 syntax), prefixed `cyber-*`. The design is dark-only (`color-scheme: dark`). Red is reserved for urgency (KEV, critical CVSS, the critical/exploited stats); keep categories and other badges off red. Tap targets should be ≥24px (icon buttons and filter chips 28–32px). Write for newcomers too: tooltips (`title`) never reach phones, so jargon needs a visible explanation (the filter hint line, the CVE dialog, `/guide`); add new terms to `glossary.ts`.
 - `NewsCard` is a **client component** (`"use client"`) for its read/bookmark/share/CVE interactions. The card is an `<article>` whose title link is stretched over the whole card with an `::after` overlay; buttons sit above it with `relative z-10`. Never nest buttons or other interactive elements inside the `<a>`. With `filterable` (home page), the source/category labels are buttons that call `showFiltered()` (source filter / category); on `/saved` they're plain text.
 - `NewsListClient` wraps the article grid with `useState`-based pagination (12 articles per page, "Load more" button). `NewsList` is a server component shell that delegates to it. It reads grid/list mode from `ViewModeContext`.
 - `ArticleFilter` persists the selected categories to `localStorage` (`cyber-pulse-category` key) and filters to the URL (`q`, `src` source, `cat`, `t`, `f` triage, `sort`); restored on mount with a validity guard against stale values. If the URL has any filter param, it fully defines the view and saved categories are ignored.

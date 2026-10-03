@@ -6,7 +6,7 @@ import { useNow } from "./useNow";
 export default function UpdatedAgo({ lastUpdated }: { lastUpdated: string }) {
   const now = useNow();
   const updated = Date.parse(lastUpdated);
-  const className = "text-xs text-slate-400 mb-4 -mt-3 px-1";
+  const className = "text-slate-400";
   // Reserve the line on the server/first render so the page doesn't shift
   // down when the client fills it in
   if (now === null || Number.isNaN(updated)) {

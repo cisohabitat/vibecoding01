@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getCachedArticles } from "@/lib/pipeline";
 import { computeTrending } from "@/lib/trending";
 import Header from "./components/Header";
@@ -29,7 +30,13 @@ export default async function Home() {
           <div className="flex-1 min-w-0">
             <FeedFailureBanner failedFeeds={failedFeeds} />
             <StatsBanner featured={featured} recent={recent} />
-            <UpdatedAgo lastUpdated={lastUpdated} />
+            <div className="flex items-baseline justify-between gap-3 text-xs mb-4 -mt-3 px-1">
+              <UpdatedAgo lastUpdated={lastUpdated} />
+              {/* Visible on every screen size (tooltips never reach phones) */}
+              <Link href="/guide" className="text-cyber-accent underline underline-offset-2 hover:text-white">
+                New here? Read the guide
+              </Link>
+            </div>
             <AutoRefresh lastUpdated={lastUpdated} />
             <div className="lg:hidden">
               <TrendingStrip topics={trending} />
