@@ -62,7 +62,7 @@ export default function GuidePage() {
           <li>
             <span className={`${badge} font-bold bg-orange-500/20 text-orange-200 border-transparent`}>EPSS 41%</span>{" "}
             is a forecast: the chance attackers start using the flaw in the next 30 days. It&rsquo;s shown when
-            it&rsquo;s {Math.round(HIGH_EPSS * 100)}% or more.
+            it&rsquo;s {Math.round(HIGH_EPSS * 100)}% or more and the flaw isn&rsquo;t already on the KEV list.
           </li>
           <li>
             <span className={`${badge} font-bold bg-amber-500/15 text-amber-300 border-amber-500/50`}>BREAKING</span>{" "}
